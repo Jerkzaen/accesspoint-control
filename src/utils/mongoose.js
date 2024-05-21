@@ -7,7 +7,7 @@ export async function connectDB() {
   console.log(db.connection.db.databaseName);
 }
 
-// Conexión a la base de datos
+// Si la conexión es exitosa
 connection.on("connected", () => {
   console.log("Base de datos conectada");
 });
