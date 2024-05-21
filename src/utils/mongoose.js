@@ -1,10 +1,22 @@
 //CONEXION A MONGODB A TRAVES DE MONGOOSE
 import { connect, connection } from "mongoose";
 
+// Objeto de conexión a la base de datos
+const conn = {
+  // Inicialmente no está conectado
+  isConnected: false,
+};
+
 // Conexión a la base de datos
 export async function connectDB() {
+  // Si ya estamos conectados, no hacemos nada
+  if (conn.isConnected) return;
+  // Conectamos a la base de datos
   const db = await connect("mongodb://localhost/apcontrol");
+  // Mostramos el nombre de la base de datos
   console.log(db.connection.db.databaseName);
+  // Asignamos la conexión a nuestro objeto
+  conn.isConnected = db.connections[0].readyState;
 }
 
 // Si la conexión es exitosa
