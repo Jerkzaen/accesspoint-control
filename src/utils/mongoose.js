@@ -3,7 +3,7 @@ import { connect, connection } from "mongoose";
 
 // Conexión a la base de datos
 export async function connectDB() {
-  const db = await mongoose.connect("mongodb://localhost/apcontrol");
+  const db = await connect("mongodb://localhost/apcontrol");
   console.log(db.connection.db.databaseName);
 }
 
