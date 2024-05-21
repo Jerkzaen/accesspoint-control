@@ -6,5 +6,5 @@ const mongoose = require("mongoose");
 
 export async function connectDB() {
   const db = await mongoose.connect("mongodb://localhost/apcontrol");
-  console.log("Base de datos conectada");
+  console.log(db.connection.db.databaseName);
 }
