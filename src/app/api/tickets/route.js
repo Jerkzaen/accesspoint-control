@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/mongoose";
+import Ticket from "@/models/Ticket";
 
-//CRUD 
+//CRUD
 
 // OBTENER TODOS LOS TICKETS
-export function GET() {
+export async function GET() {
+  // Conectar a la base de datos de MongoDB
   connectDB();
-  return NextResponse.json({
-    message: "Obteniendo tickets",
-  });
+  // Obtener todos los tickets de la base de datos
+  const tickets = await Ticket.find();
+  // Devolver los tickets
+  return NextResponse.json(tickets);
 }
 
 // CREAR UN TICKET
