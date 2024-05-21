@@ -14,7 +14,7 @@ const taskSchema = new Schema({
     required: [true, "Title is required"],
     trim: true,
   },
-  timeStamps: true,
+  timestamps: true,
 });
 
 // Exportar el modelo de Ticket
