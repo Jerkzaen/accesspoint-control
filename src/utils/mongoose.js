@@ -21,10 +21,12 @@ export async function connectDB() {
 
 // Si la conexión es exitosa
 connection.on("connected", () => {
+  // Mostramos un mensaje de éxito
   console.log("Base de datos conectada");
 });
 
 // Si la conexión falla
 connection.on("error", (err) => {
+  // Mostramos un mensaje de error
   console.log("Error en la conexion de la Base de datos:", err);
 });
