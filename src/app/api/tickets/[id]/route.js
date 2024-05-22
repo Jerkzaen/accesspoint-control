@@ -36,13 +36,32 @@ export async function GET(request, { params }) {
 }
 
 // Eliminar un ticket
-export function DELETE(request, { params }) {
-  return NextResponse.json({
-    message: `Eliminando un ticket ${params.id}`,
-  });
+export async function DELETE(request, { params }) {
+  // Buscar un ticket por su ID y eliminarlo
+  try {
+    const ticketDeleted = await Ticket.findByIdAndDelete(params.id);
+    // Devolver un mensaje si no se encontró el ticket
+    if (!ticketDeleted) {
+      return NextResponse.json(
+        {
+          message: `No se encontró un ticket con el ID ${params.id}`,
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+  } catch (error) {
+    // Devolver un mensaje de error si no se pudo eliminar el ticket
+    return NextResponse.json(error.message, {
+      status: 400,
+    });
+  }
+  // Devolver un mensaje si no se encontró el ticket
+  return NextResponse.json(ticketDeleted);
 }
 
-// Actualizar un ticket
+// Actualizar un ticket por su ID
 export async function PUT(request, { params }) {
   try {
     // Datos del ticket a actualizar en el body de la petición
