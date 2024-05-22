@@ -43,8 +43,20 @@ export function DELETE(request, { params }) {
 }
 
 // Actualizar un ticket
-export function PUT(request, { params }) {
-  return NextResponse.json({
-    message: `Actualizando un ticket ${params.id}`,
-  });
+export async function PUT(request, { params }) {
+  try {
+    // Datos del ticket a actualizar en el body de la petición
+    const data = await request.json();
+    // Actualizar un ticket por su ID con los datos del body
+    const ticketUpdated = await Ticket.findByIdAndUpdate(params.id, data, {
+      new: true,
+    });
+    // Devolver un mensaje si no se encontró el ticket
+    return NextResponse.json(ticketUpdated);
+  } catch (error) {
+    // Devolver un mensaje de error si no se pudo actualizar el ticket
+    return NextResponse.json(error.message, {
+      status: 400,
+    });
+  }
 }
