@@ -1,4 +1,4 @@
-//CONEXION A MONGODB A TRAVES DE MONGOOSE
+//Importamos mongoose para conectarnos a la base de datos
 import { connect, connection } from "mongoose";
 
 // Objeto de conexión a la base de datos
