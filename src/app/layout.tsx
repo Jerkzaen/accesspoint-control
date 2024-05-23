@@ -6,6 +6,10 @@ import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 // Importar el utilitario de clases de Tailwind CSS para React y Next.js en la aplicacion
 import { cn } from "@/lib/utils";
+// Importar el componente de proveedor de temas de la aplicacion
+import { ThemeProvider } from "@/components/theme-provider";
+// Importar el componente de barra de navegacion de la aplicacion
+import Navbar from "@/components/navbar";
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
@@ -32,7 +36,17 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main className="container mx-auto">
+            <Navbar />
+            {children}
+          </main>
+        </ThemeProvider>
       </body>
     </html>
   );

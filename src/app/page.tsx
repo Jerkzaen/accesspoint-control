@@ -20,6 +20,7 @@ async function HomePage() {
   const tickets = await loadTickets();
   //retornar los tickets 
   return (
+    //aqui se renderiza el componente TaskCard con los tickets como parametro para hacer un dashboard de tickets modificar aqui 
     //renderizar los tickets en el componente TaskCard 
     //grid de 3 columnas y espacio de 2 entre las columnas 
     <div className="grid grid-cols-3 gap-2">  
