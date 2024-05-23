@@ -2,7 +2,7 @@ import { TicketForm } from "@/components/ticket-form";
 
 function NewPage() {
   return (
-    <div>
+    <div className="flex justify-center items-center h-screen">
       <TicketForm />
     </div>
   );
