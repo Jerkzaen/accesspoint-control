@@ -1,6 +1,8 @@
-import * as React from "react"
+import * as React from "react";
 
-import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,16 +10,16 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 // Definir el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
 export function TicketForm() {
   return (
@@ -34,9 +36,18 @@ export function TicketForm() {
               <Input id="name" placeholder="Problema" />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="prioridad">Prioridad</Label>
+              <Label htmlFor="description">Descripcion</Label>
+              <Textarea
+                name="description"
+                id="description"
+                placeholder="Descripcion"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-1.5">
+              <Label className="priority" htmlFor="priority">Prioridad</Label>
               <Select>
-                <SelectTrigger id="prioridad">
+                <SelectTrigger id="priority">
                   <SelectValue placeholder="Prioridad" />
                 </SelectTrigger>
                 <SelectContent position="popper">
@@ -55,5 +66,5 @@ export function TicketForm() {
         <Button>Guardar</Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
