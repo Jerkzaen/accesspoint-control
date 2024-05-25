@@ -23,9 +23,9 @@ export async function POST(request) {
     // Datos del ticket a crear en el body de la petición
     const data = await request.json();
     // Crear un nuevo ticket con los datos del body
-    const newTask = new Ticket(data);
+    const newTicket = new Ticket(data);
     // Guardar el ticket en la base de datos
-    const saveTicket = await newTask.save();
+    const saveTicket = await newTicket.save();
     // Devolver datos del ticket creado
     console.log(saveTicket);
     // Devolver el ticket creado en formato JSON

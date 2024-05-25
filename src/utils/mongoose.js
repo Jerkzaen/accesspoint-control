@@ -1,32 +1,18 @@
 //Importamos mongoose para conectarnos a la base de datos
-import { connect, connection } from "mongoose";
+import mongoose from "mongoose";
 
-// Objeto de conexión a la base de datos
-const conn = {
-  // Inicialmente no está conectado
-  isConnected: false,
-};
-
-// Conexión a la base de datos
 export async function connectDB() {
-  // Si ya estamos conectados, no hacemos nada
-  if (conn.isConnected) return;
   // Conectamos a la base de datos
-  const db = await connect("mongodb://localhost/apcontrol");
-  // Mostramos el nombre de la base de datos
-  console.log(db.connection.db.databaseName);
-  // Asignamos la conexión a nuestro objeto
-  conn.isConnected = db.connections[0].readyState;
+  await mongoose.connect('mongodb+srv://AlertPlusDBA:AlertPlus2024APC@cluster0.2cnqbre.mongodb.net/');
+
+  // Si la conexión es exitosa
+  mongoose.connection.on("open", () => {
+    console.log("Conexión exitosa a la base de datos");
+  });
+
+  // Si la conexión falla
+  mongoose.connection.on("error", (error) => {
+    console.log("Error al conectarse a la base de datos", error);
+  });
 }
 
-// Si la conexión es exitosa
-connection.on("connected", () => {
-  // Mostramos un mensaje de éxito
-  console.log("Base de datos conectada");
-});
-
-// Si la conexión falla
-connection.on("error", (err) => {
-  // Mostramos un mensaje de error
-  console.log("Error en la conexion de la Base de datos:", err);
-});
