@@ -74,7 +74,7 @@ export function TicketForm() {
                   <SelectValue placeholder="Prioridad" />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="maja">Baja</SelectItem>
+                  <SelectItem value="baja">Baja</SelectItem>
                   <SelectItem value="media">Media</SelectItem>
                   <SelectItem value="alta">Alta</SelectItem>
                   <SelectItem value="urgente">Urgente</SelectItem>

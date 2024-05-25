@@ -15,9 +15,9 @@ const taskSchema = new Schema(
       required: [true, "Title is required"],
       trim: true,
     },
-    piority: {
+    priority: {
       type: String,
-      required: [true, "Piority is required"],
+      required: [true, "Priority is required"],
       trim: true,
     },
   },
