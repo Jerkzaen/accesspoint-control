@@ -4,6 +4,7 @@ import { Home } from "lucide-react";
 import { SidebarButton } from "./sidebar-button";
 // Importa la interfaz SidebarItem
 import { SidebarItem } from "@/types";
+import Link from "next/link";
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 
 interface SidebarDesktopProps {
@@ -20,9 +21,9 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
         <div className="mt-5 ">
           <div className="flex flex-col gap-1 w-full">
             {props.sidebarItems.links.map((link, index) => (
-              <SidebarButton key={index} icon={link.icon}>
-                {link.label}
-              </SidebarButton>
+              <Link key={index} href={link.href}>
+                <SidebarButton icon={link.icon} className="w-full" >{link.label}</SidebarButton>
+              </Link>
             ))}
           </div>
         </div>
