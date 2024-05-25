@@ -3,7 +3,9 @@ import mongoose from "mongoose";
 
 export async function connectDB() {
   // Conectamos a la base de datos
-  await mongoose.connect('mongodb+srv://AlertPlusDBA:AlertPlus2024APC@cluster0.2cnqbre.mongodb.net/');
+  await mongoose.connect(
+    "mongodb+srv://AlertPlusDBA:AlertPlus2024APC@cluster0.2cnqbre.mongodb.net/"
+  );
 
   // Si la conexión es exitosa
   mongoose.connection.on("open", () => {
@@ -15,4 +17,3 @@ export async function connectDB() {
     console.log("Error al conectarse a la base de datos", error);
   });
 }
-
