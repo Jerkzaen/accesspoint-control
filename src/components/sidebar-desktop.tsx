@@ -2,10 +2,12 @@
 import { Home } from "lucide-react";
 // Importa el componente SidebarButton
 import { SidebarButton } from "./sidebar-button";
+// Importa la interfaz SidebarItem
+import { SidebarItem } from "@/types";
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 
 interface SidebarDesktopProps {
-    sidebarItems: SidebarItem[]; 
+    sidebarItems: SidebarItem; 
 }
 
 export function SidebarDesktop() {   
