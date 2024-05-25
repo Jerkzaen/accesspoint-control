@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 // Importar el componente de proveedor de temas de la aplicacion
 import { ThemeProvider } from "@/components/theme-provider";
 // Importar el componente de barra de navegacion de la aplicacion
+import { SidebarDesktop } from "@/components/sidebar-desktop";
 import Navbar from "@/components/navbar";
 
 // Importar React y el hook de estado de React para la aplicacion
@@ -42,7 +43,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="container mx-auto">
+          <main className="ml-[280px] mr-4">
+            <SidebarDesktop />
             <Navbar />
             {children}
           </main>

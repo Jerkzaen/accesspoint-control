@@ -7,9 +7,9 @@ import { buttonVariants } from "./ui/button";
 function Navbar() {
   return (
     <nav className="flex justify-between my-2">
-      <h1>AccessPoint Control</h1>
+      <h1></h1>
 
-      <div className="flex gap-x-2 items-center">
+      <div className="flex gap-x-2 mb-1 mt-1 items-center">
         <Link href="tickets/new" className={buttonVariants({variant: "secondary"})}>  Nuevo Ticket </Link>
         <ModeToggle />
       </div>
