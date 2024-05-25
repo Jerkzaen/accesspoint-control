@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 // Importar el componente de barra de navegacion de la aplicacion
 import { SidebarDesktop } from "@/components/sidebar-desktop";
+// Importar el componente de barra de navegacion de la aplicacion
 import Navbar from "@/components/navbar";
 
 // Importar React y el hook de estado de React para la aplicacion
@@ -44,7 +45,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <main className="ml-[280px] mr-4">
-            <SidebarDesktop />
+            <SidebarDesktop sidebarItems={{
+              links: [
+                {label: 'About', href: '/about' },
+              ],
+            }}/>
             <Navbar />
             {children}
           </main>
