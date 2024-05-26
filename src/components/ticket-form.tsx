@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { redirect } from "next/navigation";
 
 // Definir el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
 export function TicketForm() {
@@ -34,6 +35,7 @@ export function TicketForm() {
     const description = formdata.get("description")?.toString();
     const priority = formdata.get("priority")?.toString();
     console.log({ title, description, priority });
+    
     // Verificar si el titulo, la descripcion y la prioridad del ticket no estan vacios
     if (!title || !description || !priority) {
       return;
@@ -48,15 +50,17 @@ export function TicketForm() {
         },
       });
       // Manejar errores de la respuesta del servidor
+      
       if (!res.ok) {
         throw new Error(res.statusText);
       }
       // Convertir la respuesta del servidor a un objeto JSON
       const data = await res.json();
       console.log(data);
+      
     } catch (error) {
       console.error("Error:", error);
-    }
+    } redirect("/tickets/dashboard");
   }
   // Renderizar el formulario de ticket
   return (
