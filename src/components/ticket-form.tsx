@@ -34,7 +34,10 @@ export function TicketForm() {
     const description = formdata.get("description")?.toString();
     const priority = formdata.get("priority")?.toString();
     console.log({ title, description, priority });
-
+    // Verificar si el titulo, la descripcion y la prioridad del ticket no estan vacios
+    if (!title || !description || !priority) {
+      return;
+    }
     // Enviar una peticion POST al servidor para crear un nuevo ticket
     try {
       const res = await fetch("http://localhost:3000/api/tickets", {
