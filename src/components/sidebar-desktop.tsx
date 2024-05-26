@@ -6,11 +6,11 @@ import { SidebarButton } from "./sidebar-button";
 import { SidebarItem } from "@/types";
 import Link from "next/link";
 import { Separator } from "./ui/separator";
-import { Popover } from "./ui/popover";
+import { Popover, PopoverContent } from "./ui/popover";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { MoreHorizontal } from "lucide-react";
+import { LogOut, MoreHorizontal, Settings } from "lucide-react";
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 
 interface SidebarDesktopProps {
@@ -35,12 +35,15 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
             ))}
             {props.sidebarItems.extras}
           </div>
-          <div className="absolute left-0 bottom-3 w-full px-3">
-            <Separator className="absolute -top-3 left-0 w-full" />
-            <Button variant="ghost" className="w-full justify-start">
+          <div className="absolute left-0 bottom-3 w-full px-3 ">
+            <Separator className="absolute -top-3 left-0 w-full " />
+            <Button
+              variant="ghost"
+              className="w-full justify-start rounded-full"
+            >
               <Popover>
                 <PopoverTrigger asChild>
-                  <div className="flex justify-between items-center w-full">
+                  <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
                       <Avatar className="h-5 w-5">
                         <AvatarImage src="https://github.com/Jerkzaen.png" />
@@ -50,9 +53,22 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                     </div>
                     <MoreHorizontal size={20} />
                   </div>
+                  </Button>
                 </PopoverTrigger>
+                <PopoverContent>
+                  <div>
+                    <Link href="/">
+                      <SidebarButton size="sm" icon={Settings} className="w-full">
+                        Configuración
+                      </SidebarButton>
+                    </Link>
+                    <SidebarButton size="sm" icon={LogOut} className="w-full">
+                        Cerrar sesión
+                      </SidebarButton>
+                  </div>
+                </PopoverContent>
               </Popover>
-            </Button>
+            
           </div>
         </div>
       </div>

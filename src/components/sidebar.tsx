@@ -24,9 +24,11 @@ const sidebarItems: SidebarItem = {
       <SidebarButton icon={MoreHorizontal} className="w-full">
         Mas
       </SidebarButton>
-      <SidebarButton className="w-full justify-center " variant="default">
-        <Link href="tickets/new"> Nuevo Ticket </Link>
-      </SidebarButton>
+      <Link href="tickets/new">
+        <SidebarButton className="w-full justify-center" variant="default">
+          Nuevo Ticket
+        </SidebarButton>
+      </Link>
     </div>
   ),
 };
