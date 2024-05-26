@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarDesktop } from "@/components/sidebar-desktop";
 // Importar el componente de barra de navegacion de la aplicacion
 import Navbar from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
@@ -45,7 +46,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <main className="ml-[280px] mr-4">
-
+            <Sidebar />
             <Navbar />
             {children}
           </main>

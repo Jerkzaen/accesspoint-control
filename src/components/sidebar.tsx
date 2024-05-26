@@ -11,7 +11,7 @@ export function Sidebar() {
   return (
     <SidebarDesktop
       sidebarItems={{
-        links: [{ label: "Dashboar", href: "/", icon: Home }],
+        links: [{ label: "Dashboard", href: "/", icon: Home }],
       }}
     />
   );
