@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface sidebarButtonProps extends ButtonProps {
   icon?: LucideIcon;
 }
-// Definimos la función SidebarButton que recibe un icono, una clase y un children
+//
 export function SidebarButton({
   icon: Icon,
   className,

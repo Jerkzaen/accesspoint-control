@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut, MoreHorizontal, Settings } from "lucide-react";
+import { usePathname } from "next/navigation";
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 
 interface SidebarDesktopProps {
@@ -17,6 +18,7 @@ interface SidebarDesktopProps {
 }
 
 export function SidebarDesktop(props: SidebarDesktopProps) {
+  const pathname = usePathname();
   return (
     <aside className="w-[270px] max-w-xs h-screen fixed left-0 top-0 z-40 border-r ">
       <div className="h-full px-3 py-4">
@@ -27,7 +29,8 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
           <div className="flex flex-col gap-1 w-full">
             {props.sidebarItems.links.map((link, index) => (
               <Link key={index} href={link.href}>
-                <SidebarButton icon={link.icon} className="w-full">
+                <SidebarButton variant={pathname === link.href ? "secondary" : "ghost"} 
+                icon={link.icon} className="w-full">
                   {link.label}
                 </SidebarButton>
               </Link>
@@ -36,8 +39,11 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
           </div>
           <div className="absolute left-0 bottom-3 w-full px-3 ">
             <Separator className="absolute -top-3 left-0 w-full " />
-              <Popover>
-              <Button variant="ghost" className="w-full justify-start rounded-full">
+            <Popover>
+              <Button
+                variant="ghost"
+                className="w-full justify-start rounded-full"
+              >
                 <PopoverTrigger asChild>
                   <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
@@ -50,20 +56,24 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                     <MoreHorizontal size={20} />
                   </div>
                 </PopoverTrigger>
-                <PopoverContent>
-                  <div>
+                <PopoverContent className="mb-2 w-56 p-3 rounded-[1rem]">
+                  <div className="space-y-1">
                     <Link href="/">
-                      <SidebarButton size="sm" icon={Settings} className="w-full">
+                      <SidebarButton
+                        size="sm"
+                        icon={Settings}
+                        className="w-full"
+                      >
                         Configuración
                       </SidebarButton>
                     </Link>
                     <SidebarButton size="sm" icon={LogOut} className="w-full">
-                        Cerrar sesión
-                      </SidebarButton>
+                      Cerrar sesión
+                    </SidebarButton>
                   </div>
                 </PopoverContent>
-                </Button>
-              </Popover>
+              </Button>
+            </Popover>
           </div>
         </div>
       </div>
