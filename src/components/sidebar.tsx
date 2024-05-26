@@ -5,14 +5,15 @@
 import { Home } from "lucide-react";
 // importamos el componente SidebarDesktop
 import { SidebarDesktop } from "./sidebar-desktop";
+import { SidebarItem } from "@/types";
+
+const sidebarItems: SidebarItem = { links: [{ href: "/", label: "Home", icon: Home }] };
 
 // Definimos la función Sidebar que devuelve el componente SidebarDesktop       
 export function Sidebar() {
   return (
     <SidebarDesktop
-      sidebarItems={{
-        links: [{ label: "Dashboard", href: "/", icon: Home }],
-      }}
+      sidebarItems={sidebarItems}
     />
   );
 }
