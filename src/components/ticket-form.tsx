@@ -42,7 +42,7 @@ export function TicketForm() {
     }
     // Enviar una peticion POST al servidor para crear un nuevo ticket
     try {
-      const res = await fetch("https://accesspoint-control.vercel.app/api/tickets", {
+      const res = await fetch("http://localhost:3000/api/tickets", {
         method: "POST",
         body: JSON.stringify({ title, description, priority }),
         headers: {

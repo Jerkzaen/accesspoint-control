@@ -4,6 +4,7 @@
 interface Ticket {
   title: string;
   description: string;
+  prioriy: string;
 }
 // Definir el componente de la tarjeta de ticket  en el dashboard del usuario logeado en la aplicacion
 function TaskCard({ ticket }: { ticket: Ticket }) {
@@ -12,6 +13,7 @@ function TaskCard({ ticket }: { ticket: Ticket }) {
     <div className="bg-gray-800 p-10 text-white rounded-md hover:cursor-pointer hover:bg-gray-700">
       <h3> {ticket.title} </h3>
       <p> {ticket.description} </p>
+      <p> {ticket.prioriy} </p>
     </div>
   );
 }
