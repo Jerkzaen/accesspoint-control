@@ -9,7 +9,7 @@ import { SidebarDesktop } from "./sidebar-desktop";
 import { SidebarItem } from "@/types";
 // Importamos el componente SidebarButton
 import { SidebarButton } from "./sidebar-button";
-//
+// Importamos el componente Link de next
 import Link from "next/link";
 
 // Definimos el objeto sidebarItems que contiene un arreglo de links con un objeto que contiene un href y un label
@@ -26,7 +26,7 @@ const sidebarItems: SidebarItem = {
       <SidebarButton icon={MoreHorizontal} className="w-full">
         Mas
       </SidebarButton>
-      <Link href="tickets/new">
+      <Link href="/tickets/new">
         <SidebarButton className="w-full justify-center" variant="default">
           Nuevo Ticket
         </SidebarButton>
