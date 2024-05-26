@@ -1,5 +1,5 @@
 // Esta es la barra lateral de la aplicación para pantallas de escritorio
-import { Home } from "lucide-react";
+
 // Importa el componente SidebarButton
 import { SidebarButton } from "./sidebar-button";
 // Importa la interfaz SidebarItem

@@ -1,13 +1,16 @@
-import {
-    Bell,
-    Bookmark,
-    Home,
-    List,
-    Mail,
-    MoreHorizontal,
-    User,
-    Users,
-} from "lucide-react";
+//
+"use client";
+import { Home } from "lucide-react";
+// importamos el componente SidebarDesktop
+import { SidebarDesktop } from "./sidebar-desktop";
 
-import {SidebarDestock} from './sidebar-desktop'
-import {SidebarMobile} from './sidebar-mobile'
+// Definimos la función Sidebar que devuelve el componente SidebarDesktop
+export function Sidebar() {
+  return (
+    <SidebarDesktop
+      sidebarItems={{
+        links: [{ label: "Dashboar", href: "/", icon: Home }],
+      }}
+    />
+  );
+}

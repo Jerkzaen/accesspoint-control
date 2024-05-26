@@ -45,11 +45,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <main className="ml-[280px] mr-4">
-            <SidebarDesktop sidebarItems={{
-              links: [
-                {label: 'About', href: '/about' },
-              ],
-            }}/>
+
             <Navbar />
             {children}
           </main>
