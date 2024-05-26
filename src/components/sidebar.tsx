@@ -2,7 +2,7 @@
 //renderizar el componente Sidebar y SidebarDesktop en el navegador y no en el servidor de la aplicación de Next.js
 "use client";
 // Importamos el componente Home de lucide-react
-import { Bell, Home, MoreHorizontal, User } from "lucide-react";
+import { Bell, Box, Cpu, Home, Monitor, MoreHorizontal, PanelBottom, User } from "lucide-react";
 // importamos el componente SidebarDesktop
 import { SidebarDesktop } from "./sidebar-desktop";
 // Importamos la interfaz SidebarItem
@@ -16,8 +16,10 @@ import Link from "next/link";
 const sidebarItems: SidebarItem = {
   links: [
     { label: "Dashboard", href: "/", icon: Home },
-    { label: "Notificaciones", href: "/item/notificacion", icon: Bell },
-    { label: "Perfil", href: "/item/perfil", icon: User },
+    { label: "Ticket de soporte", href: "/tickets/dashboard", icon: Bell },
+    { label: "AccessPoint", href: "/item/perfil", icon: Monitor },
+    { label: "WTS", href: "/item/perfil", icon: Cpu },
+    { label: "Bodega", href: "/item/perfil", icon: Box },
   ],
   extras: (
     <div className="flex flex-col gap-2">
