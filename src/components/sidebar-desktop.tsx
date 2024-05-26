@@ -6,8 +6,7 @@ import { SidebarButton } from "./sidebar-button";
 import { SidebarItem } from "@/types";
 import Link from "next/link";
 import { Separator } from "./ui/separator";
-import { Popover, PopoverContent } from "./ui/popover";
-import { PopoverTrigger } from "@radix-ui/react-popover";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut, MoreHorizontal, Settings } from "lucide-react";
@@ -37,11 +36,8 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
           </div>
           <div className="absolute left-0 bottom-3 w-full px-3 ">
             <Separator className="absolute -top-3 left-0 w-full " />
-            <Button
-              variant="ghost"
-              className="w-full justify-start rounded-full"
-            >
               <Popover>
+              <Button variant="ghost" className="w-full justify-start rounded-full">
                 <PopoverTrigger asChild>
                   <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
@@ -53,7 +49,6 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                     </div>
                     <MoreHorizontal size={20} />
                   </div>
-                  </Button>
                 </PopoverTrigger>
                 <PopoverContent>
                   <div>
@@ -67,8 +62,8 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                       </SidebarButton>
                   </div>
                 </PopoverContent>
+                </Button>
               </Popover>
-            
           </div>
         </div>
       </div>
