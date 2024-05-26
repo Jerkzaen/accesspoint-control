@@ -10,7 +10,6 @@ function Navbar() {
       <h1></h1>
 
       <div className="flex gap-x-2 mb-1 mt-1 items-center">
-        <Link href="tickets/new" className={buttonVariants({variant: "secondary"})}>  Nuevo Ticket </Link>
         <ModeToggle />
       </div>
     </nav>
