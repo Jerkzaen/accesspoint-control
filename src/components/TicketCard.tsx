@@ -3,7 +3,13 @@
 
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 // Definir la  interfaz de ticket para el componente de tarjeta de ticket
 interface Ticket {
@@ -18,8 +24,10 @@ function TaskCard({ ticket }: { ticket: Ticket }) {
   return (
     <div className="bg-gray-800 py-5 text-white rounded-md hover:cursor-pointer hover:bg-gray-700">
       <Card key={ticket.title}>
-        <CardHeader><CardTitle>{ticket.title}</CardTitle></CardHeader>
-        <Badge>{ticket.priority}</Badge>
+        <CardHeader className="flex flex-row justify-between">
+          <CardTitle>{ticket.title}</CardTitle>
+          <Badge>{ticket.priority}</Badge>
+        </CardHeader>
         <CardContent>
           <p>{ticket.description}</p>
           <span>{new Date(ticket.createAt).toDateString()}</span>
