@@ -23,7 +23,7 @@ async function Dashboard() {
     //aqui se renderiza el componente TaskCard con los tickets como parametro para hacer un dashboard de tickets modificar aqui 
     //renderizar los tickets en el componente TaskCard 
     //grid de 3 columnas y espacio de 2 entre las columnas 
-    <div className="grid grid-cols-3 gap-2">  
+    <div className="flex flex-col gap-1 w-full">  
       {tickets.map(ticket => ( //mapear los tickets y renderizarlos en el componente TaskCard
         //renderizar el componente TaskCard con el ticket como parametro y la key como el id del ticket 
         <TaskCard ticket={ticket} key={ticket._id}/>
