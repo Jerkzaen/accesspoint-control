@@ -22,9 +22,12 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
           <div className="flex flex-col gap-1 w-full">
             {props.sidebarItems.links.map((link, index) => (
               <Link key={index} href={link.href}>
-                <SidebarButton icon={link.icon} className="w-full" >{link.label}</SidebarButton>
+                <SidebarButton icon={link.icon} className="w-full">
+                  {link.label}
+                </SidebarButton>
               </Link>
             ))}
+            {props.sidebarItems.extras } 
           </div>
         </div>
       </div>
