@@ -5,13 +5,11 @@ import { Separator } from "./ui/separator";
 // Define the Navbar component
 function Navbar() {
   return (
-    <nav className="flex justify-between my-2">
-      <h1></h1>
-
+    <div className="h-full px-3 py-4 flex justify-end my-2">
       <div className="flex gap-x-2 mb-1 mt-1 items-center">
         <ModeToggle />
       </div>
-    </nav>
+    </div>
   );
 }
 export default Navbar;
