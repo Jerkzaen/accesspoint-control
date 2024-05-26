@@ -1,6 +1,6 @@
 // Import the ModeToggle component and use it in the Navbar component
 import { ModeToggle } from "./theme-toggle-button";
-import { Separator } from "./ui/separator";
+
 
 // Define the Navbar component
 function Navbar() {
