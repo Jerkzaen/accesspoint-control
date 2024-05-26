@@ -1,6 +1,7 @@
 // aqui es donde se crea el formato del ticket donde muestra 2 datos el titulo y la descripcion del ticket
 // Importar React y el hook de estado de React para la aplicacion
 
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 
@@ -18,6 +19,7 @@ function TaskCard({ ticket }: { ticket: Ticket }) {
     <div className="bg-gray-800 py-5 text-white rounded-md hover:cursor-pointer hover:bg-gray-700">
       <Card key={ticket.title}>
         <CardHeader><CardTitle>{ticket.title}</CardTitle></CardHeader>
+        <Badge>{ticket.priority}</Badge>
         <CardContent>
           <p>{ticket.description}</p>
           <span>{new Date(ticket.createAt).toDateString()}</span>
