@@ -1,8 +1,9 @@
 import * as React from "react";
-
+// Importar el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
 import { Textarea } from "@/components/ui/textarea";
-
+// Importar el componente de boton de la aplicacion
 import { Button } from "@/components/ui/button";
+// Importar el componente de tarjeta de la aplicacion
 import {
   Card,
   CardContent,
@@ -11,8 +12,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+// Importar el componente de input de la aplicacion
 import { Input } from "@/components/ui/input";
+// Importar el componente de etiqueta de la aplicacion
 import { Label } from "@/components/ui/label";
+//  Importar el componente de select de la aplicacion
 import {
   Select,
   SelectContent,
@@ -20,29 +24,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { create } from "domain";
 
 // Definir el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
 export function TicketForm() {
   // Funcion para crear un ticket en el servidor
   async function newTicket(formdata: FormData) {
     "use server";
-    const name = formdata.get("name")?.toString();
+    const title = formdata.get("title")?.toString();
     const description = formdata.get("description")?.toString();
     const priority = formdata.get("priority")?.toString();
-    console.log({ name, description, priority });
+    console.log({ title, description, priority });
 
-    // Enviar los datos al servidor para crear un nuevo ticket
-    const res = await fetch("http://localhost:3000/api/tickets", {
-      method: "POST",
-      body: JSON.stringify({name, description, priority}),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    console.log(res);
+    // Enviar una peticion POST al servidor para crear un nuevo ticket
+    try {
+      const res = await fetch("http://localhost:3000/api/tickets", {
+        method: "POST",
+        body: JSON.stringify({ title, description, priority }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      // Manejar errores de la respuesta del servidor
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      // Convertir la respuesta del servidor a un objeto JSON
+      const data = await res.json();
+      console.log(data);
+    } catch (error) {
+      console.error("Error:", error);
+    }
   }
-
+  // Renderizar el formulario de ticket
   return (
     <form action={newTicket}>
       <Card className="w-[350px]">
@@ -53,8 +66,8 @@ export function TicketForm() {
         <CardContent>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="name">Name</Label>
-              <Input name="name" id="name" placeholder="Problema" />
+              <Label htmlFor="title">Name</Label>
+              <Input name="title" id="title" placeholder="Problema" />
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="description">Descripcion</Label>
