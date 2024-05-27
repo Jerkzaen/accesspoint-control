@@ -11,14 +11,16 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut, MoreHorizontal, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
-// función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
+import { signIn, useSession } from "next-auth/react";
 
+// función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarDesktopProps {
   sidebarItems: SidebarItem;
 }
 
 export function SidebarDesktop(props: SidebarDesktopProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   return (
     <aside className="w-[270px] max-w-xs h-screen fixed left-0 top-0 z-40 border-r ">
       <div className="h-full px-3 py-4">
@@ -29,8 +31,11 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
           <div className="flex flex-col gap-1 w-full">
             {props.sidebarItems.links.map((link, index) => (
               <Link key={index} href={link.href}>
-                <SidebarButton variant={pathname === link.href ? "secondary" : "ghost"} 
-                icon={link.icon} className="w-full">
+                <SidebarButton
+                  variant={pathname === link.href ? "secondary" : "ghost"}
+                  icon={link.icon}
+                  className="w-full"
+                >
                   {link.label}
                 </SidebarButton>
               </Link>
@@ -43,19 +48,20 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start rounded-full"
-              >
+              >{session?.user? (
                 <PopoverTrigger asChild>
                   <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src="https://github.com/Jerkzaen.png" />
-                        <AvatarFallback>Jerson Armijo</AvatarFallback>
+                        <AvatarImage src={session.user.image ?? ''} />
+                        <AvatarFallback>{session.user.email}</AvatarFallback>
                       </Avatar>
-                      <span>Jerson Armijo</span>
+                      <span>{session.user.name}</span>
                     </div>
                     <MoreHorizontal size={20} />
                   </div>
                 </PopoverTrigger>
+              ) : (
                 <PopoverContent className="mb-2 w-56 p-3 rounded-[1rem]">
                   <div className="space-y-1">
                     <Link href="/">
@@ -72,6 +78,7 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                     </SidebarButton>
                   </div>
                 </PopoverContent>
+              )}
               </Button>
             </Popover>
           </div>
