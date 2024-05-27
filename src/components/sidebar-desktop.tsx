@@ -11,7 +11,7 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut, MoreHorizontal, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarDesktopProps {
@@ -42,26 +42,27 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
             ))}
             {props.sidebarItems.extras}
           </div>
+          <Button onClick={() => signIn() }> Sig in </Button>
           <div className="absolute left-0 bottom-3 w-full px-3 ">
             <Separator className="absolute -top-3 left-0 w-full " />
             <Popover>
               <Button
                 variant="ghost"
                 className="w-full justify-start rounded-full"
-              >{session?.user? (
+              >
                 <PopoverTrigger asChild>
                   <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={session.user.image ?? ''} />
-                        <AvatarFallback>{session.user.email}</AvatarFallback>
+                        <AvatarImage src={session?.user?.image ?? ''} alt="avatar" />
+                        <AvatarFallback>
+                          {session?.user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <span>{session.user.name}</span>
+                      <span>{session?.user?.email}</span>
                     </div>
                     <MoreHorizontal size={20} />
                   </div>
                 </PopoverTrigger>
-              ) : (
                 <PopoverContent className="mb-2 w-56 p-3 rounded-[1rem]">
                   <div className="space-y-1">
                     <Link href="/">
@@ -73,12 +74,12 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                         Configuración
                       </SidebarButton>
                     </Link>
-                    <SidebarButton size="sm" icon={LogOut} className="w-full">
+                    <SidebarButton onClick={() => signOut()}
+                    size="sm" icon={LogOut} className="w-full">
                       Cerrar sesión
                     </SidebarButton>
                   </div>
                 </PopoverContent>
-              )}
               </Button>
             </Popover>
           </div>
