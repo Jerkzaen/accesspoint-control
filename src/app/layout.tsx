@@ -12,8 +12,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Navbar from "@/components/navbar";
 // Importar el componente de barra lateral de la aplicacion
 import { Sidebar } from "@/components/sidebar";
-//  Importar el componente de proveedor de sesion de la aplicacion  de next-auth  para la autenticacion de usuarios
-import { SessionProvider } from "next-auth/react";
+//
+import { Providers } from "./Providers";
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
@@ -47,9 +47,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <main className="ml-[280px] mr-4">
-            <Sidebar />
-            <Navbar />
-            {children}
+            <Providers>
+              <Sidebar />
+              <Navbar />
+              {children}
+            </Providers>
           </main>
         </ThemeProvider>
       </body>
