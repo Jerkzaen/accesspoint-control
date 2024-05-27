@@ -6,4 +6,5 @@ import { SessionProvider } from "next-auth/react";
 function Provider({ children }: { children: React.ReactNode }) {
   return <SessionProvider>{children}</SessionProvider>;
 }
+// Exportar el componente de proveedor de sesion
 export default Provider;
