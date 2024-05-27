@@ -12,6 +12,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Navbar from "@/components/navbar";
 // Importar el componente de barra lateral de la aplicacion
 import { Sidebar } from "@/components/sidebar";
+//  Importar el componente de proveedor de sesion de la aplicacion  de next-auth  para la autenticacion de usuarios
+import { SessionProvider } from "next-auth/react";
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
