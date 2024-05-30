@@ -18,15 +18,16 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   // Validamos que el correo no esté registrado en la base de datos
-  const userFound = await User.findOne({ email });
-  if (userFound)
-    return NextResponse.json(
-      { message: "El correo ya esta registrado" },
-      { status: 409 }
-    );
+  // Conectamos a la base de datos
   try {
-    // Conectamos a la base de datos
     await connectDB();
+    const userFound = await User.findOne({ email });
+    if (userFound)
+      return NextResponse.json(
+        { message: "El correo ya esta registrado" },
+        { status: 409 }
+      );
+
     // Encriptamos la contraseña con bcrypt y un factor de coste de 12 (por defecto)
     const hashedPassword = await bcrypt.hash(password, 12);
 
