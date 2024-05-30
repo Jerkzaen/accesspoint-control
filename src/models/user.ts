@@ -4,8 +4,8 @@ import { Schema, model, models } from "mongoose";
 const userSchema = new Schema({
   email: {
     type: String,
-    required: true,
-    unique: [true, "El correo es requerido"],
+    required:[true, "El correo es requerido"],
+    unique: true,
     match: [
       /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/,
       "Por favor, ingrese un correo válido",
