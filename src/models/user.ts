@@ -16,7 +16,6 @@ const userSchema = new Schema({
     required: [true, "La contraseña es requerida"],
     select: false,
     minlength: 6,
-    maxlength: 12,
   },
   fullname: {
     type: String,

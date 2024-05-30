@@ -37,8 +37,11 @@ export async function POST(request: Request) {
       fullname,
       password: hashedPassword,
     });
+    // Guardamos el usuario en la base de datos
     const savedUser = await user.save();
     console.log(savedUser);
+    // Enviamos la respuesta al cliente con el usuario guardado en la base de datos y un estado 201 (creado) 
+    return NextResponse.json(savedUser, { status: 201 })
   } catch (error) {
     console.log(error);
     return NextResponse.error();
