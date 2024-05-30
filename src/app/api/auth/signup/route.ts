@@ -2,8 +2,10 @@
 import { NextResponse } from "next/server";
 //importamos el modelo de usuario para hacer la consulta
 import User from "@/models/user";
-
+// importamos bcrypt para encriptar la contraseña
 import bcrypt from "bcryptjs";
+// importamos la función connectDB para conectarnos a la base de datos
+import { connectDB } from "@/utils/mongoose";
 
 // Función POST para registrar un usuario en la base de datos
 export async function POST(request: Request) {
@@ -22,18 +24,22 @@ export async function POST(request: Request) {
       { message: "El correo ya esta registrado" },
       { status: 409 }
     );
-  // Encriptamos la contraseña con bcrypt y un factor de coste de 12 (por defecto)
-  const hashedPassword = await bcrypt.hash(password, 12);
+  try {
+    // Conectamos a la base de datos
+    await connectDB();
+    // Encriptamos la contraseña con bcrypt y un factor de coste de 12 (por defecto)
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-  // Creamos un nuevo usuario con los datos recibidos y la contraseña encriptada
-  const user = new User({
-    email,
-    fullname,
-    password: hashedPassword,
-  });
-  const savedUser = await user.save();
-  console.log(savedUser);
-
-  // Si todo está correcto, retornamos un mensaje de éxito al cliente
-  return NextResponse.json(savedUser, { status: 201 });
+    // Creamos un nuevo usuario con los datos recibidos y la contraseña encriptada
+    const user = new User({
+      email,
+      fullname,
+      password: hashedPassword,
+    });
+    const savedUser = await user.save();
+    console.log(savedUser);
+  } catch (error) {
+    console.log(error);
+    return NextResponse.error();
+  }
 }
