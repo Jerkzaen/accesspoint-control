@@ -40,20 +40,20 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <main className="ml-[280px] mr-4">
-            <Providers>
+        <Providers>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <main className="ml-[280px] mr-4">
               <Sidebar />
               <Navbar />
               {children}
-            </Providers>
-          </main>
-        </ThemeProvider>
+            </main>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

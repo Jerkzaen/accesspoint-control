@@ -17,9 +17,9 @@ const sidebarItems: SidebarItem = {
   links: [
     { label: "Dashboard", href: "/", icon: Home },
     { label: "Ticket de soporte", href: "/tickets/dashboard", icon: Bell },
-    { label: "AccessPoint", href: "/item/perfil", icon: Monitor },
+    { label: "AccessPoint", href: "/accesspoint/new", icon: Monitor },
     { label: "WTS", href: "/item/perfil", icon: Cpu },
-    { label: "Bodega", href: "/item/perfil", icon: Box },
+    { label: "Bodega", href: "/bodega/new", icon: Box },
   ],
   extras: (
     <div className="flex flex-col gap-2">
