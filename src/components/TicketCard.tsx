@@ -2,14 +2,8 @@
 // Importar React y el hook de estado de React para la aplicacion
 
 import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 // Definir la  interfaz de ticket para el componente de tarjeta de ticket
 interface Ticket {
@@ -22,22 +16,48 @@ interface Ticket {
 function TaskCard({ ticket }: { ticket: Ticket }) {
   // Renderiza el componente
   return (
-    <div className="bg-gray-800 py-5 text-white rounded-md hover:cursor-pointer hover:bg-gray-700">
-      <Card key={ticket.title}>
-        <CardHeader className="flex flex-row justify-between">
-          <CardTitle>{ticket.title}</CardTitle>
-          <Badge>{ticket.priority}</Badge>
-        </CardHeader>
-        <CardContent>
-          <p>{ticket.description}</p>
-          <span>{new Date(ticket.createAt).toDateString()}</span>
-        </CardContent>
-        <CardFooter className="flex gap-x-2 justify-end">
-          <Button variant="destructive">Eliminar</Button>
-          <Button>Modificar</Button>
-        </CardFooter>
-      </Card>
-    </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Sucursal</TableHead>
+            <TableHead className="hidden sm:table-cell">
+              Tipo
+            </TableHead>
+            <TableHead className="hidden sm:table-cell">
+              Estado
+            </TableHead>
+            <TableHead className="hidden md:table-cell">
+              Fecha
+            </TableHead>
+            <TableHead className="text-right">Responsable</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody key={ticket.title}>
+          <TableRow  className="bg-accent">
+            <TableCell>
+              <div className="font-medium">{ticket.title}</div>
+              <div className="hidden text-sm text-muted-foreground md:inline">
+              {ticket.description}
+              </div>
+            </TableCell>
+            <TableCell className="hidden sm:table-cell">
+              Sale
+            </TableCell>
+            <TableCell className="hidden sm:table-cell">
+              <Badge className="text-xs" variant="secondary">
+              {ticket.priority}
+              </Badge>
+            </TableCell>
+            <TableCell className="hidden md:table-cell">
+            {new Date(ticket.createAt).toDateString()}
+            </TableCell>
+            <TableCell className="text-right">
+              J. amijo
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+
   );
 }
 // Exporta el componente
