@@ -67,7 +67,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function BodegaNew() {
+function BodegaNew() {
   return (
     <TooltipProvider>
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
