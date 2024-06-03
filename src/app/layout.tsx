@@ -50,15 +50,15 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <main className="ml-[280px] mr-4">
+            <main className="ml-[280px] z">
               <Sidebar />
               <Navbar />
               {children}
-              <Analytics />
-              <SpeedInsights />
             </main>
           </ThemeProvider>
         </Providers>
+        <Analytics/>
+        <SpeedInsights />
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ScrollArea } from "@/components/ui/scroll-area"
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -197,8 +198,10 @@ async function Dashboard() {
                     </Button>
                   </div>
                 </div>
-                <div>
+                
                   <TabsContent value="week">
+                  <ScrollArea className="h-[600px] w-[650px] rounded-md border p-4">
+                  <div className="overflow-auto">
                     <Card x-chunk="dashboard-05-chunk-3">
                       <CardHeader className="px-7">
                         <CardTitle>Tickets</CardTitle>
@@ -217,8 +220,10 @@ async function Dashboard() {
                         )}
                       </CardContent>
                     </Card>
+                    </div>
+                    </ScrollArea>
                   </TabsContent>
-                </div>
+                
               </Tabs>
             </div>
             <div>
