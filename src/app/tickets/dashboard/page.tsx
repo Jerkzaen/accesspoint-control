@@ -209,21 +209,13 @@ async function Dashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Sucursal</TableHead>
-                        <TableHead className="">
-                          Tipo
-                        </TableHead>
-                        <TableHead className="">
-                          Estado
-                        </TableHead>
-                        <TableHead className="">
-                          Fecha
-                        </TableHead>
-                        <TableHead className="">
-                          Responsable
-                        </TableHead>
+                        <TableHead className="">Tipo</TableHead>
+                        <TableHead className="">Estado</TableHead>
+                        <TableHead className="">Fecha</TableHead>
+                        <TableHead className="">Responsable</TableHead>
                       </TableRow>
                     </TableHeader>
-                    
+
                     <ScrollArea className="h-[450px] w-[670px] rounded-sm border p-4">
                       {tickets.map(
                         (
@@ -234,7 +226,7 @@ async function Dashboard() {
                         )
                       )}
                     </ScrollArea>
-                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
