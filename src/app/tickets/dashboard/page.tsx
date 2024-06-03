@@ -91,7 +91,7 @@ async function Dashboard() {
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+        <div className="flex flex-col gap-4 py-4 pl-4 mt-4">
           <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <Breadcrumb className="hidden md:flex">
               <BreadcrumbList>
@@ -200,7 +200,7 @@ async function Dashboard() {
                 </div>
                 
                   <TabsContent value="week">
-                  <ScrollArea className="h-[600px] w-[650px] rounded-md border p-4">
+                  
                   <div className="overflow-auto">
                     <Card x-chunk="dashboard-05-chunk-3">
                       <CardHeader className="px-7">
@@ -209,7 +209,9 @@ async function Dashboard() {
                           Ultimos tickets ingresados.
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="flex.col gap-1 w-full">
+                      </Card>
+                      <ScrollArea className="h-[532px] w-[670px] rounded-md border p-4">
+                      <CardContent className="flex flex-col justify-items-center">
                         {tickets.map(
                           (
                             ticket //mapear los tickets y renderizarlos en el componente TaskCard
@@ -219,16 +221,17 @@ async function Dashboard() {
                           )
                         )}
                       </CardContent>
-                    </Card>
+                      </ScrollArea>
+                    
                     </div>
-                    </ScrollArea>
+
                   </TabsContent>
                 
               </Tabs>
             </div>
             <div>
               <Card
-                className="fixed overflow-hidden"
+                className=""
                 x-chunk="dashboard-05-chunk-4"
               >
                 <CardHeader className="flex flex-row items-start bg-muted/50">

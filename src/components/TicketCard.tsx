@@ -51,7 +51,7 @@ function TaskCard({ ticket }: { ticket: Ticket }) {
             <TableCell className="hidden md:table-cell">
             {new Date(ticket.createAt).toDateString()}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-center">
               J. amijo
             </TableCell>
           </TableRow>

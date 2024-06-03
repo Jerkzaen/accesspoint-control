@@ -1,7 +1,7 @@
 // Definir el layout de la aplicacion en un solo lugar y reutilizarlo en todas las paginas de la aplicacion
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
 //
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 // Importar React y el hook de estado de React para la aplicacion
 import { Inter as FontSans } from "next/font/google";
@@ -50,14 +50,14 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <main className="ml-[280px] z">
+            <main className="ml-[280px] mr-4">
               <Sidebar />
               <Navbar />
               {children}
             </main>
           </ThemeProvider>
         </Providers>
-        <Analytics/>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
