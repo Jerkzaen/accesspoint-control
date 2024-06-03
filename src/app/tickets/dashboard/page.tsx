@@ -119,7 +119,7 @@ async function Dashboard() {
           </header>
           <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
             <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 ">
                 <Card className="sm:col-span-2" x-chunk="dashboard-05-chunk-0">
                   <CardHeader className="pb-3">
                     <CardTitle>Crear Ticket</CardTitle>
@@ -156,13 +156,18 @@ async function Dashboard() {
                 </Card>
               </div>
               <Tabs defaultValue="week">
-                <div className="flex items-center">
+                <div className="flex items-center  justify-between">
+                <div >
                   <TabsList>
                     <TabsTrigger value="week">Week</TabsTrigger>
                     <TabsTrigger value="month">Month</TabsTrigger>
                     <TabsTrigger value="year">Year</TabsTrigger>
                   </TabsList>
-                  <div className="ml-auto flex items-center gap-2">
+                  </div>
+                  <div className="flex items-center">
+                    <p>Listado de tickets</p>
+                  </div>
+                  <div className="flex items-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -197,19 +202,11 @@ async function Dashboard() {
                       <span className="sr-only sm:not-sr-only">Export</span>
                     </Button>
                   </div>
-                </div>
+                  </div>
                 
                   <TabsContent value="week">
-                  
+
                   <div className="overflow-auto">
-                    <Card x-chunk="dashboard-05-chunk-3">
-                      <CardHeader className="px-7">
-                        <CardTitle>Tickets</CardTitle>
-                        <CardDescription>
-                          Ultimos tickets ingresados.
-                        </CardDescription>
-                      </CardHeader>
-                      </Card>
                       <ScrollArea className="h-[532px] w-[670px] rounded-md border p-4">
                       <CardContent className="flex flex-col justify-items-center">
                         {tickets.map(
