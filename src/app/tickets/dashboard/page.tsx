@@ -81,10 +81,9 @@ async function loadTickets() {
   connectDB();
   //buscar todos los tickets en la base de datos
   const tickets = await Ticket.find();
-  //retornar los tickets 
+  //retornar los tickets
   return tickets;
 }
-
 
 async function Dashboard() {
   const tickets = await loadTickets();
@@ -198,26 +197,35 @@ async function Dashboard() {
                     </Button>
                   </div>
                 </div>
-                <TabsContent value="week">
-                <Card x-chunk="dashboard-05-chunk-3">
-                <CardHeader className="px-7">
-                <CardTitle>Tickets</CardTitle>
-                <CardDescription>
-                  Ultimos tickets ingresados.
-                </CardDescription>
-                </CardHeader>
-                <CardContent className="flex.col gap-1 w-full">
-                {tickets.map(ticket => ( //mapear los tickets y renderizarlos en el componente TaskCard
-                 //renderizar el componente TaskCard con el ticket como parametro y la key como el id del ticket 
-                <TaskCard ticket={ticket} key={ticket._id} />
-                 ))}
-                 </CardContent>
-                </Card>
-                </TabsContent>
+                <div>
+                  <TabsContent value="week">
+                    <Card x-chunk="dashboard-05-chunk-3">
+                      <CardHeader className="px-7">
+                        <CardTitle>Tickets</CardTitle>
+                        <CardDescription>
+                          Ultimos tickets ingresados.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex.col gap-1 w-full">
+                        {tickets.map(
+                          (
+                            ticket //mapear los tickets y renderizarlos en el componente TaskCard
+                          ) => (
+                            //renderizar el componente TaskCard con el ticket como parametro y la key como el id del ticket
+                            <TaskCard ticket={ticket} key={ticket._id} />
+                          )
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </div>
               </Tabs>
             </div>
             <div>
-              <Card className="fixed overflow-hidden" x-chunk="dashboard-05-chunk-4">
+              <Card
+                className="fixed overflow-hidden"
+                x-chunk="dashboard-05-chunk-4"
+              >
                 <CardHeader className="flex flex-row items-start bg-muted/50">
                   <div className="grid gap-0.5">
                     <CardTitle className="group flex items-center gap-2 text-lg">
