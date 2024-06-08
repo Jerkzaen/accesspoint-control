@@ -185,11 +185,12 @@ async function Dashboard() {
                   </div>
                 </div>
 
-                <TabsContent value="all">
-                  <div className="flex flex-col justify-between">
+                <TabsContent  className="flex flex-row justify-start gap-1" value="all">
+                  <div className="">
+                  <ScrollArea className="h-[450px] w-[670px] rounded-sm border p-4">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Sucursal</TableHead>
+                        <TableHead className="">Sucursal</TableHead>
                         <TableHead className="">Tipo</TableHead>
                         <TableHead className="">Estado</TableHead>
                         <TableHead className="">Fecha</TableHead>
@@ -197,7 +198,7 @@ async function Dashboard() {
                       </TableRow>
                     </TableHeader>
 
-                    <ScrollArea className="h-[450px] w-[670px] rounded-sm border p-4">
+                    
                       {tickets.map(
                         (
                           ticket //mapear los tickets y renderizarlos en el componente TaskCard
