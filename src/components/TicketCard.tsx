@@ -13,7 +13,7 @@ import {
 
 // Definir la  interfaz de ticket para el componente de tarjeta de ticket
 interface Ticket {
-  nroCaso: number;
+  nroCaso: string;
   empresa: string;
   prioridad: string;
   tecnico: string;
@@ -27,6 +27,8 @@ interface Ticket {
   accion: string;
   fechaSolucion: string;
 }
+
+
 // Definir el componente de la tarjeta de ticket  en el dashboard del usuario logeado en la aplicacion
 function TaskCard({ ticket }: { ticket: Ticket }) {
   // Renderiza el componente

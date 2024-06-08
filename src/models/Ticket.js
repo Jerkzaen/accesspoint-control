@@ -8,9 +8,8 @@ const taskSchema = new Schema(
   {
     nroCaso: {
       type: Number,
-      default: 0,
-
-      autoIncrement: true,
+      required: [true, "Se debe ingresar un id de equipo"],
+      trim: true,
     },
     empresa: {
       type: String,

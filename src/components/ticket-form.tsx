@@ -25,12 +25,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { redirect } from "next/navigation";
+import { connectDB } from "@/utils/mongoose";
+import Ticket from "@/models/Ticket";
+
+async function loadTickets() {
+  //conexion a la base de datos
+  connectDB();
+  //buscar todos los tickets en la base de datos
+  const tickets = await Ticket.find();
+  //retornar los tickets
+  return tickets;
+}
 
 // Definir el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
-export function TicketForm() {
+export async function TicketForm() {
   // Funcion para crear un ticket en el servidor
   async function newTicket(formdata: FormData) {
     "use server";
+    const nroCaso = formdata.get("nroCaso")?.toString();
     const empresa = formdata.get("empresa")?.toString();
     const prioridad = formdata.get("prioridad")?.toString();
     const tecnico = formdata.get("tecnico")?.toString();
@@ -43,9 +55,9 @@ export function TicketForm() {
     const descripcion = formdata.get("descripcion")?.toString();
     const accion = formdata.get("accion")?.toString();
     const fechaSolucion = formdata.get("fechaSolucion")?.toString();
-    const updateAT = formdata.get("updateAT")?.toString();
 
     console.log({
+      nroCaso,
       createdAt,
       empresa,
       prioridad,
@@ -62,6 +74,7 @@ export function TicketForm() {
 
     // Verificar si el titulo, la descripcion y la prioridad del ticket no estan vacios
     if (
+      !nroCaso ||
       !empresa ||
       !prioridad ||
       !tecnico ||
@@ -80,6 +93,7 @@ export function TicketForm() {
       const res = await fetch("http://localhost:3000/api/tickets", {
         method: "POST",
         body: JSON.stringify({
+          nroCaso,
           createdAt,
           empresa,
           prioridad,
@@ -111,6 +125,7 @@ export function TicketForm() {
     redirect("/tickets/dashboard");
   }
   // Renderizar el formulario de ticket
+  const tickets = await loadTickets();
   return (
     <form action={newTicket}>
       <Card className="w-[600px]">
@@ -122,7 +137,16 @@ export function TicketForm() {
           <div className="grid grid-cols-2 w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="nroCaso">N° de Caso</Label>
-              
+              <Input
+                name="nroCaso"
+                id="nroCaso"
+                defaultValue={
+                  tickets.length > 0
+                    ? tickets[tickets.length - 1].nroCaso + 1
+                    : 1
+                }
+                readOnly
+              />
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="empresa">Empresa</Label>
@@ -193,8 +217,9 @@ export function TicketForm() {
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="createdAt">Fecha Reporte</Label>
               <Input
-              name="createdAt"
+                name="createdAt"
                 value={new Date().toLocaleDateString()}
+                readOnly
               />
             </div>
             <div className="flex flex-col space-y-1.5">
@@ -210,18 +235,16 @@ export function TicketForm() {
               <Textarea
                 name="accion"
                 id="accion"
-                placeholder="accion"
-              >
-                Accion realizada
-              </Textarea>
+                placeholder="Accion realizada"
+              />
             </div>
             <div className="flex flex-col space-y-1.5">
-            <Label htmlFor="fechaSolucion">Fecha Solucion</Label>
-            <Input
-              name="fechaSolucion"
-              id="fechaSolucion"
-              value={new Date().toLocaleDateString()}
-            />
+              <Label htmlFor="fechaSolucion">Fecha Solucion</Label>
+              <Input
+                name="fechaSolucion"
+                id="fechaSolucion"
+                defaultValue={new Date().toLocaleDateString()}
+              />
             </div>
           </div>
         </CardContent>
