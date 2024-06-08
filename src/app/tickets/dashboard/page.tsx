@@ -187,16 +187,8 @@ async function Dashboard() {
 
                 <TabsContent  className="flex flex-row justify-start gap-1" value="all">
                   <div className="">
-                  <ScrollArea className="h-[450px] w-[670px] rounded-sm border p-4">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="">Sucursal</TableHead>
-                        <TableHead className="">Tipo</TableHead>
-                        <TableHead className="">Estado</TableHead>
-                        <TableHead className="">Fecha</TableHead>
-                        <TableHead className="">Responsable</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                  <ScrollArea className="h-[800px] w-full rounded-sm border p-4">
+
 
                     
                       {tickets.map(

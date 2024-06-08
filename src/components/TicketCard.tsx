@@ -2,46 +2,106 @@
 // Importar React y el hook de estado de React para la aplicacion
 
 import { Badge } from "./ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
+  TableHeader,
+  TableHead,
 } from "./ui/table";
 
 // Definir la  interfaz de ticket para el componente de tarjeta de ticket
 interface Ticket {
-  title: string;
-  description: string;
-  priority: string;
-  createAt: string;
+  nroCaso: number;
+  empresa: string;
+  prioridad: string;
+  tecnico: string;
+  tipo: string;
+  titulo: string;
+  idNotebook: string;
+  ubicacion: string;
+  contacto: string;
+  createdAt: string;
+  descripcion: string;
+  accion: string;
+  fechaSolucion: string;
 }
 // Definir el componente de la tarjeta de ticket  en el dashboard del usuario logeado en la aplicacion
 function TaskCard({ ticket }: { ticket: Ticket }) {
   // Renderiza el componente
   return (
     <Table>
-      <TableBody key={ticket.title}>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="">Numero de Caso </TableHead>
+          <TableHead className="">Empresa</TableHead>
+          <TableHead className="">Tecnico</TableHead>
+          <TableHead className="">Prioridad</TableHead>
+          <TableHead className="">Tipo</TableHead>
+          <TableHead className="">ID Notebook</TableHead>
+          <TableHead className="">Ubicacion</TableHead>
+          <TableHead className="">Contacto</TableHead>
+          <TableHead className="">Fecha de Creacion</TableHead>
+          <TableHead className="">Descripcion</TableHead>
+          <TableHead className="">Accion</TableHead>
+          <TableHead className="">Fecha de Solucion</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody key={ticket.nroCaso}>
         <TableRow className="bg-accent">
           <TableCell>
-            <div className="font-medium">{ticket.title}</div>
+            <div className="font-medium">{ticket.nroCaso}</div>
+          </TableCell>
+          <TableCell>
             <div className="hidden text-sm text-muted-foreground md:inline">
-              {ticket.description}
+              {ticket.empresa}
             </div>
           </TableCell>
-          <TableCell className="hidden sm:table-cell">Sale</TableCell>
-          <TableCell className="hidden sm:table-cell">
-            <Badge className="text-xs" variant="secondary">
-              {ticket.priority}
+          <TableCell>
+            <div className="hidden text-sm text-muted-foreground md:inline">
+              {ticket.tecnico}
+            </div>
+          </TableCell>
+          <TableCell>
+            <Badge>{ticket.prioridad}</Badge>
+          </TableCell>
+          <TableCell>
+            <Badge>{ticket.tipo}</Badge>
+          </TableCell>
+          <TableCell>
+            <Badge>{ticket.idNotebook}</Badge>
+          </TableCell>
+          <TableCell>
+            <Badge>{ticket.ubicacion}</Badge>
+          </TableCell>
+          <TableCell>
+            <div className="hidden text-sm text-muted-foreground md:inline">
+              {ticket.contacto}
+            </div>
+          </TableCell>
+          <TableCell>
+            <Badge>
+              {ticket.createdAt
+                ? new Date(ticket.createdAt).toLocaleDateString()
+                : ""}
             </Badge>
           </TableCell>
-          <TableCell className="hidden md:table-cell">
-            {new Date(ticket.createAt).toDateString()}
+          <TableCell>
+            <div className="hidden text-sm text-muted-foreground md:inline">
+              {ticket.descripcion}
+            </div>
           </TableCell>
-          <TableCell className="text-center">J. amijo</TableCell>
+          <TableCell>
+            <div className="hidden text-sm text-muted-foreground md:inline">
+              {ticket.accion}
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="hidden text-sm text-muted-foreground md:inline">
+              {ticket.fechaSolucion ? new Date(ticket.fechaSolucion).toLocaleDateString() : ""}
+            </div>
+          </TableCell>
         </TableRow>
       </TableBody>
     </Table>
