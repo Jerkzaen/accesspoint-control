@@ -1,9 +1,7 @@
 // Importar modulos de mongoose para crear el modelo de Ticket
 import {mongoose, Schema, model, models } from "mongoose";
-import autoIncrement from 'mongoose-auto-increment';
 
-// Inicializa el plugin
-autoIncrement.initialize(mongoose.connection);
+
 
 // Crear el esquema de Ticket
 const taskSchema = new Schema(
@@ -78,10 +76,5 @@ const taskSchema = new Schema(
   
 );
 
-taskSchema.plugin(autoIncrement.plugin, {
-  model: 'Ticket', // el nombre del modelo
-  field: 'nroCaso', // el campo que quieres autoincrementar
-  startAt: 1, // comienza a contar desde 1
-});
 // Exportar el modelo de Ticket
 export default models.Ticket || model("Ticket", taskSchema);
