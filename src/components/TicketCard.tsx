@@ -36,7 +36,8 @@ interface Ticket {
 function TaskCard({ ticket }: { ticket: Ticket }) {
   // Renderiza el componente
   return (
-    <Card className="flex flex-col flex-auto" key={ticket.nroCaso}>
+    <div className="flex justify-between px-2">
+    <Card  key={ticket.nroCaso}>
       <CardHeader className="px-7">
         <CardTitle>ID Caso</CardTitle>
         <CardDescription>{ticket._id}</CardDescription>
@@ -44,7 +45,7 @@ function TaskCard({ ticket }: { ticket: Ticket }) {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow >
               <TableHead className="hidden sm:table-cell">N° Caso</TableHead>
               <TableHead className="hidden sm:table-cell">Empresa</TableHead>
               <TableHead className="hidden sm:table-cell">Prioridad</TableHead>
@@ -110,6 +111,7 @@ function TaskCard({ ticket }: { ticket: Ticket }) {
         </Table>
       </CardContent>
     </Card>
+    </div>
   )
 }
 

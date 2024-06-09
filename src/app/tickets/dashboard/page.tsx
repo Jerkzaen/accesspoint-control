@@ -38,8 +38,8 @@ async function loadTickets() {
 async function Dashboard() {
   const tickets = await loadTickets();
   return (
-    <div className="flex flex-auto min-h-screen w-full flex-col bg-muted/40">
-      <div className="flex flex-col gap-4 py-4 pl-4 mt-4">
+    <div className="flex flex-auto min-h-screen w-full flex-col bg-muted/40 ">
+      <div className="flex flex-col gap-4 py-4 pl-4 mt-4 ">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <Breadcrumb className="hidden md:flex">
             <BreadcrumbList>
