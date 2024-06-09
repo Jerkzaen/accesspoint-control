@@ -155,8 +155,8 @@ export async function TicketForm() {
                   <SelectValue placeholder="Seleccione Empresa" />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="Achs">Achs</SelectItem>
-                  <SelectItem value="Esachs">Esachs</SelectItem>
+                  <SelectItem value="Achs">ACHS</SelectItem>
+                  <SelectItem value="Esachs">ESACHS</SelectItem>
                   <SelectItem value="CMT">CMT</SelectItem>
                 </SelectContent>
               </Select>
@@ -170,10 +170,10 @@ export async function TicketForm() {
                   <SelectValue placeholder="Prioridad" />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="baja">Baja</SelectItem>
-                  <SelectItem value="media">Media</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
-                  <SelectItem value="urgente">Urgente</SelectItem>
+                  <SelectItem value="baja">BAJA</SelectItem>
+                  <SelectItem value="media">MEDIA</SelectItem>
+                  <SelectItem value="alta">ALTA</SelectItem>
+                  <SelectItem value="urgente">URGENTE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -184,9 +184,9 @@ export async function TicketForm() {
                   <SelectValue placeholder="Seleccione Tecnico" />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="cTorrens">C. Torrens</SelectItem>
-                  <SelectItem value="jArmijo">J. Armijo</SelectItem>
-                  <SelectItem value="cCheverllino">D. Cherve</SelectItem>
+                  <SelectItem value="Miguel Chervellino">M.Chervellino</SelectItem>
+                  <SelectItem value="Christian Torrenss">C. Torrens</SelectItem>
+                  <SelectItem value="jerson Armijo">J. Armijo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -216,10 +216,10 @@ export async function TicketForm() {
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="createdAt">Fecha Reporte</Label>
-              <Input
+              <Input type="date"
                 name="createdAt"
-                value={new Date().toLocaleDateString()}
-                readOnly
+                id="createdAt"
+                defaultValue={new Date().toLocaleDateString()}
               />
             </div>
             <div className="flex flex-col space-y-1.5">
@@ -240,10 +240,9 @@ export async function TicketForm() {
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="fechaSolucion">Fecha Solucion</Label>
-              <Input
+              <Input type="date" 
                 name="fechaSolucion"
-                id="fechaSolucion"
-                defaultValue={new Date().toLocaleDateString()}
+                id="fechaSolucion"           
               />
             </div>
           </div>

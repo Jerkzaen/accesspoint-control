@@ -90,7 +90,7 @@ async function Dashboard() {
                     Total a la fecha
                   </div>
                   <div className="text-xs text-muted-foreground text-center">
-                    {new Date().toLocaleDateString()}
+                    
                   </div>
                 </CardContent>
               </Card>
