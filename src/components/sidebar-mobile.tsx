@@ -14,6 +14,7 @@ import Link from "next/link";
 
 import { usePathname } from "next/navigation";
 import { SidebarButtonSheet as SidebarButton } from "./sidebar-button";
+import { Separator } from "./ui/separator";
 
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarMobileProps {
@@ -57,6 +58,10 @@ export function SidebarMobile(props: SidebarMobileProps) {
                 </SidebarButton>
               </Link>
             ))}
+            {props.sidebarItems.extras}
+          </div>
+          <div className="absolute w-full bottom-12 px-1 left-0">
+            <Separator className="absolute -top-3 left-0 w-full" /> 
           </div>
         </div>
       </SheetContent>
