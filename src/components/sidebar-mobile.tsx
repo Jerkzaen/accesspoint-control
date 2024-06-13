@@ -10,6 +10,9 @@ import {
 } from "./ui/sheet";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
+import { SidebarButton } from "./sidebar-button";
+import { usePathname } from "next/navigation";
 
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarMobileProps {
@@ -18,10 +21,11 @@ interface SidebarMobileProps {
 
 // Definimos la función SidebarMobile que recibe un objeto sidebarItems y devuelve un componente Sheet
 export function SidebarMobile(props: SidebarMobileProps) {
+  const pathname = usePathname();
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button size="icon" variant='ghost' className="fixed top-3 left-3">
+        <Button size="icon" variant="ghost" className="fixed top-3 left-3">
           <Menu size={20} />
         </Button>
       </SheetTrigger>
@@ -39,6 +43,21 @@ export function SidebarMobile(props: SidebarMobileProps) {
             </Button>
           </SheetClose>
         </SheetHeader>
+        <div>
+          <div>
+            {props.sidebarItems.links.map((link, idx) => (
+              <Link key={idx} href={link.href}>
+                <SidebarButton
+                  variant={pathname === link.href ? "secondary" : "ghost"}
+                  icon={link.icon}
+                  className="w-full"
+                >
+                  {link.label}
+                </SidebarButton>
+              </Link>
+            ))}
+          </div>
+        </div>
       </SheetContent>
     </Sheet>
   );
