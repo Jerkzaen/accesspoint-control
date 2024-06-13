@@ -44,8 +44,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
             </Button>
           </SheetClose>
         </SheetHeader>
-        <div>
-          <div>
+        <div className="h-full">
+          <div className="mt-5 flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
               <Link key={idx} href={link.href}>
                 <SidebarButton
