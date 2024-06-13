@@ -32,18 +32,6 @@ const sidebarItems: SidebarItem = {
     { label: "WTS", href: "/item/perfil", icon: Cpu },
     { label: "Bodega", href: "/bodega/new", icon: Box },
   ],
-  extras: (
-    <div className="flex flex-col gap-2">
-      <SidebarButton icon={MoreHorizontal} className="w-full">
-        Mas
-      </SidebarButton>
-      <Link href="/tickets/new">
-        <SidebarButton className="w-full justify-center" variant="default">
-          Nuevo Ticket
-        </SidebarButton>
-      </Link>
-    </div>
-  ),
 };
 
 // Definimos la función Sidebar que devuelve el componente SidebarDesktop
