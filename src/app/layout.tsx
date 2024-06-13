@@ -51,7 +51,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Sidebar />
-            <main className="mx-5 sm:ml-[280px] mr-4">
+            <main className="mx-5 sm:ml-[280px] mr-5 mt-6 mb-6">
               <Navbar />
               {children}
             </main>
