@@ -77,7 +77,9 @@ async function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardFooter>
-                  <Button>Crear Nuevo Ticket</Button>
+                  <Link href="/tickets/new">
+                    <Button>Crear Nuevo Ticket</Button>
+                  </Link>
                 </CardFooter>
               </Card>
               <Card x-chunk="dashboard-05-chunk-1">
@@ -89,9 +91,7 @@ async function Dashboard() {
                   <div className="text-xs text-muted-foreground text-center">
                     Total a la fecha
                   </div>
-                  <div className="text-xs text-muted-foreground text-center">
-                    
-                  </div>
+                  <div className="text-xs text-muted-foreground text-center"></div>
                 </CardContent>
               </Card>
               <Card x-chunk="dashboard-05-chunk-2">
@@ -108,7 +108,10 @@ async function Dashboard() {
             </div>
             <div className="flex flex-col-reverse px-2 py-2   ">
               {tickets.map((ticket) => (
-                <div className="flex flex-col-reverse px-2 py-2 flex-grow-0 flex-shrink-1" key={ticket.nroCaso}>
+                <div
+                  className="flex flex-col-reverse px-2 py-2 flex-grow-0 flex-shrink-1"
+                  key={ticket.nroCaso}
+                >
                   <TaskCard ticket={ticket} />
                 </div>
               ))}
