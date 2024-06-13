@@ -13,7 +13,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
-import { SidebarButton } from "./sidebar-button";
+import { SidebarButtonSheet as SidebarButton } from "./sidebar-button";
 
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarMobileProps {
