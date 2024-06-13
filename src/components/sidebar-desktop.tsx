@@ -42,7 +42,6 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
             ))}
             {props.sidebarItems.extras}
           </div>
-          <Button onClick={() => signIn() }> Sig in </Button>
           <div className="absolute left-0 bottom-3 w-full px-3 ">
             <Separator className="absolute -top-3 left-0 w-full " />
             <Popover>
