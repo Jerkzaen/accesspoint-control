@@ -1,9 +1,15 @@
 "use client";
 // Importamos sidebarItem de la interfaz SidebarItem
 import { SidebarItem } from "@/types";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTrigger } from "./ui/sheet";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTrigger,
+} from "./ui/sheet";
 import { Button } from "./ui/button";
-import { X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarMobileProps {
@@ -15,7 +21,9 @@ export function SidebarMobile(props: SidebarMobileProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button>Open Sidebar</Button>
+        <Button size="icon" variant='ghost' className="fixed top-3 left-3">
+          <Menu size={20} />
+        </Button>
       </SheetTrigger>
       <SheetContent side="left" className="px-3 py-4" hideClose>
         <SheetHeader
@@ -26,9 +34,9 @@ export function SidebarMobile(props: SidebarMobileProps) {
             AccessPoint Control
           </span>
           <SheetClose asChild>
-          <Button className="h-7 w-7 p-0" variant="ghost">
-            <X size={15} />
-          </Button>
+            <Button className="h-7 w-7 p-0" variant="ghost">
+              <X size={15} />
+            </Button>
           </SheetClose>
         </SheetHeader>
       </SheetContent>
