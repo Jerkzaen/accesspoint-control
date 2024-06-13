@@ -47,7 +47,11 @@ const sidebarItems: SidebarItem = {
 // Definimos la función Sidebar que devuelve el componente SidebarDesktop
 export function Sidebar() {
   // Definimos el hook useMediaQuery que recibe un media query y un valor booleano
-  const isDesktop = useMediaQuery("(min-width: 640px)");
+  const isDesktop = useMediaQuery("(min-width: 640px)", {
+    // El valor inicial de isDesktop es falso 
+    initializeWithValue: false,
+
+  });
   // Si el valor de isDesktop es verdadero, se renderiza el componente SidebarDesktop
   if (isDesktop) {
     return <SidebarDesktop sidebarItems={sidebarItems} />;
