@@ -64,7 +64,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
             ))}
             {props.sidebarItems.extras}
           </div>
-          <div className="absolute w-full bottom-12 px-1 left-0">
+          <div className="absolute w-full bottom-4 px-1 left-0">
             <Separator className="absolute -top-3 left-0 w-full" /> 
             <Drawer>
               <Button
@@ -84,8 +84,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
                     <MoreHorizontal size={20} />
                   </div>
                 </DrawerTrigger>
-                <DrawerContent className="mb-2 w-56 p-3 rounded-[1rem]">
-                  <div className="space-y-1">
+                <DrawerContent className="mb-2  p-3">
+                  <div className="sflex flex-col space-y-2 mt-2">
                     <Link href="/">
                       <SidebarButton
                         size="sm"
