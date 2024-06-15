@@ -1,6 +1,6 @@
 import React from 'react'
 
-const leftColum = () => {
+const leftColumn = () => {
   return (
     <div className=' mt-20 flex justify-between md:w-[65%] bg-gray-300 min-h-[45%]'>
         <p>Col-1 Start</p>
@@ -9,4 +9,4 @@ const leftColum = () => {
   )
 }
 
-export default leftColum
+export default leftColumn

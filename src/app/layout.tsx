@@ -18,7 +18,8 @@ import { Sidebar } from "@/components/sidebar";
 //
 import { Providers } from "./Providers";
 import Header from "@/components/Header";
-import  LeftColum  from "@/components/leftColum";
+import  LeftColumn  from "@/components/leftColumn";
+import  RightColumn  from "@/components/rightColumn"; // Import the 'RightColumn' component
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
@@ -56,7 +57,8 @@ export default function RootLayout({
             <main className="sm:ml-[270px]">
               <div className="flex-1 md:flex  h-screen relative">
                 <Header />
-                <LeftColum />
+                <LeftColumn />
+                <RightColumn />
               </div>
               {children}
             </main>
