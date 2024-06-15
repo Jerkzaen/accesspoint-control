@@ -18,6 +18,7 @@ import { Sidebar } from "@/components/sidebar";
 //
 import { Providers } from "./Providers";
 import Header from "@/components/Header";
+import  LeftColum  from "@/components/leftColum";
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
@@ -52,8 +53,11 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Sidebar />
-            <Header />
-            <main className="mx-5 mt-16 sm:ml-[280px] mr-5 sm:mt-3 mb-3">
+            <main className="sm:ml-[270px]">
+              <div className="flex-1 md:flex  h-screen relative">
+                <Header />
+                <LeftColum />
+              </div>
               {children}
             </main>
           </ThemeProvider>
