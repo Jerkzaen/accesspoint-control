@@ -11,15 +11,12 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 // Importar el componente de proveedor de temas de la aplicacion
 import { ThemeProvider } from "@/components/theme-provider";
-// Importar el componente de barra de navegacion de la aplicacion
-import Navbar from "@/components/navbar";
 // Importar el componente de barra lateral de la aplicacion
 import { Sidebar } from "@/components/sidebar";
 //
 import { Providers } from "./Providers";
 import Header from "@/components/Header";
-import  LeftColumn  from "@/components/leftColumn";
-import  RightColumn  from "@/components/rightColumn"; // Import the 'RightColumn' component
+
 
 // Importar React y el hook de estado de React para la aplicacion
 const fontSans = FontSans({
@@ -57,7 +54,6 @@ export default function RootLayout({
             
             <main className="sm:ml-[270px] relative">
             <Header />
-
               {children}
             </main>
           </ThemeProvider>

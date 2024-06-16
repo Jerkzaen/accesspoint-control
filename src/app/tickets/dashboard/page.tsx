@@ -1,5 +1,5 @@
-import LeftColumnTickets from "@/components/leftColumn";
-import RightColumnTickets from "@/components/rightColumn";
+import LeftColumnTickets from "@/components/LeftColumnTickets";
+import RightColumnTickets from "@/components/RightColumnTickets";
 
 export default function TicketsDashboardPage() {
   return (
