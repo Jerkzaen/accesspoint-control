@@ -49,42 +49,60 @@ interface Ticket {
   fechaSolucion: string;
 }
 
-
 // Definir el componente de la tarjeta de ticket  en el dashboard del usuario logeado en la aplicacion
 async function TaskCard({ ticket }: { ticket: Ticket }) {
   let idPlano = JSON.parse(JSON.stringify(ticket._id));
   const tickets = await loadTickets();
   // Renderiza el componente
   return (
-    <div  className="flex flex-shrink flex-grow flex-auto ">
-      <Card >
-      <Table>
-      <TableCaption>A list of your recent invoices.</TableCaption>
-      <TableHeader>
-        <TableRow >
-          <TableHead>Nro Caso</TableHead>
-          <TableHead>Empresa</TableHead>
-          <TableHead>Prioridad</TableHead>
-          <TableHead>Tecnico</TableHead>
-          <TableHead>Descripcion</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {tickets.map((ticket) => (
-          <TableRow key={ticket.nroCaso} >
-            <TableCell >{ticket.nroCaso}</TableCell>
-            <TableCell >{ticket.empresa}</TableCell>
-            <TableCell >{ticket.prioridad}</TableCell>
-            <TableCell >{ticket.tecnico}</TableCell>
-            <TableCell >{ticket.descripcion}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-      <TableFooter>
-        <TableRow>
-        </TableRow>
-      </TableFooter>
-    </Table>
+    <div className="flex flex-grow flex-shrink flex-wrap">
+      <Card>
+        <Table className="min-w-full">
+          <TableCaption>A list of your recent invoices.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+                Nro Caso
+              </TableHead>
+              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+                Empresa
+              </TableHead>
+              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+                Prioridad
+              </TableHead>
+              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+                Tecnico
+              </TableHead>
+              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+                Descripcion
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tickets.map((ticket) => (
+              <TableRow key={ticket.nroCaso}>
+                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                  {ticket.nroCaso}
+                </TableCell>
+                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                  {ticket.empresa}
+                </TableCell>
+                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                  {ticket.prioridad}
+                </TableCell>
+                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                  {ticket.tecnico}
+                </TableCell>
+                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                  {ticket.descripcion}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow></TableRow>
+          </TableFooter>
+        </Table>
       </Card>
     </div>
   );
