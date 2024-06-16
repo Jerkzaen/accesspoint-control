@@ -54,9 +54,11 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Sidebar />
-            <main className="sm:ml-[270px]">
-              <div className="flex-1 md:flex  h-screen relative">
-                <Header />
+            
+            <main className="sm:ml-[270px] relative">
+            <Header />
+              <div className="flex flex-auto flex-row pt-6">
+                
                 <LeftColumn />
                 <RightColumn />
               </div>

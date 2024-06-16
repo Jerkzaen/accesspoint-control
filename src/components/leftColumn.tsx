@@ -14,8 +14,6 @@ import { connectDB } from "@/utils/mongoose";
 import Ticket from "@/models/Ticket";
 import TaskCard from "./TicketCard";
 
-
-
 // Funcion para cargar los tickets de la base de datos
 async function loadTickets() {
   //conexion a la base de datos
@@ -26,15 +24,15 @@ async function loadTickets() {
   return tickets;
 }
 
- const  LeftColumn = async () => {
+const LeftColumn = async () => {
   const tickets = await loadTickets();
   return (
-    <div className=" flex md:w-[65%] bg-gray-300 min-h-[45%] relative ">
-      <Card className="flex w-full flex-col">
+    <div className=" flex flex-auto md:w-[65%] bg-gray-300 min-h-[45%]">
+ <Card className="flex w-full flex-col flex-auto flex-wrap ">
         <CardHeader>
-          <CardTitle className="flex flex-row-3 justify-between">
+          <CardTitle className="flex flex-row-3 flex-wrap">
             <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="flex  pb-2">
                   <CardTitle>Crear Ticket</CardTitle>
                   <CardDescription className="max-w-lg text-balance leading-relaxed ">
                     Para crear un ticket de soporte, haz clic en el botón de
@@ -74,7 +72,7 @@ async function loadTickets() {
               </CardTitle>
           <CardDescription>Card Description</CardDescription>
         </CardHeader>
-        <CardContent className="flex relative ">
+        <CardContent>
           
           <TaskCard ticket={tickets[0]} />
           
