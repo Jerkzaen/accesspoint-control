@@ -27,14 +27,13 @@ async function loadTickets() {
 const LeftColumnTickets = async () => {
   const tickets = await loadTickets();
   return (
-    <div className=" flex flex-auto md:w-[65%] bg-gray-300 min-h-[45%]">
- <Card className="flex w-full flex-col flex-auto flex-wrap ">
-        <CardHeader>
-          <CardTitle className="flex flex-row-3 slide-in-from-left-px">
+    <div className=" flex flex-auto flex-col sm:w-[45%] bg-gray-300 min-h-[45%] relative">
+          <div className="flex flex-row-3 flex-wrap">
+
             <Card>
                 <CardHeader className="flex  pb-2">
                   <CardTitle>Crear Ticket</CardTitle>
-                  <CardDescription className="max-w-lg text-balance leading-relaxed ">
+                  <CardDescription className="flex flex-grow">
                     Para crear un ticket de soporte, haz clic en el botón de
                     abajo.
                   </CardDescription>
@@ -68,20 +67,11 @@ const LeftColumnTickets = async () => {
                   </div>
                 </CardContent>
               </Card>
-
-              </CardTitle>
-          <CardDescription>Card Description</CardDescription>
-        </CardHeader>
-        <CardContent>
-          
+              </div>
+              <div className="flex flex-shrink">
           <TaskCard ticket={tickets[0]} />
-          
-          
-        </CardContent>
-        <CardFooter>
-          <p>Card Footer</p>
-        </CardFooter>
-      </Card>
+          </div>
+
     </div>
   );
 };

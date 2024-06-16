@@ -56,7 +56,7 @@ async function TaskCard({ ticket }: { ticket: Ticket }) {
   const tickets = await loadTickets();
   // Renderiza el componente
   return (
-    <div  className="flex flex-auto relative">
+    <div  className="flex flex-shrink flex-grow flex-auto ">
       <Card >
       <Table>
       <TableCaption>A list of your recent invoices.</TableCaption>
