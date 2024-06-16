@@ -30,7 +30,7 @@ const LeftColumnTickets = async () => {
     <div className=" flex flex-auto md:w-[65%] bg-gray-300 min-h-[45%]">
  <Card className="flex w-full flex-col flex-auto flex-wrap ">
         <CardHeader>
-          <CardTitle className="flex flex-row-3 flex-wrap">
+          <CardTitle className="flex flex-row-3 slide-in-from-left-px">
             <Card>
                 <CardHeader className="flex  pb-2">
                   <CardTitle>Crear Ticket</CardTitle>
