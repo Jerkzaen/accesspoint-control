@@ -57,11 +57,7 @@ export default function RootLayout({
             
             <main className="sm:ml-[270px] relative">
             <Header />
-              <div className="flex flex-auto flex-row pt-6">
-                
-                <LeftColumn />
-                <RightColumn />
-              </div>
+
               {children}
             </main>
           </ThemeProvider>

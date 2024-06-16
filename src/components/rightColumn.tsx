@@ -1,6 +1,6 @@
 import React from 'react'
 
-function rightCloumn() {
+function rightCloumnTickets() {
   return (
     <div className='flex justify-between md:w-[35%] bg-gray-400 min-h-[45%] z-10'>
       <p>Right Column</p>
@@ -9,4 +9,4 @@ function rightCloumn() {
   )
 }
 
-export default rightCloumn
+export default rightCloumnTickets

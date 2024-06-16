@@ -24,7 +24,7 @@ async function loadTickets() {
   return tickets;
 }
 
-const LeftColumn = async () => {
+const LeftColumnTickets = async () => {
   const tickets = await loadTickets();
   return (
     <div className=" flex flex-auto md:w-[65%] bg-gray-300 min-h-[45%]">
@@ -86,4 +86,4 @@ const LeftColumn = async () => {
   );
 };
 
-export default LeftColumn;
+export default LeftColumnTickets;
