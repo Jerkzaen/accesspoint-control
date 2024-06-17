@@ -73,27 +73,27 @@ return (
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody>
-        {tickets.map((ticket) => (
-          <TableRow key={ticket.nroCaso}>
-            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center ">
-              {ticket.nroCaso}
-            </TableCell>
-            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-              {ticket.empresa}
-            </TableCell>
-            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-              {ticket.ubicacion}
-            </TableCell>
-            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-              {ticket.tecnico}
-            </TableCell>
-            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-              {ticket.descripcion}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
+      <TableBody >
+  {tickets.sort((a, b) => b.nroCaso - a.nroCaso).map((ticket) => (
+    <TableRow key={ticket.nroCaso}>
+      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center ">
+        {ticket.nroCaso}
+      </TableCell>
+      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+        {ticket.empresa}
+      </TableCell>
+      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+        {ticket.ubicacion}
+      </TableCell>
+      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+        {ticket.tecnico}
+      </TableCell>
+      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+        {ticket.descripcion}
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
       <TableFooter>
         <TableRow></TableRow>
       </TableFooter>
