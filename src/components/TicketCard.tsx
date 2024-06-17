@@ -54,58 +54,58 @@ async function TaskCard({ ticket }: { ticket: Ticket }) {
   let idPlano = JSON.parse(JSON.stringify(ticket._id));
   const tickets = await loadTickets();
   // Renderiza el componente
-  return (
-    <div className="flex flex-grow flex-shrink flex-wrap">
-      <Card>
-        <Table className="min-w-full">
-          <TableCaption>A list of your recent invoices.</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-                Nro Caso
-              </TableHead>
-              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-                Empresa
-              </TableHead>
-              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-                Prioridad
-              </TableHead>
-              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-                Tecnico
-              </TableHead>
-              <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-                Descripcion
-              </TableHead>
+return (
+  <div className="flex flex-grow flex-shrink flex-wrap h-full p-4"> {/* Añade h-full para altura completa y p-4 para un margen interno */}
+    <Card className="w-full h-full"> {/* Asegura que Card ocupe todo el ancho y altura disponibles */}
+      <Table className="min-w-full">
+        <TableCaption>A list of your recent invoices.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+              Nro Caso
+            </TableHead>
+            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+              Empresa
+            </TableHead>
+            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+              Prioridad
+            </TableHead>
+            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+              Tecnico
+            </TableHead>
+            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
+              Descripcion
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tickets.map((ticket) => (
+            <TableRow key={ticket.nroCaso}>
+              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                {ticket.nroCaso}
+              </TableCell>
+              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                {ticket.empresa}
+              </TableCell>
+              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                {ticket.prioridad}
+              </TableCell>
+              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                {ticket.tecnico}
+              </TableCell>
+              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
+                {ticket.descripcion}
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tickets.map((ticket) => (
-              <TableRow key={ticket.nroCaso}>
-                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                  {ticket.nroCaso}
-                </TableCell>
-                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                  {ticket.empresa}
-                </TableCell>
-                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                  {ticket.prioridad}
-                </TableCell>
-                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                  {ticket.tecnico}
-                </TableCell>
-                <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                  {ticket.descripcion}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow></TableRow>
-          </TableFooter>
-        </Table>
-      </Card>
-    </div>
-  );
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow></TableRow>
+        </TableFooter>
+      </Table>
+    </Card>
+  </div>
+);
 }
 
 // Exporta el componente
