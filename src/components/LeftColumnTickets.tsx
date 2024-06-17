@@ -27,62 +27,47 @@ async function loadTickets() {
 const LeftColumnTickets = async () => {
   const tickets = await loadTickets();
   return (
-    <div className=" flex flex-auto md:w-[65%] bg-gray-300 min-h-[45%]">
- <Card className="flex w-full flex-col flex-auto flex-wrap ">
-        <CardHeader>
-          <CardTitle className="flex flex-row-3 flex-wrap">
-            <Card>
-                <CardHeader className="flex  pb-2">
-                  <CardTitle>Crear Ticket</CardTitle>
-                  <CardDescription className="max-w-lg text-balance leading-relaxed ">
-                    Para crear un ticket de soporte, haz clic en el botón de
-                    abajo.
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Link href="/tickets/new">
-                    <Button>Crear Nuevo Ticket</Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2 items-center">
-                  <CardDescription>Total Tickets</CardDescription>
-                  <CardTitle className="text-4xl"></CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-muted-foreground text-center">
-                    Total a la fecha
-                  </div>
-                  <div className="text-xs text-muted-foreground text-center"></div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2 items-center">
-                  <CardDescription>Tickets Activos</CardDescription>
-                  <CardTitle className="text-4xl">4</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-muted-foreground text-center">
-                    Sin resolver
-                  </div>
-                </CardContent>
-              </Card>
-
-              </CardTitle>
-          <CardDescription>Card Description</CardDescription>
-        </CardHeader>
-        <CardContent>
-          
-          <TaskCard ticket={tickets[0]} />
-          
-          
-        </CardContent>
-        <CardFooter>
-          <p>Card Footer</p>
-        </CardFooter>
-      </Card>
-    </div>
+   <div className="flex flex-auto flex-col bg-gray-300 relative">
+  {/* Cambia a grid layout con 1 columna en pantallas pequeñas y 3 columnas en pantallas más grandes */}
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Card className="flex flex-col"> {/* Asegúrate de que Card sea un contenedor flex para manejar el contenido internamente */}
+      <CardHeader className="flex pb-2">
+        <CardTitle>Crear Ticket</CardTitle>
+      </CardHeader>
+      <CardFooter>
+        <Link href="/tickets/new">
+          <Button>Crear Nuevo Ticket</Button>
+        </Link>
+      </CardFooter>
+    </Card>
+    <Card className="flex flex-col">
+      <CardHeader className="pb-2 items-center">
+        <CardDescription>Total Tickets</CardDescription>
+        <CardTitle className="text-4xl"></CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-xs text-muted-foreground text-center">
+          Total a la fecha
+        </div>
+        <div className="text-xs text-muted-foreground text-center"></div>
+      </CardContent>
+    </Card>
+    <Card className="flex flex-col">
+      <CardHeader className="pb-2 items-center">
+        <CardDescription>Tickets Activos</CardDescription>
+        <CardTitle className="text-4xl">4</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-xs text-muted-foreground text-center">
+          Sin resolver
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+  <div className="flex flex-shrink">
+    <TaskCard ticket={tickets[0]} />
+  </div>
+</div>
   );
 };
 

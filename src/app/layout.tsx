@@ -51,7 +51,6 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Sidebar />
-            
             <main className="sm:ml-[270px] relative">
             <Header />
               {children}
