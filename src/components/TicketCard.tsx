@@ -50,8 +50,8 @@ async function TaskCard() {
   const tickets = await loadTickets();
   // Renderiza el componente
 return (
-<div className="flex flex-grow flex-shrink flex-wrap h-full p-4"> {/* Añade h-full para altura completa y p-4 para un margen interno */}
-  <Card className="w-full h-full"> {/* Asegura que Card ocupe todo el ancho y altura disponibles */}
+<div className="flex flex-grow flex-shrink flex-wrap h-full p-4 "> {/* Añade h-full para altura completa y p-4 para un margen interno */}
+<Card className="w-full h-full shadow-2xl rounded-lg"> {/* Asegura que Card ocupe todo el ancho y altura disponibles */}
     <Table className="min-w-full">
       <TableCaption>A list of your recent invoices.</TableCaption>
       <TableHeader>
@@ -63,7 +63,7 @@ return (
             Empresa
           </TableHead>
           <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-            Prioridad
+            Ubicacion
           </TableHead>
           <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
             Tecnico
@@ -76,14 +76,14 @@ return (
       <TableBody>
         {tickets.map((ticket) => (
           <TableRow key={ticket.nroCaso}>
-            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center ">
               {ticket.nroCaso}
             </TableCell>
             <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
               {ticket.empresa}
             </TableCell>
             <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-              {ticket.prioridad}
+              {ticket.ubicacion}
             </TableCell>
             <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
               {ticket.tecnico}
