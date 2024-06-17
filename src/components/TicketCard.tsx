@@ -3,10 +3,6 @@
 import { Badge } from "./ui/badge";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "./ui/card";
 import {
   Table,
@@ -32,8 +28,7 @@ async function loadTickets() {
 }
 
 // Definir la  interfaz de ticket para el componente de tarjeta de ticket
-interface Ticket {
-  _id: string;
+interface Ticket {  
   nroCaso: string;
   empresa: string;
   prioridad: string;
@@ -50,61 +45,61 @@ interface Ticket {
 }
 
 // Definir el componente de la tarjeta de ticket  en el dashboard del usuario logeado en la aplicacion
-async function TaskCard({ ticket }: { ticket: Ticket }) {
-  let idPlano = JSON.parse(JSON.stringify(ticket._id));
+async function TaskCard() {
+  
   const tickets = await loadTickets();
   // Renderiza el componente
 return (
-  <div className="flex flex-grow flex-shrink flex-wrap h-full p-4"> {/* Añade h-full para altura completa y p-4 para un margen interno */}
-    <Card className="w-full h-full"> {/* Asegura que Card ocupe todo el ancho y altura disponibles */}
-      <Table className="min-w-full">
-        <TableCaption>A list of your recent invoices.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-              Nro Caso
-            </TableHead>
-            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-              Empresa
-            </TableHead>
-            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-              Prioridad
-            </TableHead>
-            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-              Tecnico
-            </TableHead>
-            <TableHead className="text-xs lg:text-sm px-1 lg:px-3">
-              Descripcion
-            </TableHead>
+<div className="flex flex-grow flex-shrink flex-wrap h-full p-4"> {/* Añade h-full para altura completa y p-4 para un margen interno */}
+  <Card className="w-full h-full"> {/* Asegura que Card ocupe todo el ancho y altura disponibles */}
+    <Table className="min-w-full">
+      <TableCaption>A list of your recent invoices.</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+            Nro Caso
+          </TableHead>
+          <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+            Empresa
+          </TableHead>
+          <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+            Prioridad
+          </TableHead>
+          <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+            Tecnico
+          </TableHead>
+          <TableHead className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+            Descripcion
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {tickets.map((ticket) => (
+          <TableRow key={ticket.nroCaso}>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.nroCaso}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.empresa}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.prioridad}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.tecnico}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.descripcion}
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tickets.map((ticket) => (
-            <TableRow key={ticket.nroCaso}>
-              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                {ticket.nroCaso}
-              </TableCell>
-              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                {ticket.empresa}
-              </TableCell>
-              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                {ticket.prioridad}
-              </TableCell>
-              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                {ticket.tecnico}
-              </TableCell>
-              <TableCell className="text-xs lg:text-sm px-1 lg:px-3">
-                {ticket.descripcion}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-        <TableFooter>
-          <TableRow></TableRow>
-        </TableFooter>
-      </Table>
-    </Card>
-  </div>
+        ))}
+      </TableBody>
+      <TableFooter>
+        <TableRow></TableRow>
+      </TableFooter>
+    </Table>
+  </Card>
+</div>
 );
 }
 
