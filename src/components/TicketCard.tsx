@@ -51,7 +51,7 @@ async function TaskCard() {
   // Renderiza el componente
 return (
 <div className="flex flex-grow flex-shrink flex-wrap h-full p-4 "> {/* Añade h-full para altura completa y p-4 para un margen interno */}
-  <Card className="w-full h-full "> {/* Asegura que Card ocupe todo el ancho y altura disponibles */}
+<Card className="w-full h-full shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg"> {/* Asegura que Card ocupe todo el ancho y altura disponibles y añade profundidad */}
     <Table className="min-w-full">
       <TableCaption>A list of your recent invoices.</TableCaption>
       <TableHeader>
