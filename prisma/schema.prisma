@@ -14,7 +14,7 @@ datasource db {
 }
 
 model hubUsb {
-  idHubUsb    String @id @default(cuid()) @map("_id")
+  idHubUsb    Int @id @default(autoincrement())
   modeloHubUsb String 
   hubEnUso   String?
   createdAt   DateTime @default(now())
