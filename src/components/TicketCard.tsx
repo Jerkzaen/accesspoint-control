@@ -88,9 +88,9 @@ return (
       <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
         {ticket.tecnico}
       </TableCell>
-      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-        {ticket.descripcion}
-      </TableCell>
+      <TableCell style={{ maxWidth: '50px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  {ticket.descripcion}
+</TableCell>
     </TableRow>
   ))}
 </TableBody>
