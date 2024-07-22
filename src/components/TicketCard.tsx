@@ -1,6 +1,6 @@
 // aqui es donde se crea el formato del ticket donde muestra 2 datos el titulo y la descripcion del ticket
 // Importar React y el hook de estado de React para la aplicacion
-import { Badge } from "./ui/badge";
+
 import {
   Card,
 } from "./ui/card";
@@ -50,8 +50,8 @@ async function TaskCard() {
   const tickets = await loadTickets();
   // Renderiza el componente
 return (
-<div className="flex flex-grow flex-shrink flex-wrap h-full p-4 "> {/* Añade h-full para altura completa y p-4 para un margen interno */}
-<Card className="w-full h-full shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg"> {/* Asegura que Card ocupe todo el ancho y altura disponibles y añade profundidad */}
+<div className="flex flex-grow flex-shrink flex-wrap h-full p-4 gap-4"> {/* Añade h-full para altura completa, p-4 para un margen interno y gap-4 para espacio entre cards */}
+  <Card className="flex-grow shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg p-4" style={{ width: 'calc(70% - 1rem)' }}> {/* Ajusta el Card de la izquierda para que ocupe el 90% del espacio disponible y añade padding */}
     <Table className="min-w-full">
       <TableCaption>A list of your recent invoices.</TableCaption>
       <TableHeader>
@@ -73,31 +73,34 @@ return (
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody >
-  {tickets.sort((a, b) => b.nroCaso - a.nroCaso).map((ticket) => (
-    <TableRow key={ticket.nroCaso}>
-      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center ">
-        {ticket.nroCaso}
-      </TableCell>
-      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-        {ticket.empresa}
-      </TableCell>
-      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-        {ticket.ubicacion}
-      </TableCell>
-      <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
-        {ticket.tecnico}
-      </TableCell>
-      <TableCell style={{ maxWidth: '50px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-  {ticket.descripcion}
-</TableCell>
-    </TableRow>
-  ))}
-</TableBody>
+      <TableBody>
+        {tickets.sort((a, b) => b.nroCaso - a.nroCaso).map((ticket) => (
+          <TableRow key={ticket.nroCaso}>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.nroCaso}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.empresa}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.ubicacion}
+            </TableCell>
+            <TableCell className="text-xs lg:text-sm px-1 lg:px-3 text-center">
+              {ticket.tecnico}
+            </TableCell>
+            <TableCell style={{ maxWidth: '50px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {ticket.descripcion}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
       <TableFooter>
         <TableRow></TableRow>
       </TableFooter>
     </Table>
+  </Card>
+  <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg p-4" style={{ width: '30%' }}> {/* Añade el Card de la derecha para que ocupe el 10% del espacio disponible y añade padding */}
+    {/* Contenido del Card de la derecha */}
   </Card>
 </div>
 );
