@@ -28,8 +28,9 @@ export async function GET(request: Request, { params }: Params) {
 
 //Eliminar un producto por id
 export async function DELETE(request: Request, { params }: Params) {
+  try {
     const deleteProduct = await prisma.stock.delete({
-         where: { idProducto: Number(params.id) },
+      where: { idProducto: Number(params.id) },
     });
     if (!deleteProduct) {
       return NextResponse.json(
@@ -38,7 +39,12 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
-  return NextResponse.json(deleteProduct);
+    return NextResponse.json(deleteProduct);
+  } catch (error) {
+    if (error instanceof Error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+  }
 }
 
 //Actualizar un producto por id
