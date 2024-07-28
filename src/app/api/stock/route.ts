@@ -15,24 +15,31 @@ export async function GET() {
 
 //Crear un nuevo producto
 export async function POST(request: Request) {
-  const {
-    nombrePrducto,
-    marcaProducto,
-    modeloProducto,
-    serieProducto,
-    estadoProducto,
-    ultimoEquipo,
-  } = await request.json();
-  const newProduct = await prisma.stock.create({
-    data: {
+  try {
+    const {
       nombrePrducto,
       marcaProducto,
       modeloProducto,
       serieProducto,
       estadoProducto,
       ultimoEquipo,
-    },
-  });
+    } = await request.json();
 
-  return NextResponse.json(newProduct);
+    const newProduct = await prisma.stock.create({
+      data: {
+        nombrePrducto,
+        marcaProducto,
+        modeloProducto,
+        serieProducto,
+        estadoProducto,
+        ultimoEquipo,
+      },
+    });
+
+    return NextResponse.json(newProduct);
+  } catch (error) {
+    if (error instanceof Error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+  }
 }
