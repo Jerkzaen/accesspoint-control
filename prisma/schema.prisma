@@ -13,10 +13,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model hubUsb {
-  idHubUsb    Int @id @default(autoincrement())
-  modeloHubUsb String 
-  hubEnUso   String?
+model stock {
+  idProducto    Int @id @default(autoincrement())
+  nombrePrducto String 
+  marcaProducto   String
+  modeloProducto   String
+  serieProducto String
+  estadoProducto String
+  ultimoEquipo String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
