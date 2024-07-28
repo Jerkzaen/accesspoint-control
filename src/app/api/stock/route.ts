@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+//Obtener todos los productos
 export async function GET() {
-  const stock = await prisma.stock.findMany();
-  return NextResponse.json(stock);
+  try {
+    const stock = await prisma.stock.findMany();
+    return NextResponse.json(stock);
+  } catch (error) {
+    return NextResponse.json(error, { status: 500 });
+  }
 }
 
+//Crear un nuevo producto
 export async function POST(request: Request) {
   const {
     nombrePrducto,
