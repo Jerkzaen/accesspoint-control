@@ -58,7 +58,6 @@ export async function DELETE(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   try {
     const {
-      idProducto,
       nombrePrducto,
       marcaProducto,
       modeloProducto,
@@ -67,8 +66,8 @@ export async function PUT(request: Request, { params }: Params) {
       ultimoEquipo,
     } = await request.json();
 
-    const updatePrudct = await prisma.stock.update({
-      where: { idProducto: idProducto },
+    const updatedProduct = await prisma.stock.update({
+      where: { idProducto: Number(params.id) },
       data: {
         nombrePrducto,
         marcaProducto,
@@ -79,9 +78,15 @@ export async function PUT(request: Request, { params }: Params) {
       },
     });
 
-    return NextResponse.json(updatePrudct);
+    return NextResponse.json(updatedProduct);
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json(
+          { message: "Producto no encontrado" },
+          { status: 404 }
+        );
+      }
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
   }
