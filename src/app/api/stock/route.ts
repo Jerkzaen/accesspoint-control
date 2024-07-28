@@ -17,22 +17,22 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const {
-      nombrePrducto,
+      nombreProducto,
       marcaProducto,
       modeloProducto,
-      serieProducto,
+      ubicacionProducto,
       estadoProducto,
-      ultimoEquipo,
+      cantidadProducto,
     } = await request.json();
 
     const newProduct = await prisma.stock.create({
       data: {
-        nombrePrducto,
+        nombreProducto,
         marcaProducto,
         modeloProducto,
-        serieProducto,
+        ubicacionProducto,
         estadoProducto,
-        ultimoEquipo,
+        cantidadProducto,
       },
     });
 

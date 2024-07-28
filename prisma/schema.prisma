@@ -15,12 +15,12 @@ datasource db {
 
 model stock {
   idProducto    Int @id @default(autoincrement())
-  nombrePrducto String 
+  nombreProducto String 
   marcaProducto   String
   modeloProducto   String
-  serieProducto String
+  ubicacionProducto String
   estadoProducto String
-  ultimoEquipo String?
+  cantidadProducto Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
