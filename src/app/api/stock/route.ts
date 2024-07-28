@@ -7,7 +7,9 @@ export async function GET() {
     const stock = await prisma.stock.findMany();
     return NextResponse.json(stock);
   } catch (error) {
-    return NextResponse.json(error, { status: 500 });
+    if (error instanceof Error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
   }
 }
 
@@ -21,7 +23,6 @@ export async function POST(request: Request) {
     estadoProducto,
     ultimoEquipo,
   } = await request.json();
-
   const newProduct = await prisma.stock.create({
     data: {
       nombrePrducto,
