@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 //Interface para obtener el id del producto
 interface Params {
@@ -41,7 +42,13 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json(deleteProduct);
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json(
+          { message: "Producto no encontrado" },
+          { status: 404 }
+        );
+      }
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
   }
