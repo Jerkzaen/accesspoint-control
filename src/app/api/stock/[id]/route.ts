@@ -58,23 +58,23 @@ export async function DELETE(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   try {
     const {
-      nombrePrducto,
+      nombreProducto,
       marcaProducto,
       modeloProducto,
-      serieProducto,
+      ubicacionProducto,
       estadoProducto,
-      ultimoEquipo,
+      cantidadProducto,
     } = await request.json();
 
     const updatedProduct = await prisma.stock.update({
       where: { idProducto: Number(params.id) },
       data: {
-        nombrePrducto,
+        nombreProducto,
         marcaProducto,
         modeloProducto,
-        serieProducto,
+        ubicacionProducto,
         estadoProducto,
-        ultimoEquipo,
+        cantidadProducto,
       },
     });
 
