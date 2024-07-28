@@ -55,6 +55,34 @@ export async function DELETE(request: Request, { params }: Params) {
 }
 
 //Actualizar un producto por id
-export function PUT(request: Request) {
-  return NextResponse.json({ message: "Actualizando un elemento api/stock" });
+export async function PUT(request: Request, { params }: Params) {
+  try {
+    const {
+      idProducto,
+      nombrePrducto,
+      marcaProducto,
+      modeloProducto,
+      serieProducto,
+      estadoProducto,
+      ultimoEquipo,
+    } = await request.json();
+
+    const updatePrudct = await prisma.stock.update({
+      where: { idProducto: idProducto },
+      data: {
+        nombrePrducto,
+        marcaProducto,
+        modeloProducto,
+        serieProducto,
+        estadoProducto,
+        ultimoEquipo,
+      },
+    });
+
+    return NextResponse.json(updatePrudct);
+  } catch (error) {
+    if (error instanceof Error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+  }
 }
