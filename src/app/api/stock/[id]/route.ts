@@ -27,8 +27,18 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 //Eliminar un producto por id
-export function DELETE(request: Request) {
-  return NextResponse.json({ message: "Eliminando un elemento api/stock" });
+export async function DELETE(request: Request, { params }: Params) {
+    const deleteProduct = await prisma.stock.delete({
+         where: { idProducto: Number(params.id) },
+    });
+    if (!deleteProduct) {
+      return NextResponse.json(
+        { message: "Producto no encontrado" },
+        { status: 404 }
+      );
+    }
+
+  return NextResponse.json(deleteProduct);
 }
 
 //Actualizar un producto por id
