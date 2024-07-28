@@ -10,15 +10,19 @@ interface Params {
 export async function GET(request: Request, { params }: Params) {
   try {
     const producto = await prisma.stock.findFirst({
-        where: { idProducto: Number(params.id) },
-      });
-      return NextResponse.json(producto);
-    
+      where: { idProducto: Number(params.id) },
+    });
+    if (!producto) {
+      return NextResponse.json(
+        { message: "Producto no encontrado" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(producto);
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
-    
   }
 }
 
