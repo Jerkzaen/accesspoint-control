@@ -1,9 +1,7 @@
 // Esta es la barra lateral de la aplicación para pantallas de escritorio
 
-// Importa el componente SidebarButton
 import { SidebarButton } from "./sidebar-button";
-// Importa la interfaz SidebarItem
-// import { SidebarItem } from "@/types";
+// import { SidebarItem } from "@/types"; // Comentado si causa error y no está definido en @/types
 // Define SidebarItem type here if not exported from "@/types"
 import type { LucideIcon } from "lucide-react";
 export interface SidebarItem {
@@ -21,7 +19,7 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut, MoreHorizontal, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+// import { signOut, useSession } from "next-auth/react"; // Comentado temporalmente
 
 // función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarDesktopProps {
@@ -30,7 +28,9 @@ interface SidebarDesktopProps {
 
 export function SidebarDesktop(props: SidebarDesktopProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  // const { data: session } = useSession(); // Comentado temporalmente
+  const session = null; // Placeholder
+
   return (
     <aside className="w-[270px] max-w-xs h-screen fixed left-0 top-0 z-40 border-r ">
       <div className="h-full px-3 py-4">
@@ -63,11 +63,14 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                   <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={session?.user?.image ?? ''} alt="avatar" />
+                        {/* <AvatarImage src={session?.user?.image ?? ''} alt="avatar" /> */}
                         <AvatarFallback>
-                          {session?.user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                          {/* {session?.user?.email?.charAt(0).toUpperCase()} */}
+                          U {/* Placeholder */}
+                        </AvatarFallback>
                       </Avatar>
-                      <span>{session?.user?.email}</span>
+                      {/* <span>{session?.user?.email}</span> */}
+                      <span>usuario@ejemplo.com</span> {/* Placeholder */}
                     </div>
                     <MoreHorizontal size={20} />
                   </div>
@@ -83,8 +86,12 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                         Configuración
                       </SidebarButton>
                     </Link>
-                    <SidebarButton onClick={() => signOut()}
-                    size="sm" icon={LogOut} className="w-full">
+                    <SidebarButton 
+                      // onClick={() => signOut()} // Comentado temporalmente
+                      onClick={() => console.log("Cerrar sesión clickeado")} // Placeholder
+                      size="sm" 
+                      icon={LogOut} 
+                      className="w-full">
                       Cerrar sesión
                     </SidebarButton>
                   </div>

@@ -1,6 +1,5 @@
 "use client";
-// Importamos sidebarItem de la interfaz SidebarItem
-// import { SidebarItem } from "@/types";
+// import { SidebarItem } from "@/types"; // Comentado si causa error y no está definido en @/types
 import type { LucideIcon } from "lucide-react";
 // TODO: Replace 'any' with the correct type if available in '@/types'
 type SidebarItem = {
@@ -23,17 +22,17 @@ import { SidebarButtonSheet as SidebarButton } from "./sidebar-button";
 import { Separator } from "./ui/separator";
 import { Drawer, DrawerContent, DrawerTrigger } from "./ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { signOut, useSession } from "next-auth/react";
+// import { signOut, useSession } from "next-auth/react"; // Comentado temporalmente
 
-// función SidebarDesktop( ) que devuelve un elemento aside con un ancho de 270px, una altura de pantalla completa, posición fija en la parte superior izquierda y un borde derecho
 interface SidebarMobileProps {
   sidebarItems: SidebarItem;
 }
 
-// Definimos la función SidebarMobile que recibe un objeto sidebarItems y devuelve un componente Sheet
 export function SidebarMobile(props: SidebarMobileProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  // const { data: session } = useSession(); // Comentado temporalmente
+  const session = null; // Placeholder
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -81,11 +80,14 @@ export function SidebarMobile(props: SidebarMobileProps) {
                   <div className="flex justify-between items-center w-full ">
                     <div className="flex gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={session?.user?.image ?? ''} alt="avatar" />
+                        {/* <AvatarImage src={session?.user?.image ?? ''} alt="avatar" /> */}
                         <AvatarFallback>
-                          {session?.user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                          {/* {session?.user?.email?.charAt(0).toUpperCase()} */}
+                          U {/* Placeholder */}
+                        </AvatarFallback>
                       </Avatar>
-                      <span>{session?.user?.email}</span>
+                      {/* <span>{session?.user?.email}</span> */}
+                      <span>usuario@ejemplo.com</span> {/* Placeholder */}
                     </div>
                     <MoreHorizontal size={20} />
                   </div>
@@ -101,8 +103,12 @@ export function SidebarMobile(props: SidebarMobileProps) {
                         Configuración
                       </SidebarButton>
                     </Link>
-                    <SidebarButton onClick={() => signOut()}
-                    size="sm" icon={LogOut} className="w-full">
+                    <SidebarButton 
+                      // onClick={() => signOut()} // Comentado temporalmente
+                      onClick={() => console.log("Cerrar sesión clickeado")} // Placeholder
+                      size="sm" 
+                      icon={LogOut} 
+                      className="w-full">
                       Cerrar sesión
                     </SidebarButton>
                   </div>
