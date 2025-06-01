@@ -1,294 +1,259 @@
 import * as React from "react";
-// Importar el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
-import { Textarea } from "@/components/ui/textarea";
-// Importar el componente de boton de la aplicacion
-import { Button } from "@/components/ui/button";
-// Importar el componente de tarjeta de la aplicacion
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-// Importar el componente de input de la aplicacion
-import { Input } from "@/components/ui/input";
-// Importar el componente de etiqueta de la aplicacion
-import { Label } from "@/components/ui/label";
-// Importar el componente de select de la aplicacion
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { redirect } from "next/navigation";
+    import { Textarea } from "@/components/ui/textarea";
+    import { Button } from "@/components/ui/button";
+    import {
+      Card,
+      CardContent,
+      CardDescription,
+      CardFooter,
+      CardHeader,
+      CardTitle,
+    } from "@/components/ui/card";
+    import { Input } from "@/components/ui/input";
+    import { Label } from "@/components/ui/label";
+    import {
+      Select,
+      SelectContent,
+      SelectItem,
+      SelectTrigger,
+      SelectValue,
+    } from "@/components/ui/select";
+    import { redirect } from "next/navigation";
+    import { prisma } from "@/lib/prisma";
+    import { v4 as uuidv4 } from 'uuid'; // Para generar IDs únicos
 
-import { prisma } from "@/lib/prisma";
+    // Usar la interfaz Ticket importada sería ideal, pero si es un Server Component
+    // y necesita el tipo Date para Prisma, mantenemos una local o la adaptamos.
+    // Por ahora, la ajustamos para que las fechas sean string como en el resto del frontend.
+    interface TicketFormData { // Renombrada para evitar confusión con el tipo global Ticket
+      id?: string; // Opcional, ya que Prisma lo genera
+      nroCaso: number;
+      empresa: string;
+      ubicacion: string;
+      contacto: string;
+      prioridad: string;
+      tecnico: string;
+      tipo: string;
+      descripcion: string; // Título del ticket
+      acciones: string; // JSON string de ActionEntry[]
+      estado?: string; // Prisma le da un default
+      fechaSolucion: string | null; // String para el formulario
+      createdAt: string; // String para el formulario
+    }
+    
+    // No necesitamos ActionEntry aquí si solo creamos una descripción simple
 
-// Interfaz para el ticket (asegúrate de que coincida exactamente con tu schema.prisma)
-interface Ticket {
-  id: string;
-  nroCaso: number;
-  empresa: string;
-  ubicacion: string;
-  contacto: string;
-  prioridad: string;
-  tecnico: string;
-  tipo: string;
-  descripcion: string; // Este es el campo 'Titulo' del CSV / Lo que el usuario ingresa en el campo "Título" del form
-  acciones: string; // Como String JSON
-  estado: string;
-  fechaSolucion: Date | null;
-  createdAt: Date;
-  // Considera si necesitas un campo para la descripción detallada en tu schema, ej:
-  // detalleAdicional?: string;
-}
-
-// Modifica loadTickets para usar Prisma
-async function loadTickets(): Promise<Ticket[]> {
-  try {
-    const tickets = await prisma.ticket.findMany({
-      orderBy: { nroCaso: "desc" },
-    });
-    return tickets as Ticket[];
-  } catch (error) {
-    console.error("Error al cargar tickets con Prisma:", error);
-    return [];
-  }
-}
-
-// Definir el componente de formulario de ticket para crear un nuevo ticket en la aplicacion
-export async function TicketForm() {
-  // Funcion para crear un ticket en el servidor
-  async function newTicket(formdata: FormData) {
-    "use server";
-
-    const nroCaso = parseInt(formdata.get("nroCaso")?.toString() || "0");
-    const empresa = formdata.get("empresa")?.toString() || "";
-    const prioridad = formdata.get("prioridad")?.toString() || "";
-    const tecnico = formdata.get("tecnico")?.toString() || "";
-    const tipo = formdata.get("tipo")?.toString() || "";
-    const tituloInput = formdata.get("titulo")?.toString() || "";
-    const descripcionDetalladaInput = formdata.get("descripcion")?.toString() || "";
-    const idNotebook = formdata.get("idNotebook")?.toString() || "";
-    const ubicacion = formdata.get("ubicacion")?.toString() || "";
-    const contacto = formdata.get("contacto")?.toString() || "";
-    const createdAtForm = formdata.get("createdAt")?.toString();
-    const accionInput = formdata.get("accion")?.toString() || "";
-    const fechaSolucionForm = formdata.get("fechaSolucion")?.toString();
-
-    // Validar campos obligatorios
-    if (
-      !nroCaso ||
-      !empresa ||
-      !prioridad ||
-      !tecnico ||
-      !tipo ||
-      !tituloInput ||
-      !ubicacion ||
-      !contacto
-    ) {
-      console.error("Faltan campos obligatorios para el ticket (incluyendo el Título).");
-      // Modificación: Se elimina el retorno de un objeto { error: "..." }
-      // para cumplir con la firma esperada por <form action={...}> (void | Promise<void>)
-      return;
+    async function loadTickets(): Promise<Pick<TicketFormData, 'nroCaso'>[]> { // Solo necesitamos nroCaso
+      try {
+        const tickets = await prisma.ticket.findMany({
+          orderBy: { nroCaso: "desc" },
+          select: { nroCaso: true }, // Solo seleccionar nroCaso
+        });
+        return tickets;
+      } catch (error) {
+        console.error("Error al cargar nroCaso de tickets con Prisma:", error);
+        return [];
+      }
     }
 
-    const accionesArray = [];
-    if (accionInput.trim()) {
-      accionesArray.push({
-        fecha: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
-        descripcion: accionInput,
-      });
-    }
-    const accionesParaGuardar = JSON.stringify(accionesArray);
+    export async function TicketForm() {
+      const ticketsNroCaso = await loadTickets();
+      const nextNroCaso = ticketsNroCaso.length > 0 && ticketsNroCaso[0] 
+                          ? ticketsNroCaso[0].nroCaso + 1 
+                          : 1;
 
-    const createdAtDate = createdAtForm ? new Date(`${createdAtForm}T00:00:00`) : new Date();
-    const fechaSolucionDate = fechaSolucionForm ? new Date(`${fechaSolucionForm}T00:00:00`) : null;
+      async function newTicket(formdata: FormData) {
+        "use server";
 
-    const ticketData = {
-      nroCaso: nroCaso,
-      empresa: empresa,
-      prioridad: prioridad,
-      tecnico: tecnico,
-      tipo: tipo,
-      descripcion: tituloInput,
-      ubicacion: ubicacion,
-      contacto: contacto,
-      acciones: accionesParaGuardar,
-      createdAt: createdAtDate.toISOString(),
-      fechaSolucion: fechaSolucionDate ? fechaSolucionDate.toISOString() : null,
-      // detalleAdicional: descripcionDetalladaInput, // Si tienes este campo en tu schema
-    };
+        const nroCaso = parseInt(formdata.get("nroCaso")?.toString() || "0");
+        const empresa = formdata.get("empresa")?.toString() || "";
+        const prioridad = formdata.get("prioridad")?.toString() || "";
+        const tecnico = formdata.get("tecnico")?.toString() || "";
+        const tipo = formdata.get("tipo")?.toString() || "";
+        // El campo 'descripcion' del formulario es el título del ticket
+        const tituloDelTicket = formdata.get("titulo")?.toString() || ""; 
+        // El campo 'detalle' del formulario es la descripción detallada
+        const detalleAdicional = formdata.get("detalle")?.toString() || ""; 
+        const ubicacion = formdata.get("ubicacion")?.toString() || "";
+        const contacto = formdata.get("contacto")?.toString() || "";
+        const createdAtForm = formdata.get("createdAt")?.toString(); 
+        // La "acción inicial" del formulario se convierte en la primera entrada de la bitácora
+        const accionInicialInput = formdata.get("accionInicial")?.toString() || ""; 
+        const fechaSolucionForm = formdata.get("fechaSolucion")?.toString();
 
-    try {
-      const res = await fetch("http://localhost:3000/api/tickets", {
-        method: "POST",
-        body: JSON.stringify(ticketData),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+        if (
+          !nroCaso || !empresa || !prioridad || !tecnico || !tipo ||
+          !tituloDelTicket || !ubicacion || !contacto || !createdAtForm
+        ) {
+          console.error("Faltan campos obligatorios para el ticket.");
+          return; 
+        }
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || res.statusText || "Error al crear ticket desde API");
+        const accionesArray = [];
+        // Si se ingresó una acción inicial, se añade a la bitácora.
+        // También se podría concatenar con el detalleAdicional si se desea.
+        let descripcionParaGuardar = tituloDelTicket;
+        if (detalleAdicional) {
+            // Podrías decidir si el detalle va en el campo 'descripcion' del ticket
+            // o si necesitas otro campo en la BD. Por ahora, lo concatenamos o lo ignoramos.
+            // Si 'descripcion' es solo el título, entonces detalleAdicional se podría perder
+            // o necesitaría su propio campo.
+            // Para este ejemplo, asumimos que 'descripcion' en la BD es el título.
+        }
+
+
+        if (accionInicialInput.trim()) {
+          accionesArray.push({
+            id: uuidv4(), // Generar ID único para la acción
+            fecha: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
+            descripcion: accionInicialInput,
+          });
+        }
+        // Si no hay acción inicial pero sí detalle, podrías crear una acción con el detalle:
+        else if (detalleAdicional.trim() && accionesArray.length === 0) {
+             accionesArray.push({
+                id: uuidv4(),
+                fecha: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
+                descripcion: `Detalle inicial: ${detalleAdicional}`,
+            });
+        }
+
+
+        const accionesParaGuardar = JSON.stringify(accionesArray);
+        const createdAtDate = new Date(createdAtForm + "T00:00:00"); // Asegurar que se interprete como inicio del día local
+        const fechaSolucionDate = fechaSolucionForm ? new Date(fechaSolucionForm + "T00:00:00") : null;
+
+        const ticketData = {
+          nroCaso: nroCaso,
+          empresa: empresa,
+          prioridad: prioridad,
+          tecnico: tecnico,
+          tipo: tipo,
+          descripcion: tituloDelTicket, // El título va al campo 'descripcion' de la BD
+          ubicacion: ubicacion,
+          contacto: contacto,
+          acciones: accionesParaGuardar, // La acción inicial (si existe) va a la bitácora
+          createdAt: createdAtDate.toISOString(),
+          fechaSolucion: fechaSolucionDate ? fechaSolucionDate.toISOString() : null,
+          estado: "Abierto", // Estado por defecto
+          // Si tienes un campo para 'detalleAdicional' en tu BD, añádelo aquí.
+        };
+
+        try {
+          // El endpoint POST /api/tickets espera que 'acciones' sea un string JSON
+          await prisma.ticket.create({ data: ticketData });
+          console.log("Ticket creado:", ticketData);
+          redirect("/tickets/dashboard");
+        } catch (error: any) {
+          if (error.digest?.includes('NEXT_REDIRECT')) {
+            throw error;
+          }
+          console.error("Error al crear ticket:", error.message);
+        }
       }
 
-      const data = await res.json();
-      console.log("Ticket creado:", data);
+      return (
+        // El Card ahora es más ancho y centrado, con padding en la página
+        <Card className="w-full max-w-2xl mx-auto"> 
+          <CardHeader>
+            <CardTitle>Crear Nuevo Ticket</CardTitle>
+            <CardDescription>Ingresa la información detallada del problema.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={newTicket} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="nroCaso">N° de Caso</Label>
+                  <Input name="nroCaso" id="nroCaso" defaultValue={nextNroCaso} readOnly />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="createdAt">Fecha Reporte</Label>
+                  <Input type="date" name="createdAt" id="createdAt" defaultValue={new Date().toISOString().split('T')[0]} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="empresa">Empresa</Label>
+                  <Select name="empresa" required>
+                    <SelectTrigger id="empresa"><SelectValue placeholder="Seleccione Empresa" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Achs">ACHS</SelectItem>
+                      <SelectItem value="Esachs">ESACHS</SelectItem>
+                      <SelectItem value="CMT">CMT</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tipo">Tipo</Label>
+                  <Select name="tipo" required>
+                    <SelectTrigger id="tipo"><SelectValue placeholder="Seleccione Tipo" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Software">Software</SelectItem>
+                      <SelectItem value="Hardware">Hardware</SelectItem>
+                      <SelectItem value="Aplicaciones">Aplicaciones</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="prioridad">Prioridad</Label>
+                  <Select name="prioridad" required>
+                    <SelectTrigger id="prioridad"><SelectValue placeholder="Prioridad" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baja">BAJA</SelectItem>
+                      <SelectItem value="media">MEDIA</SelectItem>
+                      <SelectItem value="alta">ALTA</SelectItem>
+                      <SelectItem value="urgente">URGENTE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tecnico">Técnico Asignado</Label>
+                  <Select name="tecnico" required>
+                    <SelectTrigger id="tecnico"><SelectValue placeholder="Seleccione Técnico" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Miguel Chervellino">M.Chervellino</SelectItem>
+                      <SelectItem value="Christian Torrenss">C. Torrens</SelectItem>
+                      <SelectItem value="jerson Armijo">J. Armijo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ubicacion">Ubicación</Label>
+                  <Input name="ubicacion" id="ubicacion" placeholder="Ej: Oficina 201, Bodega Central" required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="contacto">Contacto Solicitante</Label>
+                  <Input name="contacto" id="contacto" placeholder="Nombre o email del solicitante" required />
+                </div>
+                
+                {/* Campo para el TÍTULO del ticket */}
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="titulo">Título del Ticket</Label>
+                  <Input name="titulo" id="titulo" placeholder="Resumen breve del problema (ej: Impresora no funciona)" required />
+                </div>
 
-      redirect("/tickets/dashboard");
+                {/* Campo para la DESCRIPCIÓN DETALLADA del ticket */}
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="detalle">Descripción Detallada del Problema</Label>
+                  <Textarea name="detalle" id="detalle" placeholder="Proporciona todos los detalles relevantes sobre el incidente, pasos para reproducirlo, mensajes de error, etc." rows={4}/>
+                </div>
 
-    } catch (error: any) {
-      if (error.digest && typeof error.digest === 'string' && error.digest.includes('NEXT_REDIRECT')) {
-        throw error;
-      }
-      console.error("Error al crear ticket (inesperado):", error.message);
+                {/* Campo para la ACCIÓN INICIAL realizada */}
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="accionInicial">Acción Inicial Realizada (Opcional)</Label>
+                  <Textarea name="accionInicial" id="accionInicial" placeholder="Si ya realizaste alguna acción para intentar solucionar el problema, descríbela aquí." rows={2}/>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="fechaSolucion">Fecha Estimada/Solución</Label>
+                  <Input type="date" name="fechaSolucion" id="fechaSolucion" />
+                </div>
+              </div>
+              <CardFooter className="px-0 pt-6 flex justify-end gap-2">
+                <Button variant="outline" type="reset">Limpiar Campos</Button>
+                <Button type="submit">Guardar Ticket</Button>
+              </CardFooter>
+            </form>
+          </CardContent>
+        </Card>
+      );
     }
-  }
-
-  const tickets = await loadTickets();
-
-  return (
-    <form action={newTicket}>
-      <Card className="w-[600px]">
-        <CardHeader>
-          <CardTitle>Crear nuevo ticket</CardTitle>
-          <CardDescription>Ingresa la información del ticket</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="nroCaso">N° de Caso</Label>
-              <Input
-                name="nroCaso"
-                id="nroCaso"
-                defaultValue={
-                  tickets.length > 0 && tickets[0]
-                    ? tickets[0].nroCaso + 1
-                    : 1
-                }
-                readOnly
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="empresa">Empresa</Label>
-              <Select name="empresa" required>
-                <SelectTrigger id="empresa">
-                  <SelectValue placeholder="Seleccione Empresa" />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="Achs">ACHS</SelectItem>
-                  <SelectItem value="Esachs">ESACHS</SelectItem>
-                  <SelectItem value="CMT">CMT</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label className="prioridad" htmlFor="prioridad">
-                Prioridad
-              </Label>
-              <Select name="prioridad" required>
-                <SelectTrigger id="prioridad">
-                  <SelectValue placeholder="Prioridad" />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="baja">BAJA</SelectItem>
-                  <SelectItem value="media">MEDIA</SelectItem>
-                  <SelectItem value="alta">ALTA</SelectItem>
-                  <SelectItem value="urgente">URGENTE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="tecnico">Técnico</Label>
-              <Select name="tecnico" required>
-                <SelectTrigger id="tecnico">
-                  <SelectValue placeholder="Seleccione Tecnico" />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="Miguel Chervellino">M.Chervellino</SelectItem>
-                  <SelectItem value="Christian Torrenss">C. Torrens</SelectItem>
-                  <SelectItem value="jerson Armijo">J. Armijo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="tipo">Tipo</Label>
-              <Select name="tipo" required>
-                <SelectTrigger id="tipo">
-                  <SelectValue placeholder="Seleccione Tipo" />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="Software">Software</SelectItem>
-                  <SelectItem value="Hardware">Hardware</SelectItem>
-                  <SelectItem value="Aplicaciones">Aplicaciones</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="titulo">Título</Label>
-              <Input name="titulo" id="titulo" placeholder="Título breve del problema" required />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="idNotebook">ID Notebook</Label>
-              <Input
-                name="idNotebook"
-                id="idNotebook"
-                placeholder="ID Notebook (Opcional)"
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="ubicacion">Ubicación</Label>
-              <Input name="ubicacion" id="ubicacion" placeholder="Ubicación" required />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="contacto">Contacto</Label>
-              <Input name="contacto" id="contacto" placeholder="Nombre o email de contacto" required />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="createdAt">Fecha Reporte</Label>
-              <Input type="date"
-                name="createdAt"
-                id="createdAt"
-                defaultValue={new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="descripcion">Descripción Detallada</Label>
-              <Textarea
-                name="descripcion"
-                id="descripcion"
-                placeholder="Descripción detallada del problema (Opcional)"
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="accion">Acción Inicial</Label>
-              <Textarea
-                name="accion"
-                id="accion"
-                placeholder="Acción inicial realizada (Opcional)"
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="fechaSolucion">Fecha Solución</Label>
-              <Input type="date"
-                name="fechaSolucion"
-                id="fechaSolucion"
-              />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" type="reset">Limpiar</Button>
-          <Button type="submit">Guardar</Button>
-        </CardFooter>
-      </Card>
-    </form>
-  );
-}
+    
