@@ -1,7 +1,5 @@
 // Esta es la barra lateral de la aplicación para pantallas de escritorio
         import { SidebarButton } from "./sidebar-button";
-        // Update the import path below to the correct relative path if "@/types/sidebar" does not exist.
-        // Example: import { SidebarItem } from "../types/sidebar";
         import { SidebarItem } from "@/types/sidebar"; // Importación Unificada
         import Link from "next/link";
         import { Separator } from "./ui/separator";
@@ -86,4 +84,4 @@
             </aside>
           );
         }
-        
+   
