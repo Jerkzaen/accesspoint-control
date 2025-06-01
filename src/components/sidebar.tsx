@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 // importamos el componente SidebarDesktop
 import { SidebarDesktop } from "./sidebar-desktop";
-// Importamos la interfaz SidebarItem
-import { SidebarItem } from "@/types";
+// Importamos la interfaz SidebarItem desde sidebar-desktop para evitar conflictos de tipos
+import type { SidebarItem } from "./sidebar-desktop";
 // Importamos el componente SidebarButton
 import { SidebarButton } from "./sidebar-button";
 // Importamos el componente Link de next

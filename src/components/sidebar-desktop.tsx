@@ -6,7 +6,7 @@ import { SidebarButton } from "./sidebar-button";
 // import { SidebarItem } from "@/types";
 // Define SidebarItem type here if not exported from "@/types"
 import type { LucideIcon } from "lucide-react";
-interface SidebarItem {
+export interface SidebarItem {
   links: {
     href: string;
     icon: LucideIcon;
