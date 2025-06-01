@@ -1,13 +1,12 @@
-// Importar el componente TicketForm y renderizarlo en la página NewPage.
-import { TicketForm } from "@/components/ticket-form";
+    import { TicketForm } from "@/components/ticket-form";
 
-// Definir la función NewPage que renderiza el componente TicketForm.  
-function NewPage() {
-  return (
-    <div className="flex justify-center items-center h-screen">
-      <TicketForm />
-    </div>
-  );
-}
-// Exportar la función NewPage.
-export default NewPage;
+    export default function NewTicketPage() {
+      return (
+        // El padding general de la página se aplica aquí para centrar el formulario.
+        // h-full y flex para que el centrado funcione bien dentro del <main> del layout.
+        <div className="flex flex-col items-center justify-start h-full p-4 md:p-6">
+          <TicketForm />
+        </div>
+      );
+    }
+    
