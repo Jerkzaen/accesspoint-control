@@ -16,7 +16,7 @@ interface EditableTicketFields {
   tecnico: string;
   prioridad: string;
   contacto: string;
-  estado: string; // Estado ahora es string y no opcional para el formulario
+  estado: string; 
 }
 
 export default function TicketCard() {
@@ -29,7 +29,9 @@ export default function TicketCard() {
   const [isEditingTicket, setIsEditingTicket] = useState(false);
   const [editableTicketData, setEditableTicketData] = useState<EditableTicketFields | null>(null);
 
-  const headerAndFooterOffset = '90px'; 
+  // Ajusta este valor según la altura de tu cabecera global y el padding de la página.
+  // Representa el espacio vertical que NO está disponible para el contenido de las columnas.
+  const headerAndPagePaddingOffset = '100px'; // Ejemplo: 60px cabecera + 2rem (32px) padding de página arriba/abajo
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -53,7 +55,7 @@ export default function TicketCard() {
         tecnico: selectedTicket.tecnico,
         prioridad: selectedTicket.prioridad,
         contacto: selectedTicket.contacto,
-        estado: selectedTicket.estado, // Asegurarse que estado se inicialice
+        estado: selectedTicket.estado,
       });
       setIsEditingTicket(false); 
     } else {
@@ -183,9 +185,10 @@ export default function TicketCard() {
 
   return (
     <div className="flex flex-grow flex-shrink flex-wrap h-full p-4 gap-4">
+      {/* Columna de Tarjetas de Tickets */}
       <div 
         className="flex-grow overflow-y-auto pr-2 space-y-2"
-        style={{ width: 'calc(70% - 1rem)', maxHeight: `calc(100vh - ${headerAndFooterOffset})` }} 
+        style={{ width: 'calc(70% - 1rem)', maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }} 
       >
         {tickets.length > 0 ? (
           tickets.map((ticket) => (
@@ -201,42 +204,45 @@ export default function TicketCard() {
         )}
       </div>
 
+      {/* Panel Lateral para Detalles del Ticket Seleccionado y Acciones */}
       <Card
         className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg p-4 sticky top-4 flex flex-col" 
-        style={{ width: '30%', maxHeight: `calc(100vh - ${headerAndFooterOffset})`, overflowY: 'hidden' }} 
+        style={{ width: '30%', maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }} 
       >
         {selectedTicket && editableTicketData ? (
-          <div className="flex flex-col h-full overflow-y-auto"> 
-            <div className="mb-2 flex-shrink-0"> 
+          <div className="flex flex-col h-full overflow-y-auto"> {/* Este div interno maneja el scroll */}
+            {/* Información del Ticket y Botón Editar */}
+            <div className="mb-3 pb-2 border-b flex-shrink-0"> 
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-base">Ticket #{selectedTicket.nroCaso} - {selectedTicket.empresa}</CardTitle>
-                  <CardDescription className="text-xs">
-                    Última actualización: {selectedTicket.fechaSolucion || '--'} | Estado: {selectedTicket.estado}
+                  <CardDescription className="text-xs mt-0.5">
+                    Actualizado: {selectedTicket.fechaSolucion || '--'} | Estado: {selectedTicket.estado}
                   </CardDescription>
                 </div>
                 {!isEditingTicket && (
                   <Button variant="outline" size="sm" onClick={() => setIsEditingTicket(true)} className="ml-auto">
-                    <Edit3 className="h-4 w-4 mr-1" /> Editar Ticket
+                    <Edit3 className="h-3 w-3 mr-1.5" /> Editar
                   </Button>
                 )}
               </div>
             </div>
             
+            {/* Formulario de Edición del Ticket (condicional) */}
             {isEditingTicket && (
-              <Card className="my-3 p-3 border-dashed flex-shrink-0 bg-muted/20">
-                <CardHeader className="p-1 mb-2">
+              <Card className="mb-3 p-3 border-dashed flex-shrink-0 bg-muted/30 dark:bg-muted/10">
+                <CardHeader className="p-1 pb-2">
                   <CardTitle className="text-sm">Editando Ticket #{selectedTicket.nroCaso}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 p-1 text-xs">
-                  <div className="space-y-1">
-                    <Label htmlFor="tecnicoEdit">Técnico</Label>
-                    <Input id="tecnicoEdit" value={editableTicketData.tecnico} onChange={(e) => handleTicketInputChange('tecnico', e.target.value)} />
+                <CardContent className="space-y-2 p-1 text-xs">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="tecnicoEdit" className="text-xs">Técnico</Label>
+                    <Input id="tecnicoEdit" value={editableTicketData.tecnico} onChange={(e) => handleTicketInputChange('tecnico', e.target.value)} className="h-8 text-xs"/>
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="prioridadEdit">Prioridad</Label>
+                  <div className="space-y-0.5">
+                    <Label htmlFor="prioridadEdit" className="text-xs">Prioridad</Label>
                     <Select value={editableTicketData.prioridad} onValueChange={(value) => handleTicketInputChange('prioridad', value)}>
-                      <SelectTrigger id="prioridadEdit"><SelectValue /></SelectTrigger>
+                      <SelectTrigger id="prioridadEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="baja">BAJA</SelectItem>
                         <SelectItem value="media">MEDIA</SelectItem>
@@ -245,14 +251,14 @@ export default function TicketCard() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="contactoEdit">Contacto</Label>
-                    <Input id="contactoEdit" value={editableTicketData.contacto} onChange={(e) => handleTicketInputChange('contacto', e.target.value)} />
+                  <div className="space-y-0.5">
+                    <Label htmlFor="contactoEdit" className="text-xs">Contacto</Label>
+                    <Input id="contactoEdit" value={editableTicketData.contacto} onChange={(e) => handleTicketInputChange('contacto', e.target.value)} className="h-8 text-xs"/>
                   </div>
-                   <div className="space-y-1">
-                    <Label htmlFor="estadoEdit">Estado</Label>
+                   <div className="space-y-0.5">
+                    <Label htmlFor="estadoEdit" className="text-xs">Estado</Label>
                     <Select value={editableTicketData.estado} onValueChange={(value) => handleTicketInputChange('estado', value)}>
-                      <SelectTrigger id="estadoEdit"><SelectValue /></SelectTrigger>
+                      <SelectTrigger id="estadoEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Abierto">ABIERTO</SelectItem>
                         <SelectItem value="En Progreso">EN PROGRESO</SelectItem>
@@ -262,7 +268,7 @@ export default function TicketCard() {
                     </Select>
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2 p-1 mt-2">
+                <CardFooter className="flex justify-end gap-2 p-1 pt-2">
                   <Button variant="ghost" size="sm" onClick={() => {
                     setIsEditingTicket(false);
                     if (selectedTicket) {
@@ -274,6 +280,7 @@ export default function TicketCard() {
               </Card>
             )}
 
+            {/* Secciones que se muestran cuando NO se está editando el ticket */}
             {!isEditingTicket && (
               <>
                 {/* Sección de Acciones del Ticket (Nueva) */}
@@ -281,17 +288,19 @@ export default function TicketCard() {
                   <span className="text-sm font-semibold mb-2 block">Acciones del Ticket</span>
                   <div className="grid grid-cols-2 gap-2">
                     {/* Aquí irían los botones como "Cambiar Estado", "Cerrar Ticket", etc. */}
-                    {/* Por ahora, placeholders o botones simples */}
                     <Button variant="outline" size="sm" disabled>Cambiar Estado</Button>
                     <Button variant="destructive" size="sm" disabled>Cerrar Ticket</Button>
                   </div>
                 </div>
 
+                {/* Título Bitácora */}
                 <div className="mb-2 mt-1 flex-shrink-0"> 
                   <span className="text-sm font-semibold">Bitácora de acciones</span>
                 </div>
                 
-                <div className="overflow-y-auto space-y-2 mb-3 flex-shrink-0" style={{maxHeight: '150px'}}> {/* Reducido maxHeight para bitácora */}
+                {/* Contenedor de la Bitácora de Acciones */}
+                {/* AJUSTE: Altura máxima definida para la bitácora. El scroll se activará si el contenido excede. */}
+                <div className="overflow-y-auto space-y-2 mb-3 flex-shrink-0" style={{maxHeight: '200px'}}> 
                   {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act) => (
                     <div key={act.id} className="text-xs border-b pb-1 flex items-start justify-between">
                       {editingActionId === act.id ? (
@@ -313,6 +322,7 @@ export default function TicketCard() {
                   )) : <p className="text-xs text-muted-foreground">No hay acciones registradas.</p>}
                 </div>
 
+                {/* Contenedor para Agregar Nueva Acción */}
                 <div className="pt-2 border-t flex-shrink-0"> 
                   <div className="mb-2 flex-shrink-0"> 
                     <span className="text-sm font-semibold">Agregar nueva acción</span>
@@ -331,6 +341,7 @@ export default function TicketCard() {
               </>
             )}
             
+            {/* Div para ocupar espacio si el contenido es corto */}
             <div className="flex-grow"></div>
 
           </div>
