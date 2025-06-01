@@ -1,6 +1,12 @@
 "use client";
 // Importamos sidebarItem de la interfaz SidebarItem
-import { SidebarItem } from "@/types";
+// import { SidebarItem } from "@/types";
+import type { LucideIcon } from "lucide-react";
+// TODO: Replace 'any' with the correct type if available in '@/types'
+type SidebarItem = {
+  links: { href: string; icon: LucideIcon; label: string }[];
+  extras?: React.ReactNode;
+};
 import {
   Sheet,
   SheetClose,
