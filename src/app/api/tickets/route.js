@@ -1,39 +1,55 @@
-// Importar la función para responder a las peticiones
+// src/app/api/tickets/route.js
 import { NextResponse } from "next/server";
-// Importar la función para conectar a la base de datos
-import { connectDB } from "@/utils/mongoose";
-// Importar el modelo de Ticket
-import Ticket from "@/models/Ticket";
-
-//CRUD
+import { prisma } from "@/lib/prisma";
 
 // Obtener todos los tickets
 export async function GET() {
-  // Conectar a la base de datos de MongoDB
-  connectDB();
-  // Obtener todos los tickets de la base de datos
-  const tickets = await Ticket.find();
-  // Devolver los tickets
-  return NextResponse.json(tickets);
+  try {
+    const tickets = await prisma.ticket.findMany({
+      orderBy: { nroCaso: "desc" },
+    });
+    return NextResponse.json(tickets);
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error al obtener tickets", error: error.message },
+      { status: 500 }
+    );
+  }
 }
 
 // Crear un ticket
 export async function POST(request) {
   try {
-    // Datos del ticket a crear en el body de la petición
     const data = await request.json();
-    // Crear un nuevo ticket con los datos del body
-    const newTicket = new Ticket(data);
-    // Guardar el ticket en la base de datos
-    const saveTicket = await newTicket.save();
-    // Devolver datos del ticket creado
-    console.log(saveTicket);
-    // Devolver el ticket creado en formato JSON
-    return NextResponse.json(saveTicket);
-  } catch (error) {
-    // Devolver un mensaje de error si no se pudo crear el ticket
-    return NextResponse.json(error.message, {
-      status: 400,
+    // Asegúrate de que el objeto `data` tenga las propiedades necesarias:
+    //   nroCaso, empresa, ubicacion, contacto, prioridad, tecnico, tipo, descripcion, etc.
+
+    // === CAMBIO IMPORTANTE AQUÍ para el campo 'acciones' ===
+    const accionesParaGuardar = Array.isArray(data.acciones)
+      ? JSON.stringify(data.acciones)
+      : data.acciones || "[]"; // Si no es array y no viene, se usa '[]' como string
+
+    const newTicket = await prisma.ticket.create({
+      data: {
+        nroCaso: data.nroCaso,
+        empresa: data.empresa,
+        ubicacion: data.ubicacion,
+        contacto: data.contacto,
+        prioridad: data.prioridad,
+        tecnico: data.tecnico,
+        tipo: data.tipo,
+        descripcion: data.descripcion,
+        // Usamos la variable que asegura que 'acciones' sea un string JSON
+        acciones: accionesParaGuardar,
+        estado: data.estado ?? "Abierto",
+        fechaSolucion: data.fechaSolucion ? new Date(data.fechaSolucion) : null,
+      },
     });
+    return NextResponse.json(newTicket);
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error al crear ticket", error: error.message },
+      { status: 400 }
+    );
   }
 }

@@ -1,81 +1,65 @@
-// Importar la función para responder a las peticiones
+// /api/tickets/[id]/route.js
 import { NextResponse } from "next/server";
-// Importar la función para conectar a la base de datos
-import { connectDB } from "@/utils/mongoose";
-// Importar el modelo de Ticket
-import Ticket from "@/models/Ticket";
+import { prisma } from "@/lib/prisma";
 
-//CRUD
-
-// Obteniendo un ticket por su ID
+// Obtener un ticket por ID
 export async function GET(request, { params }) {
   try {
-    // Conectar a la base de datos de MongoDB
-    connectDB();
-    // Buscar un ticket por su ID
-    const ticketFound = await Ticket.findById(params.id);
-    // Devolver un mensaje si no se encontró el ticket
-    if (!ticketFound) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: params.id },
+    });
+    if (!ticket) {
       return NextResponse.json(
-        {
-          message: `No se encontró un ticket con el ID ${params.id}`,
-        },
-        {
-          status: 404,
-        }
+        { message: `No se encontró un ticket con el ID ${params.id}` },
+        { status: 404 }
       );
     }
-    // Devolver el ticket encontrado
-    return NextResponse.json(ticketFound);
+    return NextResponse.json(ticket);
   } catch (error) {
-    // Devolver un mensaje de error si no se pudo obtener el ticket
-    return NextResponse.json(error.message, {
-      status: 400,
-    });
+    return NextResponse.json(
+      { message: "Error al obtener el ticket", error: error.message },
+      { status: 500 }
+    );
   }
 }
 
-// Eliminar un ticket
+// Eliminar un ticket por ID
 export async function DELETE(request, { params }) {
-  // Buscar un ticket por su ID y eliminarlo
   try {
-    const ticketDeleted = await Ticket.findByIdAndDelete(params.id);
-    // Devolver un mensaje si no se encontró el ticket
-    if (!ticketDeleted) {
-      return NextResponse.json(
-        {
-          message: `No se encontró un ticket con el ID ${params.id}`,
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-  } catch (error) {
-    // Devolver un mensaje de error si no se pudo eliminar el ticket
-    return NextResponse.json(error.message, {
-      status: 400,
+    const deleted = await prisma.ticket.delete({
+      where: { id: params.id },
     });
+    return NextResponse.json(deleted);
+  } catch (error) {
+    // Si no existe, prisma arrojará un error. Podrías personalizarlo:
+    return NextResponse.json(
+      { message: `No se encontró un ticket con el ID ${params.id}` },
+      { status: 404 }
+    );
   }
-  // Devolver un mensaje si no se encontró el ticket
-  return NextResponse.json(ticketDeleted);
 }
 
-// Actualizar un ticket por su ID
+// Actualizar un ticket por ID
 export async function PUT(request, { params }) {
   try {
-    // Datos del ticket a actualizar en el body de la petición
-    const data = await request.json();
-    // Actualizar un ticket por su ID con los datos del body
-    const ticketUpdated = await Ticket.findByIdAndUpdate(params.id, data, {
-      new: true,
-    });
-    // Devolver un mensaje si no se encontró el ticket
-    return NextResponse.json(ticketUpdated);
+const data = await request.json();
+
+// Si 'acciones' puede ser actualizado y viene como array, convertir a string JSON
+if (data.acciones !== undefined) {
+  data.acciones = Array.isArray(data.acciones)
+    ? JSON.stringify(data.acciones)
+    : data.acciones; // Asegura que sea string si ya lo es
+}
+
+const updated = await prisma.ticket.update({
+  where: { id: params.id },
+  data: data, // Aquí 'data' ya tiene 'acciones' como string si era necesario
+});
+return NextResponse.json(updated);
   } catch (error) {
-    // Devolver un mensaje de error si no se pudo actualizar el ticket
-    return NextResponse.json(error.message, {
-      status: 400,
-    });
+    return NextResponse.json(
+      { message: "Error al actualizar el ticket", error: error.message },
+      { status: 400 }
+    );
   }
 }
