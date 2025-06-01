@@ -3,7 +3,17 @@
 // Importa el componente SidebarButton
 import { SidebarButton } from "./sidebar-button";
 // Importa la interfaz SidebarItem
-import { SidebarItem } from "@/types";
+// import { SidebarItem } from "@/types";
+// Define SidebarItem type here if not exported from "@/types"
+import type { LucideIcon } from "lucide-react";
+interface SidebarItem {
+  links: {
+    href: string;
+    icon: LucideIcon;
+    label: string;
+  }[];
+  extras?: React.ReactNode;
+}
 import Link from "next/link";
 import { Separator } from "./ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
