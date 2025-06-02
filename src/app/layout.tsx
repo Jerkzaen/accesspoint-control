@@ -39,8 +39,8 @@ export default function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
-            // enableSystem // <--- TEMPORALMENTE COMENTADO/ELIMINADO
-            disableTransitionOnChange
+            enableSystem // Restauramos esto, ya que quitarlo no solucionó el problema principal
+            // disableTransitionOnChange // <--- TEMPORALMENTE COMENTADO/ELIMINADO
           >
             <div className="flex h-full"> 
               <Sidebar /> 
