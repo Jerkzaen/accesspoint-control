@@ -6,7 +6,7 @@ import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider"; 
-// import { Sidebar } from "@/components/sidebar"; // Sigue comentado
+import Sidebar from "@/components/sidebar"; // <--- DESCOMENTADO y usando import por defecto
 import { Providers } from "@/app/Providers"; 
 import Header from "@/components/Header"; 
 import { ClientOnly } from "@/components/ClientOnly"; 
@@ -26,7 +26,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const sidebarWidth = "270px"; // Sigue comentado
+  const sidebarWidth = "270px"; // <--- DESCOMENTADO
 
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
@@ -41,16 +41,15 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="light" 
             disableTransitionOnChange 
-            // enableSystem={false} 
+            // enableSystem={false} // Puedes probar a activarlo después si todo va bien
           >
-            <ClientOnly fallback={null /* Fallback es ahora null */}>
-              {/* Estructura original del layout reintroducida aquí DENTRO de ClientOnly */}
+            <ClientOnly fallback={null}> 
               <div className="flex h-full" suppressHydrationWarning> 
-                {/* <Sidebar /> */} {/* Sigue comentado */}
+                <Sidebar /> {/* <--- SIDEBAR DESCOMENTADO AQUÍ */}
                 
                 <div 
                   className="flex-1 flex flex-col h-full" 
-                  // style={{ marginLeft: sidebarWidth }} // Sigue comentado
+                  style={{ marginLeft: sidebarWidth }} // <--- marginLeft RESTAURADO
                 >
                   <Header /> 
                   
@@ -68,4 +67,3 @@ export default function RootLayout({
     </html>
   );
 }
-

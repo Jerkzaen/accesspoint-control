@@ -35,9 +35,9 @@ const sidebarItemsDefinition: SidebarItem = {
   ),
 };
 
-export function Sidebar() {
+// Cambiado a export default function
+export default function Sidebar() { 
   const [mounted, setMounted] = useState(false);
-  // isDesktopClient solo se usará después de que mounted sea true.
   const isDesktopClient = useMediaQuery("(min-width: 768px)");
 
   useEffect(() => {
@@ -45,8 +45,6 @@ export function Sidebar() {
   }, []); 
 
   if (!mounted) {
-    // Placeholder que coincide con la etiqueta raíz de SidebarDesktop (<aside>)
-    // y tiene estilos inline básicos para el ancho.
     return (
       <aside 
         style={{ width: '270px', flexShrink: 0 }} 
@@ -55,7 +53,6 @@ export function Sidebar() {
     );
   }
  
-  // Renderizado solo en el cliente, después de que 'mounted' es true.
   if (isDesktopClient) {
     return <SidebarDesktop sidebarItems={sidebarItemsDefinition} />;
   }
