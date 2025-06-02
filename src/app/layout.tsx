@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider"; 
 // import { Sidebar } from "@/components/sidebar"; // Sigue comentado
 import { Providers } from "@/app/Providers"; 
-import Header from "@/components/Header"; 
+// import Header from "@/components/Header"; // Sigue comentado
+import { ClientOnly } from "@/components/ClientOnly"; // <--- IMPORTAR ClientOnly
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -25,8 +26,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const sidebarWidth = "270px"; // Sigue comentado
-
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
       <body
@@ -39,24 +38,17 @@ export default function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="light" 
-            disableTransitionOnChange
-            // asChild // <--- ELIMINADO ESTO
+            disableTransitionOnChange 
+            // enableSystem={false} // Mantenemos esto simple
           >
-            {/* ThemeProvider ahora renderizará su propio div aquí */}
-            <div className="flex h-full" suppressHydrationWarning> {/* suppressHydrationWarning aquí por si acaso */}
-              {/* <Sidebar /> */} {/* Sigue comentado */}
-              
-              <div 
-                className="flex-1 flex flex-col h-full" 
-                // style={{ marginLeft: sidebarWidth }} // Sigue comentado
-              >
-                <Header /> 
-                
-                <main className="flex-grow overflow-y-auto">
-                  {children} 
-                </main>
-              </div>
-            </div>
+            {/* Envolver el hijo de ThemeProvider con ClientOnly */}
+            <ClientOnly fallback={<div data-testid="theme-provider-child-fallback" /> /* Fallback vacío o mínimo */}>
+              <div data-testid="theme-provider-child">Test</div>
+            </ClientOnly>
+            {/* El {children} original está comentado para esta prueba.
+              Si esto funciona, el siguiente paso sería reintroducir la estructura
+              original (con Header, main, children) DENTRO de ClientOnly.
+            */}
           </ThemeProvider>
         </Providers>
         <Analytics />
