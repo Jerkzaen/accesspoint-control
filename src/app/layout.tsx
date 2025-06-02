@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 // import { Sidebar } from "@/components/sidebar"; // Sigue comentado
 import { Providers } from "@/app/Providers"; 
 // import Header from "@/components/Header"; // Sigue comentado
-import { ClientOnly } from "@/components/ClientOnly"; // <--- IMPORTAR ClientOnly
+import { ClientOnly } from "@/components/ClientOnly"; 
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -42,7 +42,7 @@ export default function RootLayout({
             // enableSystem={false} // Mantenemos esto simple
           >
             {/* Envolver el hijo de ThemeProvider con ClientOnly */}
-            <ClientOnly fallback={<div data-testid="theme-provider-child-fallback" /> /* Fallback vacío o mínimo */}>
+            <ClientOnly fallback={<div /> /* Fallback es ahora un div completamente vacío */}>
               <div data-testid="theme-provider-child">Test</div>
             </ClientOnly>
             {/* El {children} original está comentado para esta prueba.
