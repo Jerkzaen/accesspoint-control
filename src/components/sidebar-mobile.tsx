@@ -42,7 +42,6 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="px-3 py-4 flex flex-col" hideClose>
-        {/* El hideClose en SheetContent es importante, ya que usamos nuestro propio SheetClose */}
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 flex-shrink-0">
           <SheetTitle className="text-lg font-semibold text-foreground mx-3">
             AccessPoint Control
@@ -59,12 +58,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
         <div className="flex-grow overflow-y-auto py-5">
           <div className="flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
-              <Link key={idx} href={link.href}>
-                {/*
-                  Al hacer clic en un enlace, el Sheet se cerrará automáticamente si
-                  SidebarButton (que usa SheetClose) está correctamente implementado.
-                  Esto debería mover el foco fuera del SheetContent.
-                */}
+              <Link key={idx} href={link.href} passHref legacyBehavior>
+                {/* Se quita la prop 'as' de SidebarButton */}
                 <SidebarButton
                   variant={pathname === link.href ? "secondary" : "ghost"}
                   icon={link.icon}
@@ -79,13 +74,6 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </div>
         <div className="mt-auto flex-shrink-0"> 
           <Separator className="my-3" /> 
-          {/*
-            El problema podría estar aquí: un Drawer dentro de un Sheet.
-            Cuando el Drawer se abre, el Sheet sigue "abierto" en el fondo.
-            Cuando el Drawer se cierra, el foco podría intentar volver a un elemento
-            dentro del Sheet que Radix considera que debería estar oculto si el Drawer
-            era modal respecto al Sheet.
-          */}
           <Drawer>
             <DrawerTrigger asChild>
               <Button variant="ghost" className="w-full justify-start rounded-full" aria-label="Abrir opciones de usuario">
@@ -108,40 +96,35 @@ export function SidebarMobile(props: SidebarMobileProps) {
                 </DrawerDescription>
               </DrawerHeader>
               <div className="flex flex-col space-y-2 mt-1">
-                <Link href="/">
-                  {/*
-                    Si estos botones también usan SheetClose internamente (a través de SidebarButton),
-                    podrían intentar cerrar el Sheet principal, lo cual podría ser confuso.
-                    Sería mejor que estos botones dentro del Drawer no intenten cerrar el Sheet.
-                    Asumiré que SidebarButton no usa SheetClose si se usa dentro de un Drawer.
-                    Si lo hace, necesitaríamos un SidebarButton diferente o una prop para deshabilitar SheetClose.
-                  */}
-                  <Button // <--- Cambiado de SidebarButton a Button para evitar doble cierre
+                <Link href="/" passHref legacyBehavior>
+                  {/* Se cambia 'as="a"' por 'asChild' en el Button */}
+                  <Button 
                     size="sm"
-                    variant="ghost" // Para que se parezca al SidebarButton
-                    className="w-full justify-start" // Para que se parezca al SidebarButton
-                    asChild // Para que funcione con Link
+                    variant="ghost"
+                    className="w-full justify-start"
+                    asChild // <--- CORREGIDO AQUÍ
                   >
-                    <Link href="/"> {/* O la ruta de configuración correcta */}
-                      <Settings className="mr-2 h-4 w-4" /> {/* Añadir icono manualmente */}
+                    {/* El Link ahora es el hijo directo que recibe las props del Button */}
+                    <> 
+                      <Settings className="mr-2 h-4 w-4" />
                       Configuración
-                    </Link>
+                    </>
                   </Button>
                 </Link>
-                <Button // <--- Cambiado de SidebarButton a Button
+                <Button 
                   onClick={() => console.log("Placeholder: Cerrar sesión")}
                   size="sm" 
-                  variant="ghost" // Para que se parezca al SidebarButton
-                  className="w-full justify-start" // Para que se parezca al SidebarButton
+                  variant="ghost" 
+                  className="w-full justify-start" 
                 >
-                  <LogOut className="mr-2 h-4 w-4" /> {/* Añadir icono manualmente */}
+                  <LogOut className="mr-2 h-4 w-4" /> 
                   Cerrar sesión
                 </Button>
               </div>
             </DrawerContent>
           </Drawer>
         </div>
-      </SheetContent>
-    </Sheet>
+      </SheetContent> 
+    </Sheet> 
   );
 }
