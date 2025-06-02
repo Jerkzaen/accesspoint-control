@@ -9,8 +9,8 @@ interface SidebarButtonProps extends ButtonProps {
   children: React.ReactNode;
 }
 
-// Componente base SidebarButton que acepta y reenvía una ref
-const SidebarButton = React.forwardRef<
+// Define y exporta SidebarButton directamente
+export const SidebarButton = React.forwardRef<
   HTMLButtonElement,
   SidebarButtonProps
 >(({ icon: Icon, className, children, ...props }, ref) => {
@@ -18,7 +18,7 @@ const SidebarButton = React.forwardRef<
     <Button
       ref={ref} 
       variant="ghost"
-      className={cn("gap-2 justify-start rounded-full w-full", className)} // Asegurar w-full aquí
+      className={cn("gap-2 justify-start rounded-full w-full", className)}
       {...props}
     >
       {Icon && <Icon className="mr-2 h-4 w-4" />}
@@ -28,4 +28,6 @@ const SidebarButton = React.forwardRef<
 });
 SidebarButton.displayName = "SidebarButton";
 
-export { SidebarButton }; // Solo exportamos SidebarButton
+// Ya no necesitamos la línea 'export { SidebarButton };' aquí abajo
+// porque la exportación se hace directamente en la declaración de la constante.
+    
