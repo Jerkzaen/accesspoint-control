@@ -1,250 +1,297 @@
-import * as React from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { v4 as uuidv4 } from 'uuid'; // Para generar IDs únicos
-import { Ticket as GlobalTicket, ActionEntry } from '@/types/ticket'; // Importar tipos globales
+    // src/components/ticket-form.tsx
+    'use client';
 
-// Interfaz para los datos del formulario, puede ser un subconjunto o adaptación de GlobalTicket
-interface TicketFormFields {
-  nroCaso: number;
-  empresa: string;
-  ubicacion: string;
-  contacto: string;
-  prioridad: string;
-  tecnico: string;
-  tipo: string;
-  tituloDelTicket: string; // Campo para el título/descripción principal
-  detalleAdicional?: string; // Campo para la descripción más larga
-  accionInicial?: string; // Campo para la primera acción de la bitácora
-  fechaSolucion?: string | null;
-  createdAt: string; 
-}
+    import * as React from 'react';
+    import { useFormState } from 'react-dom';
+    import { redirect } from 'next/navigation'; // Se usará desde la Server Action
+    import { Textarea } from '@/components/ui/textarea';
+    import {
+      Card,
+      CardContent,
+      CardDescription,
+      CardFooter,
+      CardHeader,
+      CardTitle,
+    } from '@/components/ui/card';
+    import { Input } from '@/components/ui/input';
+    import { Label } from '@/components/ui/label';
+    import {
+      Select,
+      SelectContent,
+      SelectItem,
+      SelectTrigger,
+      SelectValue,
+    } from '@/components/ui/select';
+    import { FormSubmitButton } from '@/components/ui/FormSubmitButton'; // Importar el nuevo botón
+    import { prisma } from '@/lib/prisma'; // Prisma se usa en la Server Action
+    import { v4 as uuidv4 } from 'uuid';
+    import { ActionEntry, Ticket as GlobalTicket } from '@/types/ticket';
+    import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button } from './ui/button';
 
-
-async function loadLastTicketNro(): Promise<number> {
-  try {
-    const lastTicket = await prisma.ticket.findFirst({
-      orderBy: { nroCaso: "desc" },
-      select: { nroCaso: true },
-    });
-    return lastTicket?.nroCaso || 0;
-  } catch (error) {
-    console.error("Error al cargar nroCaso del último ticket:", error);
-    return 0;
-  }
-}
-
-export async function TicketForm() {
-  const lastNroCaso = await loadLastTicketNro();
-  const nextNroCaso = lastNroCaso + 1;
-
-  async function createNewTicketAction(formdata: FormData) {
-    "use server";
-
-    const data: TicketFormFields = {
-      nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
-      empresa: formdata.get("empresa")?.toString() || "",
-      prioridad: formdata.get("prioridad")?.toString() || "",
-      tecnico: formdata.get("tecnico")?.toString() || "",
-      tipo: formdata.get("tipo")?.toString() || "",
-      tituloDelTicket: formdata.get("tituloDelTicket")?.toString() || "",
-      detalleAdicional: formdata.get("detalleAdicional")?.toString() || "",
-      ubicacion: formdata.get("ubicacion")?.toString() || "",
-      contacto: formdata.get("contacto")?.toString() || "",
-      createdAt: formdata.get("createdAt")?.toString() || new Date().toISOString().split('T')[0],
-      accionInicial: formdata.get("accionInicial")?.toString() || "",
-      fechaSolucion: formdata.get("fechaSolucion")?.toString() || null,
-    };
-
-    if (
-      !data.nroCaso || !data.empresa || !data.prioridad || !data.tecnico || !data.tipo ||
-      !data.tituloDelTicket || !data.ubicacion || !data.contacto || !data.createdAt
-    ) {
-      console.error("Faltan campos obligatorios para el ticket.");
-      // Aquí podrías retornar un mensaje de error para mostrar en la UI si usaras useFormState
-      return; 
+    // Interfaz para los datos del formulario
+    interface TicketFormFields {
+      nroCaso: number; // Este vendrá como prop, pero se incluirá en el FormData
+      empresa: string;
+      ubicacion: string;
+      contacto: string;
+      prioridad: string;
+      tecnico: string;
+      tipo: string;
+      tituloDelTicket: string;
+      detalleAdicional?: string;
+      accionInicial?: string;
+      fechaSolucion?: string | null;
+      createdAt: string;
     }
 
-    const accionesArray: ActionEntry[] = [];
-    let descripcionPrincipalTicket = data.tituloDelTicket;
+    // Tipo para el estado que devuelve la Server Action
+    interface FormState {
+      message: string;
+      type: 'success' | 'error' | 'idle';
+      errors?: Record<string, string[] | undefined>; // Para errores de validación por campo
+      ticketId?: string; // Para redirigir o mostrar info del ticket creado
+    }
 
-    // Combinar detalle adicional con la acción inicial si ambos existen, o usar el que exista.
-    let primeraAccionDesc = "";
-    if (data.detalleAdicional?.trim()) {
+    const initialState: FormState = {
+      message: '',
+      type: 'idle',
+    };
+
+    // --- SERVER ACTION ---
+    // Esta acción ahora vive fuera del componente, pero en el mismo archivo para simplicidad.
+    // Podría moverse a un archivo separado de "actions".
+    async function createNewTicketAction(prevState: FormState, formdata: FormData): Promise<FormState> {
+      // 'use server'; // No es necesario aquí si la acción se define y exporta desde un Client Component
+      // pero si se mueve a su propio archivo .ts, sí se necesitaría el 'use server'; al inicio del archivo.
+
+      const data: TicketFormFields = {
+        nroCaso: parseInt(formdata.get('nroCaso') as string), // nroCaso ahora es un input hidden
+        empresa: formdata.get('empresa') as string,
+        prioridad: formdata.get('prioridad') as string,
+        tecnico: formdata.get('tecnico') as string,
+        tipo: formdata.get('tipo') as string,
+        tituloDelTicket: formdata.get('tituloDelTicket') as string,
+        detalleAdicional: formdata.get('detalleAdicional') as string | undefined,
+        ubicacion: formdata.get('ubicacion') as string,
+        contacto: formdata.get('contacto') as string,
+        createdAt: formdata.get('createdAt') as string,
+        accionInicial: formdata.get('accionInicial') as string | undefined,
+        fechaSolucion: formdata.get('fechaSolucion') as string || null,
+      };
+
+      // Validación simple (puedes expandirla o usar una librería como Zod)
+      if (!data.empresa || !data.prioridad || !data.tecnico || !data.tipo || !data.tituloDelTicket || !data.ubicacion || !data.contacto || !data.createdAt) {
+        return {
+          message: 'Faltan campos obligatorios.',
+          type: 'error',
+          // Podrías añadir errores específicos por campo aquí
+        };
+      }
+
+      const accionesArray: ActionEntry[] = [];
+      let descripcionPrincipalTicket = data.tituloDelTicket;
+      let primeraAccionDesc = "";
+
+      if (data.detalleAdicional?.trim()) {
         primeraAccionDesc += `Detalle del problema: ${data.detalleAdicional.trim()}`;
-    }
-    if (data.accionInicial?.trim()) {
-        if (primeraAccionDesc) primeraAccionDesc += "\n"; // Nueva línea si ya hay detalle
+      }
+      if (data.accionInicial?.trim()) {
+        if (primeraAccionDesc) primeraAccionDesc += "\n";
         primeraAccionDesc += `Acción inicial realizada: ${data.accionInicial.trim()}`;
+      }
+      
+      if (primeraAccionDesc.trim()) {
+        accionesArray.push({
+          id: uuidv4(),
+          fecha: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
+          descripcion: primeraAccionDesc.trim(),
+        });
+      }
+
+      const accionesParaGuardar = JSON.stringify(accionesArray);
+      const createdAtDate = new Date(data.createdAt + "T00:00:00");
+      const fechaSolucionDate = data.fechaSolucion ? new Date(data.fechaSolucion + "T00:00:00") : null;
+
+      const ticketDataToSave = {
+        nroCaso: data.nroCaso,
+        empresa: data.empresa,
+        prioridad: data.prioridad,
+        tecnico: data.tecnico,
+        tipo: data.tipo,
+        descripcion: descripcionPrincipalTicket,
+        ubicacion: data.ubicacion,
+        contacto: data.contacto,
+        acciones: accionesParaGuardar,
+        createdAt: createdAtDate,
+        fechaSolucion: fechaSolucionDate,
+        estado: "Abierto",
+      };
+
+      try {
+        const newTicket = await prisma.ticket.create({ data: ticketDataToSave });
+        // console.log("Ticket creado con datos:", newTicket);
+        // La redirección se manejará en el cliente si es necesario, o se puede hacer aquí.
+        // Para una mejor UX con useFormState, es mejor no redirigir directamente desde la Server Action
+        // a menos que sea un requisito absoluto. En su lugar, devuelve un estado de éxito.
+        return {
+          message: `Ticket #${newTicket.nroCaso} creado exitosamente.`,
+          type: 'success',
+          ticketId: newTicket.id,
+        };
+      } catch (error: any) {
+        console.error("Error al crear ticket en Prisma:", error.message);
+        return {
+          message: `Error al crear el ticket: ${error.message}`,
+          type: 'error',
+        };
+      }
+    }
+    // --- FIN SERVER ACTION ---
+
+
+    // Definición de Props para TicketForm
+    interface TicketFormProps {
+      nextNroCaso: number;
+    }
+
+    export function TicketForm({ nextNroCaso }: TicketFormProps) {
+      const [formState, formAction] = useFormState(createNewTicketAction, initialState);
+      const formRef = React.useRef<HTMLFormElement>(null);
+
+      React.useEffect(() => {
+        if (formState.type === 'success' && formState.ticketId) {
+          // Opcional: resetear el formulario después de un envío exitoso
+          formRef.current?.reset(); 
+          // Mostrar mensaje de éxito o redirigir
+          // alert(formState.message); // Podrías usar un toast o un componente de mensaje más elegante
+          // Si quieres redirigir después de mostrar el mensaje, podrías hacerlo aquí:
+          // setTimeout(() => {
+          //   redirect('/tickets/dashboard'); // O a la página del ticket recién creado
+          // }, 2000); // Pequeño delay para que el usuario vea el mensaje
+        }
+      }, [formState]);
+
+
+      return (
+        <Card className="w-full max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>Crear Nuevo Ticket</CardTitle>
+            <CardDescription>Ingresa la información detallada del problema.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form ref={formRef} action={formAction} className="space-y-6">
+              {/* Input oculto para nroCaso */}
+              <input type="hidden" name="nroCaso" value={nextNroCaso} />
+
+              {/* Mostrar mensajes de estado del formulario */}
+              {formState.type === 'error' && (
+                <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800 flex items-center gap-2" role="alert">
+                  <AlertCircle className="h-5 w-5"/>
+                  <span className="font-medium">Error:</span> {formState.message}
+                </div>
+              )}
+              {formState.type === 'success' && (
+                <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800 flex items-center gap-2" role="alert">
+                  <CheckCircle2 className="h-5 w-5"/>
+                  <span className="font-medium">Éxito:</span> {formState.message}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="nroCasoDisplay">N° de Caso</Label>
+                  {/* Se muestra pero no se envía directamente, el valor se toma del input hidden */}
+                  <Input id="nroCasoDisplay" value={nextNroCaso} readOnly className="bg-muted" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="createdAt">Fecha Reporte</Label>
+                  <Input type="date" name="createdAt" id="createdAt" defaultValue={new Date().toISOString().split('T')[0]} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="empresa">Empresa</Label>
+                  <Select name="empresa" required>
+                    <SelectTrigger id="empresa"><SelectValue placeholder="Seleccione Empresa" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Achs">ACHS</SelectItem>
+                      <SelectItem value="Esachs">ESACHS</SelectItem>
+                      <SelectItem value="CMT">CMT</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tipo">Tipo de Incidente</Label>
+                  <Select name="tipo" required>
+                    <SelectTrigger id="tipo"><SelectValue placeholder="Seleccione Tipo" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Software">Software</SelectItem>
+                      <SelectItem value="Hardware">Hardware</SelectItem>
+                      <SelectItem value="Aplicaciones">Aplicaciones</SelectItem>
+                      <SelectItem value="Red">Red</SelectItem>
+                      <SelectItem value="Otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="prioridad">Prioridad</Label>
+                  <Select name="prioridad" defaultValue="media" required>
+                    <SelectTrigger id="prioridad"><SelectValue placeholder="Prioridad" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baja">BAJA</SelectItem>
+                      <SelectItem value="media">MEDIA</SelectItem>
+                      <SelectItem value="alta">ALTA</SelectItem>
+                      <SelectItem value="urgente">URGENTE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tecnico">Técnico Asignado</Label>
+                  <Select name="tecnico" required>
+                    <SelectTrigger id="tecnico"><SelectValue placeholder="Seleccione Técnico" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Miguel Chervellino">M.Chervellino</SelectItem>
+                      <SelectItem value="Christian Torrenss">C. Torrens</SelectItem>
+                      <SelectItem value="jerson Armijo">J. Armijo</SelectItem>
+                      <SelectItem value="No Asignado">No Asignado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ubicacion">Ubicación (Ej: Oficina, Piso, Ciudad)</Label>
+                  <Input name="ubicacion" id="ubicacion" placeholder="Detalle de la ubicación" required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="contacto">Contacto Solicitante (Nombre/Email)</Label>
+                  <Input name="contacto" id="contacto" placeholder="Persona que reporta" required />
+                </div>
+                
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="tituloDelTicket">Título del Ticket (Resumen Breve)</Label>
+                  <Input name="tituloDelTicket" id="tituloDelTicket" placeholder="Ej: Impresora no enciende en Contabilidad" required />
+                </div>
+
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="detalleAdicional">Descripción Detallada del Problema</Label>
+                  <Textarea name="detalleAdicional" id="detalleAdicional" placeholder="Proporciona todos los detalles relevantes..." rows={5} />
+                </div>
+
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="accionInicial">Acción Inicial Realizada (Si aplica)</Label>
+                  <Textarea name="accionInicial" id="accionInicial" placeholder="Si ya realizaste alguna acción..." rows={3} />
+                </div>
+
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label htmlFor="fechaSolucion">Fecha Estimada/Solución (Opcional)</Label>
+                  <Input type="date" name="fechaSolucion" id="fechaSolucion" />
+                </div>
+              </div>
+              <CardFooter className="px-0 pt-8 flex justify-end gap-3">
+                <Button variant="outline" type="reset" onClick={() => formRef.current?.reset()}>Limpiar Campos</Button>
+                <FormSubmitButton>Guardar Ticket</FormSubmitButton>
+              </CardFooter>
+            </form>
+          </CardContent>
+        </Card>
+      );
     }
     
-    if (primeraAccionDesc.trim()) {
-      accionesArray.push({
-        id: uuidv4(), // Generar ID único para la acción
-        fecha: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
-        descripcion: primeraAccionDesc.trim(),
-      });
-    }
-
-    const accionesParaGuardar = JSON.stringify(accionesArray);
-    // Asegurar que la fecha se interprete como inicio del día en la zona horaria local del servidor
-    const createdAtDate = new Date(data.createdAt + "T00:00:00"); 
-    const fechaSolucionDate = data.fechaSolucion ? new Date(data.fechaSolucion + "T00:00:00") : null;
-
-    // Datos para Prisma, asegurando que coincidan con el schema
-    const ticketDataToSave = {
-      nroCaso: data.nroCaso,
-      empresa: data.empresa,
-      prioridad: data.prioridad,
-      tecnico: data.tecnico,
-      tipo: data.tipo,
-      descripcion: descripcionPrincipalTicket, // El título va al campo 'descripcion' de la BD
-      ubicacion: data.ubicacion,
-      contacto: data.contacto,
-      acciones: accionesParaGuardar, 
-      createdAt: createdAtDate, // Prisma espera Date
-      fechaSolucion: fechaSolucionDate, // Prisma espera Date o null
-      estado: "Abierto", // Estado por defecto
-      // Si tienes un campo para 'detalleAdicional' en tu BD, añádelo aquí.
-      // Por ejemplo: detalleAdicional: data.detalleAdicional || null,
-    };
-
-    try {
-      await prisma.ticket.create({ data: ticketDataToSave });
-      console.log("Ticket creado con datos:", ticketDataToSave);
-    } catch (error: any) {
-      console.error("Error al crear ticket en Prisma:", error.message);
-      // Podrías querer manejar este error de forma diferente, quizás retornando un mensaje.
-      // Por ahora, la redirección no ocurrirá si hay un error aquí.
-      return; // Evita la redirección si hay error
-    }
-    
-    // La redirección debe ocurrir fuera del try/catch si el error en Prisma no la previene.
-    // O, si quieres que siempre redirija, incluso con error (no recomendado), muévela fuera.
-    // Para Server Actions, redirect() lanza una excepción especial.
-    redirect("/tickets/dashboard");
-  }
-
-  return (
-    <Card className="w-full max-w-2xl mx-auto"> 
-      <CardHeader>
-        <CardTitle>Crear Nuevo Ticket</CardTitle>
-        <CardDescription>Ingresa la información detallada del problema.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* El form ahora llama a createNewTicketAction */}
-        <form action={createNewTicketAction} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="nroCaso">N° de Caso</Label>
-              <Input name="nroCaso" id="nroCaso" defaultValue={nextNroCaso} readOnly className="bg-muted"/>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="createdAt">Fecha Reporte</Label>
-              <Input type="date" name="createdAt" id="createdAt" defaultValue={new Date().toISOString().split('T')[0]} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="empresa">Empresa</Label>
-              <Select name="empresa" required>
-                <SelectTrigger id="empresa"><SelectValue placeholder="Seleccione Empresa" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Achs">ACHS</SelectItem>
-                  <SelectItem value="Esachs">ESACHS</SelectItem>
-                  <SelectItem value="CMT">CMT</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tipo">Tipo de Incidente</Label>
-              <Select name="tipo" required>
-                <SelectTrigger id="tipo"><SelectValue placeholder="Seleccione Tipo" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Software">Software</SelectItem>
-                  <SelectItem value="Hardware">Hardware</SelectItem>
-                  <SelectItem value="Aplicaciones">Aplicaciones</SelectItem>
-                  <SelectItem value="Red">Red</SelectItem>
-                  <SelectItem value="Otro">Otro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="prioridad">Prioridad</Label>
-              <Select name="prioridad" defaultValue="media" required>
-                <SelectTrigger id="prioridad"><SelectValue placeholder="Prioridad" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="baja">BAJA</SelectItem>
-                  <SelectItem value="media">MEDIA</SelectItem>
-                  <SelectItem value="alta">ALTA</SelectItem>
-                  <SelectItem value="urgente">URGENTE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tecnico">Técnico Asignado</Label>
-              <Select name="tecnico" required>
-                <SelectTrigger id="tecnico"><SelectValue placeholder="Seleccione Técnico" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Miguel Chervellino">M.Chervellino</SelectItem>
-                  <SelectItem value="Christian Torrenss">C. Torrens</SelectItem>
-                  <SelectItem value="jerson Armijo">J. Armijo</SelectItem>
-                  <SelectItem value="No Asignado">No Asignado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ubicacion">Ubicación (Ej: Oficina, Piso, Ciudad)</Label>
-              <Input name="ubicacion" id="ubicacion" placeholder="Detalle de la ubicación" required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contacto">Contacto Solicitante (Nombre/Email)</Label>
-              <Input name="contacto" id="contacto" placeholder="Persona que reporta" required />
-            </div>
-            
-            <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="tituloDelTicket">Título del Ticket (Resumen Breve)</Label>
-              <Input name="tituloDelTicket" id="tituloDelTicket" placeholder="Ej: Impresora no enciende en Contabilidad" required />
-            </div>
-
-            <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="detalleAdicional">Descripción Detallada del Problema</Label>
-              <Textarea name="detalleAdicional" id="detalleAdicional" placeholder="Proporciona todos los detalles relevantes: qué ocurre, cuándo, mensajes de error, pasos para reproducirlo, etc." rows={5}/>
-            </div>
-
-            <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="accionInicial">Acción Inicial Realizada (Si aplica)</Label>
-              <Textarea name="accionInicial" id="accionInicial" placeholder="Si ya realizaste alguna acción para intentar solucionar o diagnosticar, descríbela aquí." rows={3}/>
-            </div>
-
-            <div className="md:col-span-2 space-y-1.5"> {/* Ocupa todo el ancho para mejor visualización */}
-              <Label htmlFor="fechaSolucion">Fecha Estimada/Solución (Opcional)</Label>
-              <Input type="date" name="fechaSolucion" id="fechaSolucion" />
-            </div>
-          </div>
-          <CardFooter className="px-0 pt-8 flex justify-end gap-3"> {/* Aumentado pt y gap */}
-            <Button variant="outline" type="reset">Limpiar Campos</Button>
-            <Button type="submit">Guardar Ticket</Button>
-          </CardFooter>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
