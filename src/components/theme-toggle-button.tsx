@@ -1,3 +1,4 @@
+// src/components/theme-toggle-button.tsx
 "use client"
 
 import * as React from "react"
@@ -13,7 +14,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ModeToggle() {
-  const { setTheme } = useTheme()
+  const { setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  // Efecto para establecer que el componente está montado en el cliente
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Si el componente aún no está montado, no renderizamos el botón real
+  // para evitar el mismatch de hidratación.
+  // Puedes retornar null o un placeholder. Un botón deshabilitado puede ser una buena opción
+  // para mantener el espacio en el layout y evitar saltos visuales.
+  if (!mounted) {
+    return (
+      <Button variant="outline" size="icon" disabled className="h-[1.2rem] w-[1.2rem] aspect-square opacity-50">
+        {/* Puedes poner un icono genérico o dejarlo vacío */}
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
