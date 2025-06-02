@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme(); // Usar resolvedTheme para el placeholder si es necesario
   const [mounted, setMounted] = React.useState(false);
 
   // Efecto para establecer que el componente está montado en el cliente
@@ -22,18 +22,18 @@ export function ModeToggle() {
     setMounted(true);
   }, []);
 
-  // Si el componente aún no está montado, no renderizamos el botón real
-  // para evitar el mismatch de hidratación.
-  // Puedes retornar null o un placeholder. Un botón deshabilitado puede ser una buena opción
-  // para mantener el espacio en el layout y evitar saltos visuales.
+  // Si el componente aún no está montado, no renderizamos nada o un placeholder muy simple
+  // para evitar el mismatch de hidratación. Retornar null es a menudo lo más seguro.
   if (!mounted) {
-    return (
-      <Button variant="outline" size="icon" disabled className="h-[1.2rem] w-[1.2rem] aspect-square opacity-50">
-        {/* Puedes poner un icono genérico o dejarlo vacío */}
-      </Button>
-    );
+    // Alternativamente, podrías renderizar un botón esqueleto si el salto de layout es un problema,
+    // pero asegúrate de que su contenido no dependa del tema.
+    // Por ahora, retornamos null para máxima seguridad contra errores de hidratación.
+    // Si necesitas mantener el espacio, un botón simple sin iconos dinámicos:
+    // return <Button variant="outline" size="icon" disabled className="h-[1.2rem] w-[1.2rem]" />;
+    return null; 
   }
 
+  // Una vez montado, renderizamos el componente completo
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
