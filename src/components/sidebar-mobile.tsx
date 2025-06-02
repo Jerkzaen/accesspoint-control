@@ -1,5 +1,6 @@
 // src/components/sidebar-mobile.tsx
 "use client";
+import * as React from 'react'; // <--- IMPORTACIÓN DE REACT AÑADIDA
 import { SidebarItem } from "@/types/sidebar"; 
 import {
   Sheet,
@@ -10,11 +11,11 @@ import {
   SheetDescription, 
   SheetTrigger,
 } from "./ui/sheet"; 
-import { Button } from "./ui/button";
+import { Button } from "./ui/button"; 
 import { LogOut, Menu, MoreHorizontal, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SidebarButtonSheet as SidebarButton } from "./sidebar-button";
+import { SidebarButton } from "./sidebar-button"; 
 import { Separator } from "./ui/separator";
 import { 
   Drawer, 
@@ -58,18 +59,23 @@ export function SidebarMobile(props: SidebarMobileProps) {
         <div className="flex-grow overflow-y-auto py-5">
           <div className="flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
-              <Link key={idx} href={link.href} passHref legacyBehavior>
-                {/* Se quita la prop 'as' de SidebarButton */}
-                <SidebarButton
-                  variant={pathname === link.href ? "secondary" : "ghost"}
-                  icon={link.icon}
-                  className="w-full"
-                >
-                  {link.label}
-                </SidebarButton>
-              </Link>
+              <SheetClose asChild key={idx}>
+                <Link href={link.href} passHref legacyBehavior>
+                  <SidebarButton 
+                    variant={pathname === link.href ? "secondary" : "ghost"}
+                    icon={link.icon}
+                    className="w-full"
+                  >
+                    {link.label}
+                  </SidebarButton>
+                </Link>
+              </SheetClose>
             ))}
-            {props.sidebarItems.extras}
+            {props.sidebarItems.extras && React.isValidElement(props.sidebarItems.extras) && (
+              <SheetClose asChild>
+                {React.cloneElement(props.sidebarItems.extras, {key: "extras-link"})}
+              </SheetClose>
+            )}
           </div>
         </div>
         <div className="mt-auto flex-shrink-0"> 
@@ -97,14 +103,12 @@ export function SidebarMobile(props: SidebarMobileProps) {
               </DrawerHeader>
               <div className="flex flex-col space-y-2 mt-1">
                 <Link href="/" passHref legacyBehavior>
-                  {/* Se cambia 'as="a"' por 'asChild' en el Button */}
                   <Button 
                     size="sm"
                     variant="ghost"
                     className="w-full justify-start"
-                    asChild // <--- CORREGIDO AQUÍ
+                    asChild 
                   >
-                    {/* El Link ahora es el hijo directo que recibe las props del Button */}
                     <> 
                       <Settings className="mr-2 h-4 w-4" />
                       Configuración
@@ -128,3 +132,4 @@ export function SidebarMobile(props: SidebarMobileProps) {
     </Sheet> 
   );
 }
+
