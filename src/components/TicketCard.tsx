@@ -1,56 +1,61 @@
 // src/components/TicketCard.tsx
 'use client';
 
+import * as React from 'react'; // Asegúrate de tener esta importación
 import { useState, useEffect } from 'react';
 import SingleTicketItemCard from './SingleTicketItemCard'; 
-import SelectedTicketPanel from './SelectedTicketPanel'; // Asumimos que este componente ya existe
+import SelectedTicketPanel from './SelectedTicketPanel';
 import { Ticket } from '@/types/ticket'; 
-import { useMediaQuery } from 'usehooks-ts'; // Para detectar el tamaño de pantalla
+import { useMediaQuery } from 'usehooks-ts';
 import {
-  Drawer,
-  DrawerContent,
-  // DrawerTrigger, // No usaremos un trigger visible, se abrirá al seleccionar ticket
-  // DrawerHeader, DrawerTitle, DrawerDescription, // Opcional si quieres un header en el drawer
-} from '@/components/ui/drawer'; // Asegúrate que la ruta a ui/drawer sea correcta
-import { AlertTriangle, Loader2 } from 'lucide-react';
-import React from 'react';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose, // Para un botón de cierre opcional dentro del Sheet
+} from '@/components/ui/sheet'; // Cambiado de Drawer a Sheet
+import { AlertTriangle, Loader2, X as CloseIcon } from 'lucide-react'; // X para el botón de cierre
+import { Button } from './ui/button';
 
-const HEADER_AND_PAGE_PADDING_OFFSET = '100px'; 
+// Asumiendo que tienes un hook useTickets. Si no, necesitas importarlo o definirlo.
+// import { useTickets } from '@/hooks/useTickets'; 
+
+const HEADER_AND_PAGE_PADDING_OFFSET = '100px'; // Ajusta según tu layout
 
 export default function TicketCard() {
+  // Asegúrate de que useTickets esté disponible. Si no, descomenta la importación o usa el de abajo.
   const {
     tickets,
     setTickets, 
     isLoading,
     error: fetchTicketsError,
     refreshTickets, 
-  } = useTickets(); // Asumiendo que useTickets está definido como antes
+  } = useTickets(); 
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // Cambiado de isDrawerOpen a isSheetOpen
 
   const isDesktop = useMediaQuery('(min-width: 768px)'); // md breakpoint
 
   useEffect(() => {
-    // Si no estamos en desktop y se selecciona un ticket, abrir el drawer.
-    // Si se deselecciona un ticket (o cambiamos a desktop), cerrar el drawer.
     if (!isDesktop && selectedTicket) {
-      setIsDrawerOpen(true);
-    } else {
-      setIsDrawerOpen(false);
+      setIsSheetOpen(true);
+    } else if (isDesktop) { // Si cambiamos a desktop, cerramos el sheet
+      setIsSheetOpen(false);
     }
   }, [selectedTicket, isDesktop]);
 
   const handleSelectTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     if (!isDesktop) {
-      setIsDrawerOpen(true);
+      setIsSheetOpen(true);
     }
   };
 
-  const handleCloseDrawer = () => {
-    setIsDrawerOpen(false);
-    // Opcionalmente, deseleccionar el ticket cuando el drawer se cierra
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+    // Opcional: Deseleccionar el ticket cuando el sheet se cierra para que no se reabra si se rota la pantalla
     // setSelectedTicket(null); 
   };
 
@@ -61,10 +66,7 @@ export default function TicketCard() {
     if (selectedTicket?.id === updatedTicket.id) {
       setSelectedTicket(updatedTicket);
     }
-    // Podrías cerrar el drawer después de una actualización si es en móvil
-    // if (!isDesktop) {
-    //   setIsDrawerOpen(false);
-    // }
+    // No cerramos el sheet automáticamente tras la actualización, el usuario puede querer seguir viendo/editando.
   };
 
   if (isLoading) {
@@ -93,10 +95,10 @@ export default function TicketCard() {
   }
 
   return (
-    <div className="flex flex-grow flex-shrink flex-wrap h-full p-4 gap-4 md:flex-nowrap">
+    <div className="flex flex-col md:flex-row flex-grow h-full p-1 sm:p-4 gap-4"> {/* Ajuste de padding y flex-direction */}
       {/* Columna de Tarjetas de Tickets */}
       <div 
-        className={`flex-grow overflow-y-auto pr-2 space-y-2 ${isDesktop ? 'md:w-[calc(70%-0.5rem)]' : 'w-full'}`}
+        className={`flex-grow overflow-y-auto md:pr-2 space-y-2 w-full ${isDesktop ? 'md:w-[calc(65%-0.5rem)] lg:w-[calc(70%-0.5rem)]' : 'md:w-full'}`}
         style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }} 
       >
         {tickets.length > 0 ? (
@@ -105,7 +107,7 @@ export default function TicketCard() {
               key={ticket.id}
               ticket={ticket}
               onSelectTicket={handleSelectTicket}
-              isSelected={selectedTicket?.id === ticket.id && isDesktop} // Solo resaltar si está en desktop y visible
+              isSelected={selectedTicket?.id === ticket.id && isDesktop} 
             />
           ))
         ) : (
@@ -115,75 +117,94 @@ export default function TicketCard() {
         )}
       </div>
 
-      {/* Panel Lateral para Detalles (Desktop) o Drawer (Móvil) */}
+      {/* Panel Lateral para Detalles (Desktop) o Sheet (Móvil) */}
       {isDesktop ? (
-        // Vista Desktop: Panel lateral fijo
-        selectedTicket && ( // Solo mostrar si hay un ticket seleccionado
+        selectedTicket && ( 
           <div 
-            className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[30%]" // Asegurar que no se encoja
+            className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]"
             style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})`, overflowY: 'hidden' }}
           >
             <SelectedTicketPanel
               selectedTicket={selectedTicket}
               onTicketUpdated={handleTicketUpdated}
-              headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET} // Pasar el offset
+              headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
             />
           </div>
         )
       ) : (
-        // Vista Móvil: Drawer
-        <Drawer open={isDrawerOpen} onOpenChange={(open) => {
+        // Vista Móvil: Sheet desde la derecha
+        <Sheet open={isSheetOpen} onOpenChange={(open) => {
           if (!open) {
-            handleCloseDrawer();
+            handleCloseSheet();
           } else {
-            setIsDrawerOpen(true);
+            setIsSheetOpen(true); // Asegurar que el estado se actualice si se abre por otros medios
           }
         }}>
-          {/* No necesitamos un DrawerTrigger visible aquí, se controla con isDrawerOpen */}
-          <DrawerContent className="p-4 h-[85vh]"> {/* Altura del drawer */}
-            {/* Podrías añadir un DrawerHeader aquí si lo deseas */}
-            {/* <DrawerHeader><DrawerTitle>Detalles del Ticket</DrawerTitle></DrawerHeader> */}
-            {selectedTicket && (
-              <SelectedTicketPanel
-                selectedTicket={selectedTicket}
-                onTicketUpdated={handleTicketUpdated}
-                // El offset aquí es relativo al drawer, podría ser menor o '0px'
-                headerAndPagePaddingOffset="20px" // Ajusta según el padding del DrawerContent
-              />
+          <SheetContent side="right" className="w-[90vw] sm:w-[75vw] p-0 flex flex-col"> {/* Ancho del Sheet y sin padding inicial */}
+            {selectedTicket && ( // Solo renderizar el contenido si hay un ticket
+              <>
+                <SheetHeader className="p-4 border-b flex-row justify-between items-center">
+                  <div>
+                    <SheetTitle>Detalles del Ticket #{selectedTicket.nroCaso}</SheetTitle>
+                    <SheetDescription className="sr-only">
+                      Información y bitácora del ticket seleccionado.
+                    </SheetDescription>
+                  </div>
+                  <SheetClose asChild>
+                    <Button variant="ghost" size="icon" aria-label="Cerrar panel de detalles">
+                      <CloseIcon className="h-5 w-5" />
+                    </Button>
+                  </SheetClose>
+                </SheetHeader>
+                <div className="flex-grow overflow-y-auto"> {/* Div para scroll interno */}
+                  <SelectedTicketPanel
+                    selectedTicket={selectedTicket}
+                    onTicketUpdated={handleTicketUpdated}
+                    // El offset aquí es relativo al Sheet, puede ser 0 si el panel ocupa todo
+                    headerAndPagePaddingOffset="0px" 
+                  />
+                </div>
+              </>
             )}
-          </DrawerContent>
-        </Drawer>
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   );
 }
 
-// Asumiendo que tienes un hook useTickets similar a este:
+// --- Placeholder para useTickets ---
+// Asegúrate de importar tu hook useTickets real
+// import { useTickets } from '@/hooks/useTickets';
+// Si no lo tienes, puedes usar este como base temporal:
 function useTickets() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tickets, setTickets] = React.useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   const fetchTickets = React.useCallback(async () => {
-    // ... tu lógica de fetch ...
-    // Ejemplo:
     setIsLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/tickets');
-      if (!res.ok) throw new Error("Error al cargar tickets");
-      const data = await res.json();
+      const res = await fetch('/api/tickets'); // Ajusta tu endpoint
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `Error HTTP: ${res.status}` }));
+        throw new Error(errorData.message || `Error al cargar tickets: ${res.statusText}`);
+      }
+      const data: Ticket[] = await res.json();
       setTickets(data);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (err: any) {
+      console.error("Error en fetchTickets:", err);
+      setError(err.message || 'Ocurrió un error desconocido al cargar los tickets.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
 
   return { tickets, setTickets, isLoading, error, refreshTickets: fetchTickets };
 }
-
+// --- Fin Placeholder ---
