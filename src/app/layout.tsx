@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider"; 
 // import { Sidebar } from "@/components/sidebar"; // Sigue comentado
 import { Providers } from "@/app/Providers"; 
-import Header from "@/components/Header"; // <--- DESCOMENTADO
+import Header from "@/components/Header"; 
 import { ClientOnly } from "@/components/ClientOnly"; 
 
 const fontSans = FontSans({
@@ -26,7 +26,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const sidebarWidth = "270px"; // Sigue comentado, se manejará cuando se reintroduzca Sidebar
+  // const sidebarWidth = "270px"; // Sigue comentado
 
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
@@ -41,9 +41,9 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="light" 
             disableTransitionOnChange 
-            // enableSystem={false} // Mantenemos esto simple por ahora
+            // enableSystem={false} 
           >
-            <ClientOnly fallback={<div style={{ display: 'flex', height: '100vh' }} /> /* Fallback simple que ocupa espacio */}>
+            <ClientOnly fallback={null /* Fallback es ahora null */}>
               {/* Estructura original del layout reintroducida aquí DENTRO de ClientOnly */}
               <div className="flex h-full" suppressHydrationWarning> 
                 {/* <Sidebar /> */} {/* Sigue comentado */}
@@ -68,3 +68,4 @@ export default function RootLayout({
     </html>
   );
 }
+
