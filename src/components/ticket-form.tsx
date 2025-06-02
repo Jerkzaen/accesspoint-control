@@ -22,12 +22,12 @@
       SelectTrigger,
       SelectValue,
     } from '@/components/ui/select';
+    import { Button } from '@/components/ui/button'; // <--- IMPORTACIÓN AGREGADA AQUÍ
     import { FormSubmitButton } from '@/components/ui/FormSubmitButton'; // Importar el nuevo botón
     import { prisma } from '@/lib/prisma'; // Prisma se usa en la Server Action
     import { v4 as uuidv4 } from 'uuid';
     import { ActionEntry, Ticket as GlobalTicket } from '@/types/ticket';
     import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button } from './ui/button';
 
     // Interfaz para los datos del formulario
     interface TicketFormFields {
@@ -294,4 +294,5 @@ import { Button } from './ui/button';
         </Card>
       );
     }
+    
     
