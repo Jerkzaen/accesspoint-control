@@ -5,9 +5,9 @@ import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider";
+// import { ThemeProvider } from "@/components/theme-provider"; // Comentado temporalmente
 import { Sidebar } from "@/components/sidebar";
-import { Providers } from "./Providers";
+import { Providers } from "./Providers"; // Providers podría estar vacío o solo envolver <SessionProvider> si lo usaras
 import Header from "@/components/Header";
 
 const fontSans = FontSans({
@@ -35,13 +35,13 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <Providers>
-          <ThemeProvider
+        <Providers> {/* Si Providers solo envolvía ThemeProvider, podría quedar solo el contenido interno */}
+          {/* <ThemeProvider
             attribute="class"
             defaultTheme="system"
-            enableSystem // Restauramos esto, ya que quitarlo no solucionó el problema principal
-            // disableTransitionOnChange // <--- TEMPORALMENTE COMENTADO/ELIMINADO
-          >
+            enableSystem 
+            // disableTransitionOnChange
+          > */}
             <div className="flex h-full"> 
               <Sidebar /> 
               
@@ -56,7 +56,7 @@ export default function RootLayout({
                 </main>
               </div>
             </div>
-          </ThemeProvider>
+          {/* </ThemeProvider> */}
         </Providers>
         <Analytics />
         <SpeedInsights />
