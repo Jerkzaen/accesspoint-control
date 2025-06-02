@@ -83,7 +83,6 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </div>
         <div className="mt-auto flex-shrink-0"> 
           <Separator className="my-3" /> 
-          {/* Añadir modal={false} al Drawer */}
           <Drawer modal={false}> 
             <DrawerTrigger asChild>
               <Button variant="ghost" className="w-full justify-start rounded-full" aria-label="Abrir opciones de usuario">
@@ -101,8 +100,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
             <DrawerContent 
               className="mb-2 p-3"
               onInteractOutside={(e) => {
-                // Esto podría ya no ser necesario si modal={false} funciona,
-                // pero lo dejamos por ahora.
+                // Prevenir que la interacción fuera del Drawer cierre el Sheet padre
+                // o cause otros comportamientos no deseados con el foco.
                 e.preventDefault(); 
               }}
             >
