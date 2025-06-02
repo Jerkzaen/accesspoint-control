@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 // import { Sidebar } from "@/components/sidebar"; // Sigue comentado
 import { Providers } from "@/app/Providers"; 
 // import Header from "@/components/Header"; // Sigue comentado
-import { ClientOnly } from "@/components/ClientOnly"; 
+// import { ClientOnly } from "@/components/ClientOnly"; // Comentado temporalmente
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -41,14 +41,9 @@ export default function RootLayout({
             disableTransitionOnChange 
             // enableSystem={false} // Mantenemos esto simple
           >
-            {/* Envolver el hijo de ThemeProvider con ClientOnly */}
-            <ClientOnly fallback={<div /> /* Fallback es ahora un div completamente vacío */}>
-              <div data-testid="theme-provider-child">Test</div>
-            </ClientOnly>
-            {/* El {children} original está comentado para esta prueba.
-              Si esto funciona, el siguiente paso sería reintroducir la estructura
-              original (con Header, main, children) DENTRO de ClientOnly.
-            */}
+            {/* Hijo directo de ThemeProvider, sin ClientOnly */}
+            <div data-testid="direct-theme-child">Contenido de prueba directo</div>
+            {/* El {children} original está comentado para esta prueba. */}
           </ThemeProvider>
         </Providers>
         <Analytics />
