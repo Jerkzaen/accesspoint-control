@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from "./ui/sheet"; 
 import { Button } from "./ui/button"; 
-import { LogOut, Menu, MoreHorizontal, Settings, X, User } from "lucide-react"; // <--- User AÑADIDO AQUÍ
+import { LogOut, Menu, MoreHorizontal, Settings, X, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarButton } from "./sidebar-button"; 
@@ -42,7 +42,11 @@ export function SidebarMobile(props: SidebarMobileProps) {
           <Menu size={20} />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="px-3 py-4 flex flex-col" hideClose>
+      <SheetContent 
+        side="left" 
+        className="px-3 py-4 flex flex-col" 
+        hideClose // Mantenemos esto ya que tienes un botón de cierre personalizado
+      >
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 flex-shrink-0">
           <SheetTitle className="text-lg font-semibold text-foreground mx-3">
             AccessPoint Control
@@ -59,38 +63,22 @@ export function SidebarMobile(props: SidebarMobileProps) {
         <div className="flex-grow overflow-y-auto py-5">
           <div className="flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
-              <Link href={link.href} passHref legacyBehavior key={idx}>
-                <SheetClose asChild>
-                  <SidebarButton 
+              <SheetClose asChild key={idx}>
+                <Link href={link.href} className="block rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none text-left"> 
+                  <SidebarButton
                     variant={pathname === link.href ? "secondary" : "ghost"}
                     icon={link.icon}
-                    className="w-full"
                   >
                     {link.label}
                   </SidebarButton>
-                </SheetClose>
-              </Link>
+                </Link>
+              </SheetClose>
             ))}
-             {/* Reconstrucción explícita para el link de "Perfil" en extras */}
-             {/* Asumiendo que props.sidebarItems.extras se define en sidebar.tsx como:
-                extras: (
-                  <Link href="/profile"> 
-                    <SidebarButton icon={User} variant="ghost" className="w-full">
-                      Perfil
-                    </SidebarButton>
-                  </Link>
-                ),
-                Aquí solo necesitamos renderizarlo y envolverlo en SheetClose si es un enlace.
-                Si props.sidebarItems.extras ya es un Link que envuelve un SidebarButton,
-                la estructura <SheetClose asChild>{props.sidebarItems.extras}</SheetClose> es correcta.
-             */}
-             {props.sidebarItems.extras && (
+            {props.sidebarItems.extras && (
                 <SheetClose asChild>
-                  {/* Esto asume que props.sidebarItems.extras es un elemento React válido
-                      que puede recibir las props de SheetClose (como un Link o Button) */}
                   {props.sidebarItems.extras}
                 </SheetClose>
-             )}
+            )}
           </div>
         </div>
         <div className="mt-auto flex-shrink-0"> 
@@ -109,7 +97,14 @@ export function SidebarMobile(props: SidebarMobileProps) {
                 </div>
               </Button>
             </DrawerTrigger>
-            <DrawerContent className="mb-2 p-3">
+            <DrawerContent 
+              className="mb-2 p-3"
+              onInteractOutside={(e) => {
+                // Prevenir que la interacción fuera del Drawer cierre el Sheet padre
+                // o cause otros comportamientos no deseados con el foco.
+                e.preventDefault(); 
+              }}
+            >
               <DrawerHeader className="pt-2 pb-1 px-1 text-left">
                 <DrawerTitle>Opciones de Usuario</DrawerTitle>
                 <DrawerDescription className="sr-only">
@@ -117,17 +112,14 @@ export function SidebarMobile(props: SidebarMobileProps) {
                 </DrawerDescription>
               </DrawerHeader>
               <div className="flex flex-col space-y-2 mt-1">
-                <Link href="/" passHref legacyBehavior>
+                <Link href="/" className="block rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none text-left">
                   <Button 
                     size="sm"
                     variant="ghost"
                     className="w-full justify-start"
-                    asChild 
                   >
-                    <> 
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configuración
-                    </>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configuración
                   </Button>
                 </Link>
                 <Button 
