@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider"; 
 // import { Sidebar } from "@/components/sidebar"; // Sigue comentado
 import { Providers } from "@/app/Providers"; 
-// import Header from "@/components/Header"; // Sigue comentado
-import { ClientOnly } from "@/components/ClientOnly"; // <--- IMPORTAR ClientOnly (asegúrate que la ruta sea correcta)
+import Header from "@/components/Header"; // <--- DESCOMENTADO
+import { ClientOnly } from "@/components/ClientOnly"; 
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -26,6 +26,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // const sidebarWidth = "270px"; // Sigue comentado, se manejará cuando se reintroduzca Sidebar
+
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
       <body
@@ -39,16 +41,25 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="light" 
             disableTransitionOnChange 
-            // enableSystem={false} // Mantenemos esto simple
+            // enableSystem={false} // Mantenemos esto simple por ahora
           >
-            {/* Envolver el hijo de ThemeProvider con ClientOnly */}
-            <ClientOnly fallback={null /* O un <div /> vacío si es necesario para la estructura */}>
-              <div data-testid="direct-theme-child">Contenido de prueba directo</div>
+            <ClientOnly fallback={<div style={{ display: 'flex', height: '100vh' }} /> /* Fallback simple que ocupa espacio */}>
+              {/* Estructura original del layout reintroducida aquí DENTRO de ClientOnly */}
+              <div className="flex h-full" suppressHydrationWarning> 
+                {/* <Sidebar /> */} {/* Sigue comentado */}
+                
+                <div 
+                  className="flex-1 flex flex-col h-full" 
+                  // style={{ marginLeft: sidebarWidth }} // Sigue comentado
+                >
+                  <Header /> 
+                  
+                  <main className="flex-grow overflow-y-auto">
+                    {children} 
+                  </main>
+                </div>
+              </div>
             </ClientOnly>
-            {/* El {children} original está comentado para esta prueba.
-              Si esto funciona, el siguiente paso sería reintroducir la estructura
-              original (con Header, main, children) DENTRO de ClientOnly.
-            */}
           </ThemeProvider>
         </Providers>
         <Analytics />
