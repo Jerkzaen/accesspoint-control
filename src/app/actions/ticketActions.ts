@@ -1,12 +1,13 @@
+// Asume que este archivo está en: src/app/actions/ticketActions.ts
 "use server";
 
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from 'uuid';
-import { redirect } from "next/navigation";
+// import { redirect } from "next/navigation"; // Descomenta si la vas a usar
 import { revalidatePath } from "next/cache";
-import { ActionEntry, Ticket } from '@/types/ticket'; // Asegúrate que la ruta a tus tipos es correcta
+import { ActionEntry } from '@/types/ticket';
 
-// Interfaz para los datos del formulario, adaptada de tu ticket-form.tsx
+// Interfaz para los datos del formulario (puede vivir aquí o ser importada)
 interface TicketFormFields {
   nroCaso: number;
   empresa: string;
@@ -22,6 +23,15 @@ interface TicketFormFields {
   createdAt: string;
 }
 
+// Tipo para el estado que la acción maneja y devuelve.
+// Debe ser consistente con `initialState` en `ticket-form.tsx`.
+interface ActionState {
+  error?: string;
+  success?: boolean;
+  message?: string;
+  ticketId?: string;
+}
+
 export async function loadLastTicketNro(): Promise<number> {
   try {
     const lastTicket = await prisma.ticket.findFirst({
@@ -31,11 +41,14 @@ export async function loadLastTicketNro(): Promise<number> {
     return lastTicket?.nroCaso || 0;
   } catch (error) {
     console.error("Error al cargar nroCaso del último ticket:", error);
-    return 0; // Retorna 0 en caso de error para evitar que nextNroCaso sea NaN
+    return 0; 
   }
 }
 
-export async function createNewTicketAction(formdata: FormData): Promise<{ error?: string; success?: boolean }> {
+export async function createNewTicketAction(
+  previousState: ActionState, // <--- AÑADIDO: Primer parámetro es el estado previo
+  formdata: FormData          // <--- SEGUNDO parámetro es FormData
+): Promise<ActionState> {     // <--- TIPO DE RETORNO consistente con ActionState
   const data: TicketFormFields = {
     nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
     empresa: formdata.get("empresa")?.toString() || "",
@@ -56,7 +69,8 @@ export async function createNewTicketAction(formdata: FormData): Promise<{ error
     !data.tituloDelTicket || !data.ubicacion || !data.contacto || !data.createdAt
   ) {
     console.error("Faltan campos obligatorios para el ticket.");
-    return { error: "Faltan campos obligatorios para el ticket." };
+    // Devuelve el estado de error
+    return { error: "Faltan campos obligatorios para el ticket.", success: false };
   }
 
   const accionesArray: ActionEntry[] = [];
@@ -80,7 +94,7 @@ export async function createNewTicketAction(formdata: FormData): Promise<{ error
   }
 
   const accionesParaGuardar = JSON.stringify(accionesArray);
-  const createdAtDate = new Date(data.createdAt + "T00:00:00Z"); // Usar Z para UTC o ajustar a zona horaria
+  const createdAtDate = new Date(data.createdAt + "T00:00:00Z"); 
   const fechaSolucionDate = data.fechaSolucion ? new Date(data.fechaSolucion + "T00:00:00Z") : null;
 
   const ticketDataToSave = {
@@ -99,16 +113,16 @@ export async function createNewTicketAction(formdata: FormData): Promise<{ error
   };
 
   try {
-    await prisma.ticket.create({ data: ticketDataToSave });
-    console.log("Ticket creado con datos:", ticketDataToSave);
+    const newTicket = await prisma.ticket.create({ data: ticketDataToSave });
+    console.log("Ticket creado con datos:", newTicket);
+    revalidatePath("/tickets/dashboard"); 
+    return { 
+      success: true, 
+      message: `Ticket #${newTicket.nroCaso} creado exitosamente.`, 
+      ticketId: newTicket.id 
+    };
   } catch (error: any) {
-    console.error("Error al crear ticket en Prisma:", error.message);
-    return { error: `Error al crear ticket en Prisma: ${error.message}` };
+    console.error("Error al crear ticket en Prisma:", error.message); 
+    return { error: `Error al crear el ticket: ${error.message}`, success: false };
   }
-  
-  // Revalidar el path del dashboard para que se actualice la lista de tickets
-  revalidatePath("/tickets/dashboard");
-  // Opcionalmente, podrías redirigir, pero para un modal, revalidatePath es mejor
-  // redirect("/tickets/dashboard"); 
-  return { success: true };
 }
