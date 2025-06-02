@@ -1,6 +1,6 @@
 // src/components/sidebar-mobile.tsx
 "use client";
-import * as React from 'react'; // <--- IMPORTACIÓN DE REACT AÑADIDA
+import * as React from 'react';
 import { SidebarItem } from "@/types/sidebar"; 
 import {
   Sheet,
@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from "./ui/sheet"; 
 import { Button } from "./ui/button"; 
-import { LogOut, Menu, MoreHorizontal, Settings, X } from "lucide-react";
+import { LogOut, Menu, MoreHorizontal, Settings, X, User } from "lucide-react"; // <--- User AÑADIDO AQUÍ
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarButton } from "./sidebar-button"; 
@@ -59,8 +59,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
         <div className="flex-grow overflow-y-auto py-5">
           <div className="flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
-              <SheetClose asChild key={idx}>
-                <Link href={link.href} passHref legacyBehavior>
+              <Link href={link.href} passHref legacyBehavior key={idx}>
+                <SheetClose asChild>
                   <SidebarButton 
                     variant={pathname === link.href ? "secondary" : "ghost"}
                     icon={link.icon}
@@ -68,14 +68,29 @@ export function SidebarMobile(props: SidebarMobileProps) {
                   >
                     {link.label}
                   </SidebarButton>
-                </Link>
-              </SheetClose>
+                </SheetClose>
+              </Link>
             ))}
-            {props.sidebarItems.extras && React.isValidElement(props.sidebarItems.extras) && (
-              <SheetClose asChild>
-                {React.cloneElement(props.sidebarItems.extras, {key: "extras-link"})}
-              </SheetClose>
-            )}
+             {/* Reconstrucción explícita para el link de "Perfil" en extras */}
+             {/* Asumiendo que props.sidebarItems.extras se define en sidebar.tsx como:
+                extras: (
+                  <Link href="/profile"> 
+                    <SidebarButton icon={User} variant="ghost" className="w-full">
+                      Perfil
+                    </SidebarButton>
+                  </Link>
+                ),
+                Aquí solo necesitamos renderizarlo y envolverlo en SheetClose si es un enlace.
+                Si props.sidebarItems.extras ya es un Link que envuelve un SidebarButton,
+                la estructura <SheetClose asChild>{props.sidebarItems.extras}</SheetClose> es correcta.
+             */}
+             {props.sidebarItems.extras && (
+                <SheetClose asChild>
+                  {/* Esto asume que props.sidebarItems.extras es un elemento React válido
+                      que puede recibir las props de SheetClose (como un Link o Button) */}
+                  {props.sidebarItems.extras}
+                </SheetClose>
+             )}
           </div>
         </div>
         <div className="mt-auto flex-shrink-0"> 
