@@ -45,7 +45,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
       <SheetContent 
         side="left" 
         className="px-3 py-4 flex flex-col" 
-        hideClose // Mantenemos esto ya que tienes un botón de cierre personalizado
+        hideClose
       >
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 flex-shrink-0">
           <SheetTitle className="text-lg font-semibold text-foreground mx-3">
@@ -83,7 +83,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </div>
         <div className="mt-auto flex-shrink-0"> 
           <Separator className="my-3" /> 
-          <Drawer>
+          {/* Añadir modal={false} al Drawer */}
+          <Drawer modal={false}> 
             <DrawerTrigger asChild>
               <Button variant="ghost" className="w-full justify-start rounded-full" aria-label="Abrir opciones de usuario">
                 <div className="flex justify-between items-center w-full">
@@ -100,8 +101,8 @@ export function SidebarMobile(props: SidebarMobileProps) {
             <DrawerContent 
               className="mb-2 p-3"
               onInteractOutside={(e) => {
-                // Prevenir que la interacción fuera del Drawer cierre el Sheet padre
-                // o cause otros comportamientos no deseados con el foco.
+                // Esto podría ya no ser necesario si modal={false} funciona,
+                // pero lo dejamos por ahora.
                 e.preventDefault(); 
               }}
             >
