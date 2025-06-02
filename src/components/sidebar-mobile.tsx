@@ -6,10 +6,10 @@ import {
   SheetClose,
   SheetContent,
   SheetHeader,
-  SheetTitle, // <--- IMPORTADO
-  SheetDescription, // <--- IMPORTADO
+  SheetTitle, 
+  SheetDescription, 
   SheetTrigger,
-} from "./ui/sheet"; // Asegúrate que la ruta a ui/sheet sea correcta
+} from "./ui/sheet"; 
 import { Button } from "./ui/button";
 import { LogOut, Menu, MoreHorizontal, Settings, X } from "lucide-react";
 import Link from "next/link";
@@ -20,10 +20,10 @@ import {
   Drawer, 
   DrawerContent, 
   DrawerTrigger,
-  DrawerHeader, // <--- IMPORTADO
-  DrawerTitle, // <--- IMPORTADO
-  DrawerDescription // <--- IMPORTADO
-} from "./ui/drawer"; // Asegúrate que la ruta a ui/drawer sea correcta
+  DrawerHeader, 
+  DrawerTitle, 
+  DrawerDescription 
+} from "./ui/drawer"; 
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
 interface SidebarMobileProps {
@@ -42,12 +42,11 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="px-3 py-4 flex flex-col" hideClose>
+        {/* El hideClose en SheetContent es importante, ya que usamos nuestro propio SheetClose */}
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 flex-shrink-0">
-          {/* Título y Descripción para el Sheet (principalmente para accesibilidad) */}
           <SheetTitle className="text-lg font-semibold text-foreground mx-3">
             AccessPoint Control
           </SheetTitle>
-          {/* SheetDescription puede estar oculta visualmente si no se necesita */}
           <SheetDescription className="sr-only">
             Menú principal de navegación y opciones de la aplicación.
           </SheetDescription>
@@ -61,6 +60,11 @@ export function SidebarMobile(props: SidebarMobileProps) {
           <div className="flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
               <Link key={idx} href={link.href}>
+                {/*
+                  Al hacer clic en un enlace, el Sheet se cerrará automáticamente si
+                  SidebarButton (que usa SheetClose) está correctamente implementado.
+                  Esto debería mover el foco fuera del SheetContent.
+                */}
                 <SidebarButton
                   variant={pathname === link.href ? "secondary" : "ghost"}
                   icon={link.icon}
@@ -75,6 +79,13 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </div>
         <div className="mt-auto flex-shrink-0"> 
           <Separator className="my-3" /> 
+          {/*
+            El problema podría estar aquí: un Drawer dentro de un Sheet.
+            Cuando el Drawer se abre, el Sheet sigue "abierto" en el fondo.
+            Cuando el Drawer se cierra, el foco podría intentar volver a un elemento
+            dentro del Sheet que Radix considera que debería estar oculto si el Drawer
+            era modal respecto al Sheet.
+          */}
           <Drawer>
             <DrawerTrigger asChild>
               <Button variant="ghost" className="w-full justify-start rounded-full" aria-label="Abrir opciones de usuario">
@@ -90,7 +101,6 @@ export function SidebarMobile(props: SidebarMobileProps) {
               </Button>
             </DrawerTrigger>
             <DrawerContent className="mb-2 p-3">
-              {/* Envolver título y descripción en DrawerHeader */}
               <DrawerHeader className="pt-2 pb-1 px-1 text-left">
                 <DrawerTitle>Opciones de Usuario</DrawerTitle>
                 <DrawerDescription className="sr-only">
@@ -99,21 +109,34 @@ export function SidebarMobile(props: SidebarMobileProps) {
               </DrawerHeader>
               <div className="flex flex-col space-y-2 mt-1">
                 <Link href="/">
-                  <SidebarButton
+                  {/*
+                    Si estos botones también usan SheetClose internamente (a través de SidebarButton),
+                    podrían intentar cerrar el Sheet principal, lo cual podría ser confuso.
+                    Sería mejor que estos botones dentro del Drawer no intenten cerrar el Sheet.
+                    Asumiré que SidebarButton no usa SheetClose si se usa dentro de un Drawer.
+                    Si lo hace, necesitaríamos un SidebarButton diferente o una prop para deshabilitar SheetClose.
+                  */}
+                  <Button // <--- Cambiado de SidebarButton a Button para evitar doble cierre
                     size="sm"
-                    icon={Settings}
-                    className="w-full"
+                    variant="ghost" // Para que se parezca al SidebarButton
+                    className="w-full justify-start" // Para que se parezca al SidebarButton
+                    asChild // Para que funcione con Link
                   >
-                    Configuración
-                  </SidebarButton>
+                    <Link href="/"> {/* O la ruta de configuración correcta */}
+                      <Settings className="mr-2 h-4 w-4" /> {/* Añadir icono manualmente */}
+                      Configuración
+                    </Link>
+                  </Button>
                 </Link>
-                <SidebarButton 
+                <Button // <--- Cambiado de SidebarButton a Button
                   onClick={() => console.log("Placeholder: Cerrar sesión")}
                   size="sm" 
-                  icon={LogOut} 
-                  className="w-full">
+                  variant="ghost" // Para que se parezca al SidebarButton
+                  className="w-full justify-start" // Para que se parezca al SidebarButton
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> {/* Añadir icono manualmente */}
                   Cerrar sesión
-                </SidebarButton>
+                </Button>
               </div>
             </DrawerContent>
           </Drawer>
