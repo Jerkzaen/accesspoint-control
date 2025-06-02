@@ -7,19 +7,21 @@ import { cn } from "@/lib/utils"; // Asegúrate que la ruta a lib/utils es corre
 interface SidebarButtonProps extends ButtonProps {
   icon?: LucideIcon;
   children: React.ReactNode;
+  // La prop 'asChild' se hereda de ButtonProps, no es necesario añadirla aquí explícitamente
+  // a menos que quieras restringir su tipo.
 }
 
 // Define y exporta SidebarButton directamente
 export const SidebarButton = React.forwardRef<
-  HTMLButtonElement,
+  HTMLButtonElement, // La ref será para un elemento botón
   SidebarButtonProps
 >(({ icon: Icon, className, children, ...props }, ref) => {
   return (
     <Button
       ref={ref} 
       variant="ghost"
-      className={cn("gap-2 justify-start rounded-full w-full", className)}
-      {...props}
+      className={cn("gap-2 justify-start rounded-full w-full", className)} // w-full por defecto
+      {...props} // Pasa todas las props, incluyendo un posible asChild desde el padre
     >
       {Icon && <Icon className="mr-2 h-4 w-4" />}
       <span>{children}</span>
@@ -27,7 +29,3 @@ export const SidebarButton = React.forwardRef<
   );
 });
 SidebarButton.displayName = "SidebarButton";
-
-// Ya no necesitamos la línea 'export { SidebarButton };' aquí abajo
-// porque la exportación se hace directamente en la declaración de la constante.
-    
