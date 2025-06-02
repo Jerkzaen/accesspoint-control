@@ -1,7 +1,9 @@
+// src/components/TicketFormInModal.tsx
 "use client";
 
 import * as React from "react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react"; // useEffect para reaccionar al estado del formulario
+import { useFormState, useFormStatus } from "react-dom"; // Importar useFormState
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +23,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNewTicketAction } from "@/app/actions/ticketActions"; // Importar la Server Action
+import { createNewTicketAction } from "@/app/actions/ticketActions"; // Asegúrate que la ruta es correcta
+import { AlertCircle, Loader2 } from "lucide-react"; // Para mostrar errores y estado de carga
+
+// Componente interno para el botón de submit, para usar useFormStatus
+function SubmitButton({ children }: { children: React.ReactNode }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {children}
+    </Button>
+  );
+}
 
 interface TicketFormInModalProps {
   nextNroCaso: number;
@@ -29,46 +43,68 @@ interface TicketFormInModalProps {
   onCancel: () => void;
 }
 
+// Definir el tipo de estado para useFormState, debe coincidir con lo que devuelve la Server Action
+interface ActionState {
+  error?: string;
+  success?: boolean;
+  message?: string;
+  ticketId?: string;
+}
+
+const initialState: ActionState = {
+  error: undefined,
+  success: undefined,
+  message: undefined,
+  ticketId: undefined,
+};
+
 export function TicketFormInModal({ 
   nextNroCaso, 
   onFormSubmitSuccess, 
   onCancel 
 }: TicketFormInModalProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Usar useFormState con la Server Action y el estado inicial
+  const [formState, formAction] = useFormState(createNewTicketAction, initialState);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!formRef.current) return;
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    const formData = new FormData(formRef.current);
-    
-    const result = await createNewTicketAction(formData);
-    setIsSubmitting(false);
-
-    if (result.success) {
-      onFormSubmitSuccess();
-    } else if (result.error) {
-      setErrorMessage(result.error);
-      console.error("Error desde la acción del formulario:", result.error);
+  useEffect(() => {
+    if (formState?.success) {
+      onFormSubmitSuccess(); // Llama al callback de éxito (que probablemente cierra el modal)
+      // Si el modal no se cierra automáticamente, podrías resetear aquí:
+      // formRef.current?.reset(); 
     }
-  };
+    // El mensaje de error se mostrará directamente desde formState en el JSX
+  }, [formState, onFormSubmitSuccess]);
 
   return (
-    <Card className="overflow-hidden shadow-none border-none"> {/* Ajustar estilos para modal si es necesario */}
+    <Card className="overflow-hidden shadow-none border-none">
       <CardHeader>
         <CardTitle>Crear Nuevo Ticket</CardTitle>
         <CardDescription>Ingresa la información detallada del problema.</CardDescription>
       </CardHeader>
       <CardContent className="max-h-[70vh] overflow-y-auto p-4 sm:p-6">
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+        {/* El 'action' del formulario ahora es el 'formAction' de useFormState */}
+        <form ref={formRef} action={formAction} className="space-y-6">
+          {/* Input oculto para nroCaso. El name es importante para FormData */}
+          <input type="hidden" name="nroCaso" value={nextNroCaso} />
+
+          {formState?.error && (
+            <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800 flex items-center gap-2" role="alert">
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-medium">Error:</span> {formState.error}
+            </div>
+          )}
+          {/* Podrías mostrar un mensaje de éxito aquí también si el modal no se cierra inmediatamente */}
+          {/* {formState?.success && formState.message && (
+            <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
+              {formState.message}
+            </div>
+          )} */}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="nroCasoModal">N° de Caso</Label>
-              <Input name="nroCaso" id="nroCasoModal" defaultValue={nextNroCaso} readOnly className="bg-muted dark:bg-gray-800"/>
+              <Label htmlFor="nroCasoModalDisplay">N° de Caso</Label>
+              <Input id="nroCasoModalDisplay" value={nextNroCaso} readOnly className="bg-muted dark:bg-gray-700"/>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="createdAtModal">Fecha Reporte</Label>
@@ -147,14 +183,11 @@ export function TicketFormInModal({
               <Input type="date" name="fechaSolucion" id="fechaSolucionModal" />
             </div>
           </div>
-          {errorMessage && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
-          )}
+          
           <CardFooter className="px-0 pt-6 flex justify-end gap-3">
-            <Button variant="outline" type="button" onClick={onCancel} disabled={isSubmitting}>Cancelar</Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Guardando..." : "Guardar Ticket"}
-            </Button>
+            {/* El botón de cancelar no debe ser de tipo submit y puede usar el estado `pending` de useFormStatus si es necesario deshabilitarlo */}
+            <Button variant="outline" type="button" onClick={onCancel} >Cancelar</Button>
+            <SubmitButton>Guardar Ticket</SubmitButton>
           </CardFooter>
         </form>
       </CardContent>
