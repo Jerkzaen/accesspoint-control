@@ -12,19 +12,12 @@ import {
   SheetTrigger,
 } from "./ui/sheet"; 
 import { Button } from "./ui/button"; 
-import { LogOut, Menu, MoreHorizontal, Settings, X, User } from "lucide-react";
+import { LogOut, Menu, MoreHorizontal, Settings, X, User } from "lucide-react"; // User sigue importado por si extras lo usa
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarButton } from "./sidebar-button"; 
 import { Separator } from "./ui/separator";
-import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerTrigger,
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerDescription 
-} from "./ui/drawer"; 
+// Ya no necesitamos Drawer y sus subcomponentes aquí
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
 interface SidebarMobileProps {
@@ -81,59 +74,47 @@ export function SidebarMobile(props: SidebarMobileProps) {
             )}
           </div>
         </div>
-        <div className="mt-auto flex-shrink-0"> 
-          <Separator className="my-3" /> 
-          <Drawer modal={false}> 
-            <DrawerTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start rounded-full" aria-label="Abrir opciones de usuario">
-                <div className="flex justify-between items-center w-full">
-                  <div className="flex gap-2 items-center">
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback>{userEmailPlaceholder.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span>{userEmailPlaceholder}</span>
-                  </div>
-                  <MoreHorizontal size={20} />
+        
+        {/* Sección de Opciones de Usuario directamente en el Sheet */}
+        <div className="mt-auto flex-shrink-0 border-t pt-3"> 
+          <div className="px-1 mb-2"> {/* Contenedor para el "título" visual si se desea */}
+            <div className="flex justify-between items-center w-full mb-2">
+                <div className="flex gap-2 items-center">
+                  <Avatar className="h-5 w-5">
+                    <AvatarFallback>{userEmailPlaceholder.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">{userEmailPlaceholder}</span>
                 </div>
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent 
-              className="mb-2 p-3"
-              onInteractOutside={(e) => {
-                // Prevenir que la interacción fuera del Drawer cierre el Sheet padre
-                // o cause otros comportamientos no deseados con el foco.
-                e.preventDefault(); 
-              }}
-            >
-              <DrawerHeader className="pt-2 pb-1 px-1 text-left">
-                <DrawerTitle>Opciones de Usuario</DrawerTitle>
-                <DrawerDescription className="sr-only">
-                  Acciones de perfil y cierre de sesión.
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="flex flex-col space-y-2 mt-1">
-                <Link href="/" className="block rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none text-left">
-                  <Button 
-                    size="sm"
-                    variant="ghost"
-                    className="w-full justify-start"
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configuración
-                  </Button>
-                </Link>
+                {/* Podríamos quitar MoreHorizontal si ya no abre un submenú */}
+            </div>
+            {/* <p className="text-xs text-muted-foreground">Opciones de Usuario</p> */}
+          </div>
+          <div className="flex flex-col space-y-1">
+            {/* SheetClose envuelve cada Link/Button para cerrar el Sheet al hacer clic */}
+            <SheetClose asChild>
+              <Link href="/" className="block rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none text-left">
                 <Button 
-                  onClick={() => console.log("Placeholder: Cerrar sesión")}
-                  size="sm" 
-                  variant="ghost" 
-                  className="w-full justify-start" 
+                  size="sm"
+                  variant="ghost"
+                  className="w-full justify-start"
                 >
-                  <LogOut className="mr-2 h-4 w-4" /> 
-                  Cerrar sesión
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configuración
                 </Button>
-              </div>
-            </DrawerContent>
-          </Drawer>
+              </Link>
+            </SheetClose>
+            <SheetClose asChild>
+              <Button 
+                onClick={() => console.log("Placeholder: Cerrar sesión")}
+                size="sm" 
+                variant="ghost" 
+                className="w-full justify-start" 
+              >
+                <LogOut className="mr-2 h-4 w-4" /> 
+                Cerrar sesión
+              </Button>
+            </SheetClose>
+          </div>
         </div>
       </SheetContent> 
     </Sheet> 
