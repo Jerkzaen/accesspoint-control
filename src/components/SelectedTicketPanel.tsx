@@ -16,15 +16,13 @@ import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
   onTicketUpdated: (updatedTicket: Ticket) => void;
-  // Offset para calcular la altura máxima, por ejemplo, la altura del header de la página.
-  // Podrías hacerlo más dinámico si es necesario, pero un valor fijo suele funcionar.
   headerAndPagePaddingOffset?: string; 
 }
 
 export default function SelectedTicketPanel({
   selectedTicket,
   onTicketUpdated,
-  headerAndPagePaddingOffset = '100px', // Valor por defecto
+  headerAndPagePaddingOffset = '100px', 
 }: SelectedTicketPanelProps) {
   
   const {
@@ -57,7 +55,8 @@ export default function SelectedTicketPanel({
     return (
       <Card
         className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center"
-        style={{ width: '30%', maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
+        // MODIFICADO: Eliminado width: '30%'
+        style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
       >
         <div className="text-sm text-muted-foreground text-center">
           <Edit3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -68,13 +67,13 @@ export default function SelectedTicketPanel({
     );
   }
 
-  // Combinar errores para mostrar (opcional, pero útil)
   const combinedError = ticketEditorError || actionsManagerError;
 
   return (
     <Card
       className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col"
-      style={{ width: '30%', maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
+      // MODIFICADO: Eliminado width: '30%'
+      style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
     >
       <div className="flex flex-col h-full overflow-y-auto pr-1"> {/* Div interno para scroll */}
         {/* Información del Ticket y Botón Editar */}
@@ -253,7 +252,6 @@ export default function SelectedTicketPanel({
           </>
         )}
         
-        {/* Div para ocupar espacio si el contenido es corto y empujar el footer hacia abajo */}
         <div className="flex-grow"></div>
       </div>
     </Card>

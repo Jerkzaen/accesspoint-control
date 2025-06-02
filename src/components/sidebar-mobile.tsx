@@ -21,7 +21,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "./ui/popover"; // <--- CAMBIADO: Usar Popover
+} from "./ui/popover";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
 interface SidebarMobileProps {
@@ -81,7 +81,6 @@ export function SidebarMobile(props: SidebarMobileProps) {
         </div>
         <div className="mt-auto flex-shrink-0"> 
           <Separator className="my-3" /> 
-          {/* Reemplazar Drawer con Popover */}
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <Button variant="ghost" className="w-full justify-start rounded-full" aria-label="Abrir opciones de usuario">
@@ -97,28 +96,19 @@ export function SidebarMobile(props: SidebarMobileProps) {
               </Button>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-[240px] p-2 mb-2" // Ajustar ancho y padding según sea necesario
-              side="top" // Para que aparezca encima del botón
-              align="start" // Para alinear con el inicio del botón
+              className="max-w-[240px] w-auto p-2 mb-2" // MODIFICADO: max-w-[240px] w-auto
+              side="top" 
+              align="start" 
             >
-              {/* No hay PopoverHeader, PopoverTitle, PopoverDescription directos */}
-              {/* Podemos añadir un título visual si es necesario */}
               <p className="text-sm font-medium px-2 pt-1 pb-2">Opciones de Usuario</p>
               <div className="flex flex-col space-y-1">
-                {/*
-                  Al hacer clic en estos enlaces/botones dentro del Popover,
-                  queremos que tanto el Popover como el Sheet se cierren.
-                  SheetClose envolverá el Link/Button.
-                  El Popover se cerrará al hacer clic fuera o al perder el foco,
-                  o podemos cerrarlo programáticamente si es necesario.
-                */}
                 <SheetClose asChild>
                   <Link href="/" className="block rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none text-left">
                     <Button 
                       size="sm"
                       variant="ghost"
                       className="w-full justify-start"
-                      onClick={() => setPopoverOpen(false)} // Cerrar Popover al hacer clic
+                      onClick={() => setPopoverOpen(false)} 
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       Configuración
@@ -129,7 +119,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
                   <Button 
                     onClick={() => {
                       console.log("Placeholder: Cerrar sesión");
-                      setPopoverOpen(false); // Cerrar Popover al hacer clic
+                      setPopoverOpen(false); 
                     }}
                     size="sm" 
                     variant="ghost" 
@@ -147,4 +137,3 @@ export function SidebarMobile(props: SidebarMobileProps) {
     </Sheet> 
   );
 }
-
