@@ -5,10 +5,10 @@ import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider"; 
-import { Sidebar } from "@/components/sidebar";
-import { Providers } from "./Providers"; 
-import Header from "@/components/Header";
+import { ThemeProvider } from "@/components/theme-provider"; // <--- DESCOMENTADO
+// import { Sidebar } from "@/components/sidebar"; // Sigue comentado
+import { Providers } from "@/app/Providers"; 
+import Header from "@/components/Header"; 
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -25,7 +25,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const sidebarWidth = "270px"; 
+  // const sidebarWidth = "270px"; // Sigue comentado
 
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
@@ -38,17 +38,17 @@ export default function RootLayout({
         <Providers>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system" 
-            enableSystem        
-            disableTransitionOnChange 
-            enableColorScheme={false} // <--- AÑADIDO ESTO
+            defaultTheme="system" // Puedes empezar con "light" o "dark" si "system" da problemas
+            enableSystem
+            disableTransitionOnChange // Mantenemos esta por ahora, es útil
+            // enableColorScheme={false} // Dejamos esto comentado por ahora, a menos que sea necesario
           >
             <div className="flex h-full"> 
-              <Sidebar /> 
+              {/* <Sidebar /> */} {/* Sigue comentado */}
               
               <div 
                 className="flex-1 flex flex-col h-full" 
-                style={{ marginLeft: sidebarWidth }} 
+                // style={{ marginLeft: sidebarWidth }} // Sigue comentado
               >
                 <Header /> 
                 
