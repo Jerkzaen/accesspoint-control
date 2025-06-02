@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 
 interface ClientOnlyProps {
   children: React.ReactNode;
-  fallback?: React.ReactNode; // Un placeholder opcional mientras no está montado
+  fallback?: React.ReactNode; 
 }
 
 export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
@@ -16,8 +16,11 @@ export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
   }, []);
 
   if (!hasMounted) {
-    return <>{fallback}</>; // Renderiza el fallback (o null) en el servidor y en la hidratación inicial
+    // Si fallback es un elemento React válido (incluyendo null), retornarlo directamente.
+    // React maneja bien los fragments si children/fallback es un array.
+    return fallback; 
   }
 
-  return <>{children}</>; // Renderiza los hijos solo en el cliente después de montar
+  return <>{children}</>; // Mantener el fragmento aquí está bien si children puede ser múltiple.
+                          // O también podrías retornar 'children' directamente si siempre es un solo nodo.
 }
