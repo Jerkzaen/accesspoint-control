@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider"; // <--- DESCOMENTADO
+import { ThemeProvider } from "@/components/theme-provider"; 
 // import { Sidebar } from "@/components/sidebar"; // Sigue comentado
 import { Providers } from "@/app/Providers"; 
 import Header from "@/components/Header"; 
@@ -38,12 +38,12 @@ export default function RootLayout({
         <Providers>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system" // Puedes empezar con "light" o "dark" si "system" da problemas
-            enableSystem
-            disableTransitionOnChange // Mantenemos esta por ahora, es útil
-            // enableColorScheme={false} // Dejamos esto comentado por ahora, a menos que sea necesario
+            defaultTheme="light" 
+            disableTransitionOnChange
+            // asChild // <--- ELIMINADO ESTO
           >
-            <div className="flex h-full"> 
+            {/* ThemeProvider ahora renderizará su propio div aquí */}
+            <div className="flex h-full" suppressHydrationWarning> {/* suppressHydrationWarning aquí por si acaso */}
               {/* <Sidebar /> */} {/* Sigue comentado */}
               
               <div 
