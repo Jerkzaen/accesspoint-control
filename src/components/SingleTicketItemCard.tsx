@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Número de Caso como Badge)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Número de Caso como Badge junto al Estado)
 'use client';
 
 import {
@@ -8,9 +8,9 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { Ticket } from '@/types/ticket'; // Esta interfaz ya debería estar actualizada
-import { Badge } from '@/components/ui/badge'; // Asegúrate de que Badge esté importado
-import { cn } from '@/lib/utils';
+import { Ticket } from '@/types/ticket';
+import { Badge } from '@/components/ui/badge';
+import { cn, formatTicketNumber } from '@/lib/utils'; // Importar formatTicketNumber
 
 interface SingleTicketItemCardProps {
   ticket: Ticket;
@@ -19,7 +19,6 @@ interface SingleTicketItemCardProps {
 }
 
 export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelected }: SingleTicketItemCardProps) {
-  // Usar el nuevo nombre de campo: fechaCreacion
   const fechaCreacionDate = new Date(ticket.fechaCreacion).toLocaleString('es-CL', {
     day: '2-digit',
     month: '2-digit',
@@ -37,13 +36,17 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
     default: prioridadVariant = "outline";
   }
 
+  // Definir la variante para el badge del estado
   let estadoVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
   switch (ticket.estado?.toLowerCase()) {
-    case 'abierto': estadoVariant = "default"; break;
+    case 'abierto': estadoVariant = "default"; break; // Usar 'default' para un color primario
     case 'cerrado': estadoVariant = "destructive"; break;
     case 'en progreso': estadoVariant = "secondary"; break;
     case 'pendiente': estadoVariant = "outline"; break;
   }
+
+  // Formatear el número de caso
+  const formattedNumeroCaso = formatTicketNumber(ticket.numeroCaso);
 
   return (
     <Card
@@ -60,32 +63,33 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
       <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
           <div className="flex-grow">
-            {/* NUEVO: Badge para el número de caso */}
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5">
-                Caso #{ticket.numeroCaso}
-              </Badge>
-              {/* Opcional: Si quieres mantener la empresa aquí, puedes hacerlo */}
-              {/* <span className="text-xs text-muted-foreground">{ticket.empresa}</span> */}
-            </div>
-            
             {/* Mantener el título como el CardTitle principal */}
             <CardTitle className="text-base sm:text-lg md:text-xl leading-tight">
               {ticket.titulo}
             </CardTitle>
-            {/* La CardDescription ahora solo contendrá la empresa si no se puso en la badge */}
+            {/* La CardDescription ahora solo contendrá la empresa */}
             <CardDescription className="text-xs sm:text-sm mt-0.5">
               {ticket.empresa}
             </CardDescription>
           </div>
-          <Badge variant={estadoVariant} className="mt-1 sm:mt-0 whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6">
-            {ticket.estado || 'N/A'}
-          </Badge>
+          {/* Contenedor para las dos Badges: Número de Caso y Estado */}
+          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-start mt-1 sm:mt-0">
+            {/* Badge para el número de caso, con texto "Caso" */}
+            <Badge 
+              variant="secondary" // Usar secondary para un estilo que no sea afectado por el hover de la tarjeta
+              className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6"
+            >
+            #{formattedNumeroCaso}
+            </Badge>
+            {/* Badge para el estado del ticket */}
+            <Badge variant={estadoVariant} className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6">
+              {ticket.estado || 'N/A'}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="text-sm space-y-2 pt-2 pb-3 px-4 sm:px-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:text-sm pt-2 mt-1">
-          {/* Usar los nuevos nombres de campo */}
           <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente}</div>
           <div><strong>Ubicación:</strong> {ticket.ubicacion}</div>
           <div><strong>Técnico:</strong> {ticket.tecnicoAsignado}</div>

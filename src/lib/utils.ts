@@ -1,6 +1,41 @@
+// src/lib/utils.ts (ACTUALIZADO - Añadir función para logos de empresa)
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Formatea un número a un string con ceros a la izquierda.
+ * @param num El número a formatear.
+ * @param size El número total de dígitos deseados (ej. 5 para 00001).
+ * @returns El número formateado como string.
+ */
+export function formatTicketNumber(num: number, size: number = 5): string {
+  let s = String(num);
+  while (s.length < size) {
+    s = "0" + s;
+  }
+  return s;
+}
+
+/**
+ * Mapea el nombre de una empresa a la URL de su logo.
+ * Asume que los logos están en /public/images/.
+ * @param companyName El nombre de la empresa (ej. "CMT", "Achs").
+ * @returns La URL del logo o un string vacío si no se encuentra.
+ */
+export function getCompanyLogoUrl(companyName: string): string {
+  const lowerCaseName = companyName.toLowerCase();
+  switch (lowerCaseName) {
+    case 'achs':
+      return '/images/achs-logo.png'; // Asegúrate que esta ruta exista
+    case 'esachs':
+      return '/images/esachs-logo.png'; // Asegúrate que esta ruta exista
+    case 'cmt':
+      return '/images/cmt-logo.png'; // Asegúrate que esta ruta exista
+    default:
+      return ''; // O una imagen de logo por defecto
+  }
 }
