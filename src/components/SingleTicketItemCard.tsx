@@ -1,6 +1,7 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Número de Caso como Badge junto al Estado)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Insignia de Empresa y Reorganización)
 'use client';
 
+import Image from 'next/image'; // Importar el componente Image de Next.js
 import {
   Card,
   CardHeader,
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Ticket } from '@/types/ticket';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatTicketNumber } from '@/lib/utils'; // Importar formatTicketNumber
+import { cn, formatTicketNumber, getCompanyLogoUrl } from '@/lib/utils'; // Importar getCompanyLogoUrl
 
 interface SingleTicketItemCardProps {
   ticket: Ticket;
@@ -47,6 +48,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
 
   // Formatear el número de caso
   const formattedNumeroCaso = formatTicketNumber(ticket.numeroCaso);
+  // Obtener la URL del logo de la empresa
+  const companyLogoUrl = getCompanyLogoUrl(ticket.empresa);
 
   return (
     <Card
@@ -67,20 +70,44 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             <CardTitle className="text-base sm:text-lg md:text-xl leading-tight">
               {ticket.titulo}
             </CardTitle>
-            {/* La CardDescription ahora solo contendrá la empresa */}
-            <CardDescription className="text-xs sm:text-sm mt-0.5">
+            {/* La CardDescription se elimina ya que la empresa irá en una Badge */}
+            {/* <CardDescription className="text-xs sm:text-sm mt-0.5">
               {ticket.empresa}
-            </CardDescription>
+            </CardDescription> */}
           </div>
-          {/* Contenedor para las dos Badges: Número de Caso y Estado */}
+          {/* Contenedor para las tres Badges: Número de Caso, Empresa y Estado */}
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-start mt-1 sm:mt-0">
             {/* Badge para el número de caso, con texto "Caso" */}
             <Badge 
               variant="secondary" // Usar secondary para un estilo que no sea afectado por el hover de la tarjeta
               className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6"
             >
-            #{formattedNumeroCaso}
+              Caso #{formattedNumeroCaso}
             </Badge>
+            {/* Badge para la empresa, con logo si existe */}
+            {companyLogoUrl ? (
+              <Badge 
+                variant="secondary" // O outline, según prefieras
+                className="whitespace-nowrap text-xs sm:text-sm px-1.5 py-0.5 h-auto sm:h-6 flex items-center gap-1"
+              >
+                <Image 
+                  src={companyLogoUrl} 
+                  alt={`${ticket.empresa} logo`} 
+                  width={16} // Ajusta el tamaño del logo
+                  height={16} 
+                  className="rounded-full" // Para logos circulares si los tienes
+                />
+                <span className="sr-only sm:not-sr-only">{ticket.empresa}</span> {/* Texto visible en desktop, solo SR en mobile si el logo es suficiente */}
+              </Badge>
+            ) : (
+              // Si no hay logo, mostrar solo el nombre de la empresa como badge
+              <Badge 
+                variant="secondary" 
+                className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6"
+              >
+                {ticket.empresa}
+              </Badge>
+            )}
             {/* Badge para el estado del ticket */}
             <Badge variant={estadoVariant} className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6">
               {ticket.estado || 'N/A'}
