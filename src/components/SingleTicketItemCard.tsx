@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Número de Caso en Título)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Número de Caso como Badge)
 'use client';
 
 import {
@@ -9,7 +9,7 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Ticket } from '@/types/ticket'; // Esta interfaz ya debería estar actualizada
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge'; // Asegúrate de que Badge esté importado
 import { cn } from '@/lib/utils';
 
 interface SingleTicketItemCardProps {
@@ -60,11 +60,20 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
       <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
           <div className="flex-grow">
-            {/* ACTUALIZADO: Combinar número de caso y título en el CardTitle */}
+            {/* NUEVO: Badge para el número de caso */}
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5">
+                Caso #{ticket.numeroCaso}
+              </Badge>
+              {/* Opcional: Si quieres mantener la empresa aquí, puedes hacerlo */}
+              {/* <span className="text-xs text-muted-foreground">{ticket.empresa}</span> */}
+            </div>
+            
+            {/* Mantener el título como el CardTitle principal */}
             <CardTitle className="text-base sm:text-lg md:text-xl leading-tight">
-              <span className="font-bold text-primary mr-1">#{ticket.numeroCaso}</span> - {ticket.titulo}
+              {ticket.titulo}
             </CardTitle>
-            {/* La CardDescription ahora solo contendrá la empresa (si es necesario) */}
+            {/* La CardDescription ahora solo contendrá la empresa si no se puso en la badge */}
             <CardDescription className="text-xs sm:text-sm mt-0.5">
               {ticket.empresa}
             </CardDescription>
