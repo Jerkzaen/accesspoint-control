@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Eliminada descripción detallada)
 'use client';
 
 import {
@@ -87,25 +87,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             </Badge>
           </div>
         </div>
-        {/* El campo 'titulo' (antes 'descripcion' en el modelo) se usa en CardTitle.
-            Ahora usaremos 'descripcionDetallada' si queremos mostrar la descripción larga aquí,
-            o podríamos optar por mostrar el 'titulo' si la 'descripcionDetallada' es muy larga para la tarjeta.
-            Por ahora, asumiremos que el 'titulo' ya está en CardTitle y mostraremos 'descripcionDetallada' si existe.
-        */}
-        {ticket.descripcionDetallada && (
-          <div className="mt-2.5">
-            <p className="font-semibold text-xs sm:text-sm">Descripción:</p>
-            <div className="mt-1 text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-md border border-border min-h-[48px]">
-              {/* Usar el nuevo nombre de campo */}
-              {ticket.descripcionDetallada}
-            </div>
-          </div>
-        )}
-        {/* Si quieres mostrar el campo 'titulo' aquí también (además de en CardTitle), puedes hacerlo.
-            Por ejemplo, si 'titulo' es un resumen breve y 'descripcionDetallada' es el texto completo.
-            Si 'titulo' es el único campo de descripción que quieres en la tarjeta, y ya está en CardTitle,
-            entonces esta sección de descripción podría incluso eliminarse o adaptarse.
-            Por ahora, la lógica usa 'descripcionDetallada'.
+        {/*
+          SE HA ELIMINADO LA DESCRIPCIÓN DETALLADA DE ESTA TARJETA PARA EVITAR REDUNDANCIA
+          Y MANTENER ESTA TARJETA COMO UN RESUMEN CONCISO.
+          La descripción detallada completa se mostrará en el SelectedTicketPanel.
         */}
       </CardContent>
     </Card>
