@@ -1,30 +1,30 @@
-// Asume que este archivo está en: src/app/actions/ticketActions.ts
+// src/app/actions/ticketActions.ts
 "use server";
 
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from 'uuid';
-// import { redirect } from "next/navigation"; // Descomenta si la vas a usar
 import { revalidatePath } from "next/cache";
 import { ActionEntry } from '@/types/ticket';
 
-// Interfaz para los datos del formulario (puede vivir aquí o ser importada)
-interface TicketFormFields {
+// Interfaz para los datos que vienen del FormData del formulario.
+// Los nombres aquí coinciden con los atributos 'name' de tus inputs.
+interface TicketFormInputFields {
   nroCaso: number;
   empresa: string;
+  tipo: string; // Este es 'tipoIncidente' en el modelo Prisma
   ubicacion: string;
-  contacto: string;
+  tecnico: string; // Este es 'tecnicoAsignado' en el modelo Prisma
+  contacto: string; // Este es 'solicitante' en el modelo Prisma
+  tituloDelTicket: string; // Este es 'titulo' en el modelo Prisma
+  detalleAdicional?: string; // Este es 'descripcionDetallada' en el modelo Prisma
   prioridad: string;
-  tecnico: string;
-  tipo: string;
-  tituloDelTicket: string;
-  detalleAdicional?: string;
-  accionInicial?: string;
+  // estado se define internamente, no usualmente desde el form de creación inicial
+  accionInicial?: string; // Esto se usa para crear la primera acción en la bitácora
+  createdAt: string; // Esta es 'fechaCreacion' en el modelo Prisma (fecha de reporte del formulario)
   fechaSolucion?: string | null;
-  createdAt: string;
 }
 
 // Tipo para el estado que la acción maneja y devuelve.
-// Debe ser consistente con `initialState` en `ticket-form.tsx`.
 interface ActionState {
   error?: string;
   success?: boolean;
@@ -35,54 +35,55 @@ interface ActionState {
 export async function loadLastTicketNro(): Promise<number> {
   try {
     const lastTicket = await prisma.ticket.findFirst({
-      orderBy: { nroCaso: "desc" },
-      select: { nroCaso: true },
+      orderBy: { numeroCaso: "desc" }, // ACTUALIZADO al nuevo nombre del modelo
+      select: { numeroCaso: true },    // ACTUALIZADO al nuevo nombre del modelo
     });
-    return lastTicket?.nroCaso || 0;
+    return lastTicket?.numeroCaso || 0;
   } catch (error) {
-    console.error("Error al cargar nroCaso del último ticket:", error);
-    return 0; 
+    console.error("Error al cargar numeroCaso del último ticket:", error);
+    return 0;
   }
 }
 
 export async function createNewTicketAction(
-  previousState: ActionState, // <--- AÑADIDO: Primer parámetro es el estado previo
-  formdata: FormData          // <--- SEGUNDO parámetro es FormData
-): Promise<ActionState> {     // <--- TIPO DE RETORNO consistente con ActionState
-  const data: TicketFormFields = {
+  previousState: ActionState,
+  formdata: FormData
+): Promise<ActionState> {
+  // Recolectar datos del FormData usando los nombres de los inputs del formulario
+  const formInput: TicketFormInputFields = {
     nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
     empresa: formdata.get("empresa")?.toString() || "",
-    prioridad: formdata.get("prioridad")?.toString() || "",
-    tecnico: formdata.get("tecnico")?.toString() || "",
     tipo: formdata.get("tipo")?.toString() || "",
+    ubicacion: formdata.get("ubicacion")?.toString() || "",
+    tecnico: formdata.get("tecnico")?.toString() || "",
+    contacto: formdata.get("contacto")?.toString() || "",
     tituloDelTicket: formdata.get("tituloDelTicket")?.toString() || "",
     detalleAdicional: formdata.get("detalleAdicional")?.toString() || "",
-    ubicacion: formdata.get("ubicacion")?.toString() || "",
-    contacto: formdata.get("contacto")?.toString() || "",
-    createdAt: formdata.get("createdAt")?.toString() || new Date().toISOString().split('T')[0],
+    prioridad: formdata.get("prioridad")?.toString() || "",
     accionInicial: formdata.get("accionInicial")?.toString() || "",
+    createdAt: formdata.get("createdAt")?.toString() || new Date().toISOString().split('T')[0],
     fechaSolucion: formdata.get("fechaSolucion")?.toString() || null,
   };
 
+  // Validación de campos obligatorios (usando los nombres de formInput)
   if (
-    !data.nroCaso || !data.empresa || !data.prioridad || !data.tecnico || !data.tipo ||
-    !data.tituloDelTicket || !data.ubicacion || !data.contacto || !data.createdAt
+    !formInput.nroCaso || !formInput.empresa || !formInput.prioridad || !formInput.tecnico || !formInput.tipo ||
+    !formInput.tituloDelTicket || !formInput.ubicacion || !formInput.contacto || !formInput.createdAt
   ) {
-    console.error("Faltan campos obligatorios para el ticket.");
-    // Devuelve el estado de error
     return { error: "Faltan campos obligatorios para el ticket.", success: false };
   }
 
+  // Preparar la primera acción para la bitácora
   const accionesArray: ActionEntry[] = [];
-  let descripcionPrincipalTicket = data.tituloDelTicket;
   let primeraAccionDesc = "";
 
-  if (data.detalleAdicional?.trim()) {
-    primeraAccionDesc += `Detalle del problema: ${data.detalleAdicional.trim()}`;
+  // Usar detalleAdicional para la descripción de la primera acción si existe
+  if (formInput.detalleAdicional?.trim()) {
+    primeraAccionDesc += `Detalle del problema: ${formInput.detalleAdicional.trim()}`;
   }
-  if (data.accionInicial?.trim()) {
-    if (primeraAccionDesc) primeraAccionDesc += "\n";
-    primeraAccionDesc += `Acción inicial realizada: ${data.accionInicial.trim()}`;
+  if (formInput.accionInicial?.trim()) {
+    if (primeraAccionDesc) primeraAccionDesc += "\n"; // Añadir nueva línea si ya hay descripción
+    primeraAccionDesc += `Acción inicial realizada: ${formInput.accionInicial.trim()}`;
   }
   
   if (primeraAccionDesc.trim()) {
@@ -92,37 +93,41 @@ export async function createNewTicketAction(
       descripcion: primeraAccionDesc.trim(),
     });
   }
-
   const accionesParaGuardar = JSON.stringify(accionesArray);
-  const createdAtDate = new Date(data.createdAt + "T00:00:00Z"); 
-  const fechaSolucionDate = data.fechaSolucion ? new Date(data.fechaSolucion + "T00:00:00Z") : null;
 
+  // Conversión de fechas
+  const fechaCreacionDate = new Date(formInput.createdAt + "T00:00:00Z"); // Asumir que la fecha del input es local y convertir a UTC para guardar
+  const fechaSolucionDate = formInput.fechaSolucion ? new Date(formInput.fechaSolucion + "T00:00:00Z") : null;
+
+  // Mapeo de los nombres de formInput a los nombres del modelo Prisma para guardar
   const ticketDataToSave = {
-    nroCaso: data.nroCaso,
-    empresa: data.empresa,
-    prioridad: data.prioridad,
-    tecnico: data.tecnico,
-    tipo: data.tipo,
-    descripcion: descripcionPrincipalTicket,
-    ubicacion: data.ubicacion,
-    contacto: data.contacto,
+    numeroCaso: formInput.nroCaso,                     // Mapeado
+    empresa: formInput.empresa,
+    tipoIncidente: formInput.tipo,                    // Mapeado
+    ubicacion: formInput.ubicacion,
+    tecnicoAsignado: formInput.tecnico,               // Mapeado
+    solicitante: formInput.contacto,                  // Mapeado
+    titulo: formInput.tituloDelTicket,                // Mapeado
+    descripcionDetallada: formInput.detalleAdicional?.trim() || null, // Mapeado y puede ser null si no se provee
+    prioridad: formInput.prioridad,
+    estado: "Abierto",                                // Estado inicial por defecto
     acciones: accionesParaGuardar,
-    createdAt: createdAtDate,
+    fechaCreacion: fechaCreacionDate,                 // Mapeado
     fechaSolucion: fechaSolucionDate,
-    estado: "Abierto",
+    // fechaActualizacion se maneja automáticamente por @updatedAt en el schema.prisma
   };
 
   try {
     const newTicket = await prisma.ticket.create({ data: ticketDataToSave });
-    console.log("Ticket creado con datos:", newTicket);
-    revalidatePath("/tickets/dashboard"); 
+    revalidatePath("/tickets/dashboard"); // Revalida la ruta para mostrar el nuevo ticket
     return { 
       success: true, 
-      message: `Ticket #${newTicket.nroCaso} creado exitosamente.`, 
+      message: `Ticket #${newTicket.numeroCaso} creado exitosamente.`, 
       ticketId: newTicket.id 
     };
   } catch (error: any) {
-    console.error("Error al crear ticket en Prisma:", error.message); 
+    console.error("Error al crear ticket en Prisma:", error.message);
+    // Devolver el mensaje de error específico de Prisma puede ser útil para depurar
     return { error: `Error al crear el ticket: ${error.message}`, success: false };
   }
 }
