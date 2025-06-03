@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Insignia de Empresa solo con Imagen)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Insignia de Empresa más ancha y con imagen que llena)
 'use client';
 
 import Image from 'next/image'; // Importar el componente Image de Next.js
@@ -84,17 +84,18 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             {companyLogoUrl ? (
               <Badge 
                 variant="secondary" 
-                // Ajustar padding, ancho y alto para que la imagen lo cubra
-                className="p-0 w-6 h-6 flex items-center justify-center overflow-hidden rounded-md" // w-6 h-6 para un tamaño fijo, p-0 para eliminar padding
+                // Establecer un ancho y alto fijo para el badge
+                // h-6 es 24px de alto. w-10 es 40px de ancho. Esto lo hace rectangular.
+                // p-0 elimina el padding interno del badge.
+                className="w-10 h-6 p-0 flex items-center justify-center overflow-hidden rounded-md" 
               >
                 <Image 
                   src={companyLogoUrl} 
                   alt={`${ticket.empresa} logo`} 
-                  width={24} // Coincidir con el tamaño del badge (w-6 = 24px)
-                  height={24} // Coincidir con el tamaño del badge (h-6 = 24px)
-                  className="object-cover w-full h-full" // Asegurar que la imagen cubra el espacio
+                  width={40} // Coincidir con el ancho del badge (w-10 = 40px)
+                  height={24} // Coincidir con el alto del badge (h-6 = 24px)
+                  className="object-cover w-full h-full" // object-cover para que la imagen llene el espacio, recortando si es necesario
                 />
-                {/* Texto de la empresa eliminado, ya que el logo es suficiente */}
               </Badge>
             ) : (
               // Si no hay logo, mostrar solo el nombre de la empresa como badge
