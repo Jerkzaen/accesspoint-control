@@ -1,4 +1,4 @@
-// src/app/api/tickets/route.js
+// src/app/api/tickets/route.js (ACTUALIZADO - CORRECCIÓN DE ERROR 'mode')
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -25,13 +25,17 @@ export async function GET(request) {
 
     // Aplicar búsqueda de texto si se proporciona
     if (searchText) {
-      // Usar `OR` para buscar en múltiples campos de texto
+      // NOTA IMPORTANTE: Se ha eliminado `mode: 'insensitive'` porque solo es compatible
+      // con bases de datos PostgreSQL. Si estás usando SQLite (por ejemplo),
+      // esta opción causará un error. La búsqueda será sensible a mayúsculas y minúsculas
+      // a menos que tu base de datos o configuración de Prisma maneje la insensibilidad
+      // de otra manera (ej. configurando la base de datos o usando LOWER() si es posible).
       whereClause.OR = [
-        { titulo: { contains: searchText, mode: 'insensitive' } },
-        { descripcionDetallada: { contains: searchText, mode: 'insensitive' } },
-        { empresa: { contains: searchText, mode: 'insensitive' } },
-        { solicitante: { contains: searchText, mode: 'insensitive' } },
-        { tecnicoAsignado: { contains: searchText, mode: 'insensitive' } },
+        { titulo: { contains: searchText } },
+        { descripcionDetallada: { contains: searchText } },
+        { empresa: { contains: searchText } },
+        { solicitante: { contains: searchText } },
+        { tecnicoAsignado: { contains: searchText } },
         // Convertir numeroCaso a string para buscar si es numérico
         { numeroCaso: { equals: parseInt(searchText) || undefined } },
       ];
