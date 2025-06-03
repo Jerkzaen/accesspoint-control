@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Insignia de Empresa y Reorganización)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Insignia de Empresa solo con Imagen)
 'use client';
 
 import Image from 'next/image'; // Importar el componente Image de Next.js
@@ -70,10 +70,6 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             <CardTitle className="text-base sm:text-lg md:text-xl leading-tight">
               {ticket.titulo}
             </CardTitle>
-            {/* La CardDescription se elimina ya que la empresa irá en una Badge */}
-            {/* <CardDescription className="text-xs sm:text-sm mt-0.5">
-              {ticket.empresa}
-            </CardDescription> */}
           </div>
           {/* Contenedor para las tres Badges: Número de Caso, Empresa y Estado */}
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-start mt-1 sm:mt-0">
@@ -87,17 +83,18 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             {/* Badge para la empresa, con logo si existe */}
             {companyLogoUrl ? (
               <Badge 
-                variant="secondary" // O outline, según prefieras
-                className="whitespace-nowrap text-xs sm:text-sm px-1.5 py-0.5 h-auto sm:h-6 flex items-center gap-1"
+                variant="secondary" 
+                // Ajustar padding, ancho y alto para que la imagen lo cubra
+                className="p-0 w-6 h-6 flex items-center justify-center overflow-hidden rounded-md" // w-6 h-6 para un tamaño fijo, p-0 para eliminar padding
               >
                 <Image 
                   src={companyLogoUrl} 
                   alt={`${ticket.empresa} logo`} 
-                  width={16} // Ajusta el tamaño del logo
-                  height={16} 
-                  className="rounded-full" // Para logos circulares si los tienes
+                  width={24} // Coincidir con el tamaño del badge (w-6 = 24px)
+                  height={24} // Coincidir con el tamaño del badge (h-6 = 24px)
+                  className="object-cover w-full h-full" // Asegurar que la imagen cubra el espacio
                 />
-                <span className="sr-only sm:not-sr-only">{ticket.empresa}</span> {/* Texto visible en desktop, solo SR en mobile si el logo es suficiente */}
+                {/* Texto de la empresa eliminado, ya que el logo es suficiente */}
               </Badge>
             ) : (
               // Si no hay logo, mostrar solo el nombre de la empresa como badge
