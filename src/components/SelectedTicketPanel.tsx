@@ -9,36 +9,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit3, AlertTriangle } from 'lucide-react';
-import { Ticket, ActionEntry } from '@/types/ticket'; // Esta interfaz ya debería estar actualizada
-import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor'; // Asumimos que EditableTicketFields se actualizará
+import { Ticket, ActionEntry } from '@/types/ticket';
+import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
 
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
   onTicketUpdated: (updatedTicket: Ticket) => void;
-  headerAndPagePaddingOffset?: string;
+  headerAndPagePaddingOffset?: string; // Aunque ya no se usa directamente en el style de la Card raíz, se mantiene por si el padre lo necesita.
 }
 
 export default function SelectedTicketPanel({
   selectedTicket,
   onTicketUpdated,
-  headerAndPagePaddingOffset = '100px',
+  headerAndPagePaddingOffset = '100px', 
 }: SelectedTicketPanelProps) {
   
-  // NOTA IMPORTANTE: Los campos en editableTicketData y los 'field' names en 
-  // handleTicketInputChange deben coincidir con la interfaz EditableTicketFields
-  // que se define y usa en useTicketEditor.ts.
-  // Asumimos que useTicketEditor.ts se actualizará para usar:
-  // - tecnicoAsignado en lugar de tecnico
-  // - solicitante en lugar de contacto
   const {
     isEditingTicket,
-    editableTicketData, // Debería tener { tecnicoAsignado, prioridad, solicitante, estado }
+    editableTicketData,
     isSaving: isSavingTicket,
     error: ticketEditorError,
     startEditingTicket,
     cancelEditingTicket,
-    handleTicketInputChange, // Debería aceptar 'tecnicoAsignado' y 'solicitante'
+    handleTicketInputChange,
     saveTicketChanges,
   } = useTicketEditor({ selectedTicket, onTicketUpdated });
 
@@ -59,9 +53,10 @@ export default function SelectedTicketPanel({
 
   if (!selectedTicket) {
     return (
+      // Esta Card es para el estado vacío, su estilo es independiente del panel principal.
+      // El contenedor en TicketCard.tsx le dará la altura.
       <Card
-        className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center"
-        style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
+        className="shadow-lg rounded-lg p-4 flex flex-col items-center justify-center h-full"
       >
         <div className="text-sm text-muted-foreground text-center">
           <Edit3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -74,6 +69,7 @@ export default function SelectedTicketPanel({
 
   const combinedError = ticketEditorError || actionsManagerError;
 
+  // Formateo de fechas para visualización
   const fechaActualizacionFormatted = new Date(selectedTicket.fechaActualizacion).toLocaleString('es-CL', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
@@ -88,14 +84,16 @@ export default function SelectedTicketPanel({
 
   return (
     <Card
-      className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col"
-      style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
+      className="shadow-lg rounded-lg p-4 flex flex-col h-full" // MODIFICADO: Quitado sticky, maxHeight, overflowY. Añadido h-full.
+      // El estilo de maxHeight y sticky debe ser manejado por el div contenedor en TicketCard.tsx
     >
-      <div className="flex flex-col h-full overflow-y-auto pr-1"> {/* Div interno para scroll */}
-        <div className="mb-3 pb-2 border-b flex-shrink-0">
+      {/* Div interno que manejará el scroll y la distribución flex del contenido */}
+      <div className="flex flex-col h-full overflow-y-auto pr-1"> {/* pr-1 para espacio de la scrollbar */}
+        
+        {/* Encabezado del Ticket y botón Editar */}
+        <div className="mb-3 pb-2 border-b flex-shrink-0"> {/* flex-shrink-0 para que no se encoja */}
           <div className="flex justify-between items-center">
             <div>
-              {/* ACTUALIZADO: Usar nuevos nombres de campo */}
               <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso} - {selectedTicket.titulo}</CardTitle>
               <CardDescription className="text-xs mt-0.5">
                 Actualizado: {fechaActualizacionFormatted} | Estado: {selectedTicket.estado}
@@ -109,6 +107,7 @@ export default function SelectedTicketPanel({
           </div>
         </div>
 
+        {/* Mensaje de Error Combinado */}
         {combinedError && (
           <div className="mb-3 p-2 text-xs bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 text-red-700 dark:text-red-300 rounded-md flex items-center gap-2 flex-shrink-0">
             <AlertTriangle className="h-4 w-4" />
@@ -116,10 +115,10 @@ export default function SelectedTicketPanel({
           </div>
         )}
 
+        {/* Formulario de Edición del Ticket (si está activo) */}
         {isEditingTicket && editableTicketData && (
           <Card className="mb-3 p-3 border-dashed flex-shrink-0 bg-muted/30 dark:bg-muted/10">
             <CardHeader className="p-1 pb-2">
-              {/* ACTUALIZADO: Usar nuevo nombre de campo */}
               <CardTitle className="text-sm">Editando Ticket #{selectedTicket.numeroCaso}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-1 text-xs">
@@ -127,9 +126,6 @@ export default function SelectedTicketPanel({
               <div className="space-y-0.5">
                 <Label htmlFor="tecnicoAsignadoEdit" className="text-xs">Técnico Asignado</Label>
                 <Select
-                  // ACTUALIZADO: value y onValueChange para usar 'tecnicoAsignado'
-                  // Esto asume que `editableTicketData` y `handleTicketInputChange` en `useTicketEditor`
-                  // han sido actualizados para manejar `tecnicoAsignado`.
                   value={editableTicketData.tecnicoAsignado} 
                   onValueChange={(value) => handleTicketInputChange('tecnicoAsignado', value)}
                   disabled={isSavingTicket}
@@ -165,9 +161,6 @@ export default function SelectedTicketPanel({
                 <Label htmlFor="solicitanteEdit" className="text-xs">Solicitante</Label>
                 <Input
                   id="solicitanteEdit"
-                  // ACTUALIZADO: value y onChange para usar 'solicitante'
-                  // Esto asume que `editableTicketData` y `handleTicketInputChange` en `useTicketEditor`
-                  // han sido actualizados para manejar `solicitante`.
                   value={editableTicketData.solicitante}
                   onChange={(e) => handleTicketInputChange('solicitante', e.target.value)}
                   className="h-8 text-xs"
@@ -201,10 +194,11 @@ export default function SelectedTicketPanel({
           </Card>
         )}
 
+        {/* Detalles del Ticket (si no está en modo edición) */}
         {!isEditingTicket && (
           <>
+            {/* Información detallada del ticket */}
             <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
-              {/* ACTUALIZADO: Usar nuevos nombres de campo para mostrar detalles */}
               <p><strong>Título:</strong> {selectedTicket.titulo}</p>
               <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
               <p><strong>Ubicación:</strong> {selectedTicket.ubicacion}</p>
@@ -223,6 +217,7 @@ export default function SelectedTicketPanel({
               )}
             </div>
 
+            {/* Acciones Rápidas */}
             <div className="py-2 my-2 border-y flex-shrink-0">
               <span className="text-sm font-semibold mb-2 block">Acciones Rápidas</span>
               <div className="grid grid-cols-2 gap-2">
@@ -231,25 +226,27 @@ export default function SelectedTicketPanel({
               </div>
             </div>
 
+            {/* Encabezado de la Bitácora */}
             <div className="mb-2 mt-1 flex-shrink-0">
               <span className="text-sm font-semibold">Bitácora de acciones</span>
             </div>
 
-            <div className="overflow-y-auto space-y-2 mb-3 flex-shrink-0" style={{ maxHeight: '200px' }}>
+            {/* Contenedor de la Bitácora de Acciones */}
+            <div className="overflow-y-auto space-y-2 mb-3 flex-grow"> 
               {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act) => (
                 <div key={act.id} className="text-xs border-b pb-1 flex items-start justify-between gap-2">
                   {editingActionId === act.id ? (
                     <Textarea
                       value={editedActionDescription}
                       onChange={(e) => setEditedActionDescription(e.target.value)}
-                      className="flex-grow"
+                      className="flex-grow" 
                       rows={2}
                       disabled={isProcessingAction}
                     />
                   ) : (
                     <span className="font-medium flex-grow break-all pt-1">{act.fecha}: {act.descripcion}</span>
                   )}
-                  <div className="flex-shrink-0 flex flex-col gap-1 items-end">
+                  <div className="flex-shrink-0 flex flex-col gap-1 items-end"> 
                     {editingActionId === act.id ? (
                       <>
                         <Button variant="default" size="sm" onClick={saveEditedAction} disabled={isProcessingAction}>
@@ -265,7 +262,8 @@ export default function SelectedTicketPanel({
               )) : <p className="text-xs text-muted-foreground">No hay acciones registradas.</p>}
             </div>
 
-            <div className="pt-2 border-t flex-shrink-0">
+            {/* Sección para Agregar Nueva Acción */}
+            <div className="pt-2 border-t flex-shrink-0"> 
               <div className="mb-2">
                 <span className="text-sm font-semibold">Agregar nueva acción</span>
               </div>
@@ -274,11 +272,11 @@ export default function SelectedTicketPanel({
                 value={newActionDescription}
                 onChange={(e) => setNewActionDescription(e.target.value)}
                 placeholder="Describe la acción realizada..."
-                rows={3}
+                rows={3} 
                 disabled={isProcessingAction || isEditingTicket}
               />
               <Button
-                className="mt-2 w-full"
+                className="mt-2 w-full" 
                 onClick={addAction}
                 disabled={isProcessingAction || isEditingTicket || !newActionDescription.trim()}
               >
@@ -288,7 +286,6 @@ export default function SelectedTicketPanel({
           </>
         )}
         
-        <div className="flex-grow"></div> {/* Div para ocupar espacio y empujar footer visualmente */}
       </div>
     </Card>
   );
