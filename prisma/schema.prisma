@@ -14,17 +14,31 @@ generator client {
 }
 
 model Ticket {
-  id              String    @id @default(uuid())
-  nroCaso         Int       @unique
-  empresa         String
-  ubicacion       String
-  contacto        String
-  prioridad       String
-  tecnico         String
-  tipo            String
-  descripcion     String
-  acciones        String    @default("[]")    // <--- ¡VUELTA A STRING!
-  estado          String    @default("Abierto")
-  fechaSolucion   DateTime?
-  createdAt       DateTime  @default(now())
+  id                   String    @id @default(uuid())
+  numeroCaso           Int       @unique // Antes nroCaso
+  empresa              String
+  tipoIncidente        String    // Antes tipo
+  ubicacion            String
+  tecnicoAsignado      String    // Antes tecnico
+  solicitante          String    // Antes contacto
+  titulo               String    // Antes descripcion (para el resumen breve)
+  descripcionDetallada String?   // Nuevo campo para la descripción larga
+  prioridad            String
+  estado               String    @default("Abierto")
+  acciones             String    @default("[]") // Mantenido como String para JSON
+  fechaCreacion        DateTime  @default(now()) // Antes createdAt
+  fechaSolucion        DateTime?
+  fechaActualizacion   DateTime  @updatedAt // Nuevo campo para rastrear actualizaciones
+
+  // Aquí puedes añadir más campos a futuro si los necesitas
+  // ej: categoria String?
+  //     subCategoria String?
 }
+
+// Si tienes otros modelos, déjalos como están.
+// Ejemplo de otro modelo (si existiera):
+// model User {
+//   id    Int     @id @default(autoincrement())
+//   email String  @unique
+//   name  String?
+// }
