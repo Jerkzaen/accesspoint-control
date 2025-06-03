@@ -1,4 +1,4 @@
-// src/components/TicketCard.tsx (ACTUALIZADO)
+// src/components/TicketCard.tsx (ACTUALIZADO - Añadir botón de Crear Ticket)
 'use client';
 
 import * as React from 'react';
@@ -15,12 +15,14 @@ import {
   SheetDescription,
   SheetClose,
 } from '@/components/ui/sheet';
-import { AlertTriangle, Loader2, X as CloseIcon, Search as SearchIcon, Filter as FilterIcon } from 'lucide-react'; // Importar SearchIcon y FilterIcon
+import { AlertTriangle, Loader2, X as CloseIcon, Search as SearchIcon, Filter as FilterIcon, PlusCircle } from 'lucide-react'; // Importar PlusCircle
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Importar Input
-import { Label } from '@/components/ui/label'; // Importar Label
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Importar Select
-import { useTickets, TicketFilters } from '@/hooks/useTickets'; // Importar TicketFilters
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTickets, TicketFilters } from '@/hooks/useTickets';
+import { TicketModal } from './TicketModal'; // Importar TicketModal
+import { loadLastTicketNro } from '@/app/actions/ticketActions'; // Importar la acción para obtener el último número de caso
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
@@ -31,18 +33,19 @@ export default function TicketCard() {
     isLoading,
     error: fetchTicketsError,
     refreshTickets,
-    applyFilters, // Nuevo: para aplicar filtros
-    currentFilters, // Nuevo: para acceder a los filtros actuales
+    applyFilters,
+    currentFilters,
   } = useTickets();
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Nuevo estado para el modal de creación
+  const [nextTicketNumber, setNextTicketNumber] = useState(0); // Nuevo estado para el siguiente número de ticket
 
   // Estados locales para los filtros de búsqueda
-  // Inicializar con "all" si el filtro actual es vacío, para que el Select muestre la opción "Todos"
   const [searchText, setSearchText] = useState(currentFilters.searchText || '');
-  const [estadoFilter, setEstadoFilter] = useState(currentFilters.estado || 'all'); // Cambiado a 'all'
-  const [prioridadFilter, setPrioridadFilter] = useState(currentFilters.prioridad || 'all'); // Cambiado a 'all'
+  const [estadoFilter, setEstadoFilter] = useState(currentFilters.estado || 'all');
+  const [prioridadFilter, setPrioridadFilter] = useState(currentFilters.prioridad || 'all');
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -57,10 +60,25 @@ export default function TicketCard() {
   // Sincronizar los estados locales de los filtros con `currentFilters` del hook
   useEffect(() => {
     setSearchText(currentFilters.searchText || '');
-    // Si currentFilters.estado es vacío, establecer estadoFilter a "all" para que el Select lo muestre
     setEstadoFilter(currentFilters.estado || 'all'); 
     setPrioridadFilter(currentFilters.prioridad || 'all');
   }, [currentFilters]);
+
+  // Cargar el siguiente número de ticket cuando el componente se monta o el modal se abre
+  useEffect(() => {
+    const fetchNextTicketNumber = async () => {
+      try {
+        const lastNro = await loadLastTicketNro();
+        setNextTicketNumber(lastNro + 1);
+      } catch (err) {
+        console.error("Error al cargar el siguiente número de ticket:", err);
+        // Manejar el error, quizás mostrando un mensaje al usuario
+      }
+    };
+    if (isCreateModalOpen || tickets.length === 0) { // Cargar al abrir el modal o si no hay tickets aún
+      fetchNextTicketNumber();
+    }
+  }, [isCreateModalOpen, tickets.length]); // Depende de si el modal está abierto o si la lista de tickets está vacía
 
   const handleSelectTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -82,22 +100,34 @@ export default function TicketCard() {
     }
   };
 
-  // Función para aplicar los filtros cuando se hace clic en el botón
   const handleApplyFilters = () => {
     applyFilters({
       searchText: searchText.trim(),
-      // Si estadoFilter es "all", enviar una cadena vacía para que la API lo ignore
       estado: estadoFilter === 'all' ? '' : estadoFilter,
       prioridad: prioridadFilter === 'all' ? '' : prioridadFilter,
     });
   };
 
-  // Función para limpiar los filtros
   const handleClearFilters = () => {
     setSearchText('');
-    setEstadoFilter('all'); // Restablecer a 'all' para que el Select muestre la opción "Todos"
-    setPrioridadFilter('all'); // Restablecer a 'all'
-    applyFilters({}); // Aplicar filtros vacíos para recargar sin filtros
+    setEstadoFilter('all');
+    setPrioridadFilter('all');
+    applyFilters({});
+  };
+
+  // Funciones para manejar el modal de creación
+  const handleOpenCreateModal = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+    refreshTickets(); // Refrescar la lista de tickets después de cerrar el modal (si se creó uno)
+  };
+
+  const handleFormSubmitSuccess = () => {
+    // Esto se llama desde TicketModal cuando el formulario se envía con éxito
+    handleCloseCreateModal(); // Cierra el modal y refresca los tickets
   };
 
   if (isLoading) {
@@ -133,12 +163,18 @@ export default function TicketCard() {
         className={`flex-grow overflow-y-auto md:pr-2 space-y-2 w-full ${isDesktop ? 'md:w-[calc(65%-0.5rem)] lg:w-[calc(70%-0.5rem)]' : 'md:w-full'}`}
         style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }} 
       >
-        {/* Controles de filtro */}
+        {/* Controles de filtro y botón de Crear Ticket */}
         <div className="bg-card p-4 rounded-lg shadow-sm mb-4">
-          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <FilterIcon className="h-5 w-5 text-primary" />
-            Filtros de Búsqueda
-          </h2>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <FilterIcon className="h-5 w-5 text-primary" />
+              Filtros de Búsqueda
+            </h2>
+            <Button onClick={handleOpenCreateModal} size="sm">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Crear Ticket
+            </Button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="searchText">Buscar por texto</Label>
@@ -158,7 +194,6 @@ export default function TicketCard() {
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Cambiado value a "all" */}
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="Abierto">Abierto</SelectItem>
                   <SelectItem value="En Progreso">En Progreso</SelectItem>
@@ -174,7 +209,6 @@ export default function TicketCard() {
                   <SelectValue placeholder="Todas las prioridades" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Cambiado value a "all" */}
                   <SelectItem value="all">Todas las prioridades</SelectItem>
                   <SelectItem value="baja">BAJA</SelectItem>
                   <SelectItem value="media">MEDIA</SelectItem>
@@ -261,6 +295,14 @@ export default function TicketCard() {
           </SheetContent>
         </Sheet>
       )}
+
+      {/* Modal para crear tickets */}
+      <TicketModal
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
+        nextNroCaso={nextTicketNumber}
+        onFormSubmitSuccess={handleFormSubmitSuccess}
+      />
     </div>
   );
 }
