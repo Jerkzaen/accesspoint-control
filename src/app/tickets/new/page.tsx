@@ -29,14 +29,6 @@ export default async function NewTicketPage() {
     // El padding general de la página se aplica aquí para centrar el formulario.
     // h-full y flex para que el centrado funcione bien dentro del <main> del layout.
     <div className="flex flex-col items-center justify-start h-full p-4 md:p-6">
-      {/* Se pasa el siguiente número de caso al componente TicketForm.
-        El componente TicketForm (según tu código) espera una prop llamada 'nextNroCaso'.
-        Asegúrate también que dentro de tu Server Action (createNewTicketAction)
-        estés manejando correctamente los nombres de los campos del formulario 
-        (ej: 'nroCaso', 'empresa', 'tipo', 'tituloDelTicket', etc.) y mapeándolos
-        a los nombres correctos de tu schema Prisma si son diferentes
-        (ej: 'numeroCaso', 'tipoIncidente', 'titulo', etc.).
-      */}
       <TicketForm nextNroCaso={valueForNextNroCasoProp} />
     </div>
   );
