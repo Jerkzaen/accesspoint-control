@@ -1,4 +1,4 @@
-// src/app/actions/ticketActions.ts
+// src/app/actions/ticketActions.ts (ACTUALIZADO - Lógica de acción inicial)
 "use server";
 
 import { prisma } from "@/lib/prisma";
@@ -75,22 +75,13 @@ export async function createNewTicketAction(
 
   // Preparar la primera acción para la bitácora
   const accionesArray: ActionEntry[] = [];
-  let primeraAccionDesc = "";
-
-  // Usar detalleAdicional para la descripción de la primera acción si existe
-  if (formInput.detalleAdicional?.trim()) {
-    primeraAccionDesc += `Detalle del problema: ${formInput.detalleAdicional.trim()}`;
-  }
-  if (formInput.accionInicial?.trim()) {
-    if (primeraAccionDesc) primeraAccionDesc += "\n"; // Añadir nueva línea si ya hay descripción
-    primeraAccionDesc += `Acción inicial realizada: ${formInput.accionInicial.trim()}`;
-  }
   
-  if (primeraAccionDesc.trim()) {
+  // SOLO agregar la acción inicial si se proporcionó en el formulario
+  if (formInput.accionInicial?.trim()) {
     accionesArray.push({
       id: uuidv4(),
       fecha: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
-      descripcion: primeraAccionDesc.trim(),
+      descripcion: formInput.accionInicial.trim(), // Solo la acción inicial
     });
   }
   const accionesParaGuardar = JSON.stringify(accionesArray);

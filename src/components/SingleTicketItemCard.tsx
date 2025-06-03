@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Eliminada descripción detallada)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Número de Caso en Título)
 'use client';
 
 import {
@@ -60,13 +60,13 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
       <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
           <div className="flex-grow">
+            {/* ACTUALIZADO: Combinar número de caso y título en el CardTitle */}
             <CardTitle className="text-base sm:text-lg md:text-xl leading-tight">
-              {/* Usar los nuevos nombres de campo */}
-              Caso #{ticket.numeroCaso} - {ticket.empresa}
+              <span className="font-bold text-primary mr-1">#{ticket.numeroCaso}</span> - {ticket.titulo}
             </CardTitle>
+            {/* La CardDescription ahora solo contendrá la empresa (si es necesario) */}
             <CardDescription className="text-xs sm:text-sm mt-0.5">
-              {/* Usar los nuevos nombres de campo */}
-              {ticket.tipoIncidente} - {ticket.ubicacion}
+              {ticket.empresa}
             </CardDescription>
           </div>
           <Badge variant={estadoVariant} className="mt-1 sm:mt-0 whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6">
@@ -77,6 +77,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
       <CardContent className="text-sm space-y-2 pt-2 pb-3 px-4 sm:px-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:text-sm pt-2 mt-1">
           {/* Usar los nuevos nombres de campo */}
+          <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente}</div>
+          <div><strong>Ubicación:</strong> {ticket.ubicacion}</div>
           <div><strong>Técnico:</strong> {ticket.tecnicoAsignado}</div>
           <div><strong>Contacto:</strong> {ticket.solicitante}</div>
           <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDate}</div>
@@ -87,11 +89,6 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             </Badge>
           </div>
         </div>
-        {/*
-          SE HA ELIMINADO LA DESCRIPCIÓN DETALLADA DE ESTA TARJETA PARA EVITAR REDUNDANCIA
-          Y MANTENER ESTA TARJETA COMO UN RESUMEN CONCISO.
-          La descripción detallada completa se mostrará en el SelectedTicketPanel.
-        */}
       </CardContent>
     </Card>
   );
