@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Insignia de Empresa más ancha y con imagen que llena)
+// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Badge de Estado Interactiva y Actualización de Lista)
 'use client';
 
 import Image from 'next/image'; // Importar el componente Image de Next.js
@@ -12,14 +12,25 @@ import {
 import { Ticket } from '@/types/ticket';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatTicketNumber, getCompanyLogoUrl } from '@/lib/utils'; // Importar getCompanyLogoUrl
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"; // Importar Popover
+import { Button } from "@/components/ui/button"; // Importar Button
+import { Loader2 } from 'lucide-react'; // Importar Loader2 para el spinner
+import { useState } from 'react'; // Importar useState para el estado de carga local
 
 interface SingleTicketItemCardProps {
   ticket: Ticket;
-  onSelectTicket: (ticket: Ticket) => void;
+  onSelectTicket: (ticket: Ticket) => void; // Para seleccionar el ticket y mostrar detalles
+  onTicketUpdatedInList: (updatedTicket: Ticket) => void; // NUEVA PROP: Para actualizar el ticket en la lista principal
   isSelected: boolean;
 }
 
-export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelected }: SingleTicketItemCardProps) {
+export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected }: SingleTicketItemCardProps) {
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false); // Nuevo estado para el spinner en el badge
+
   const fechaCreacionDate = new Date(ticket.fechaCreacion).toLocaleString('es-CL', {
     day: '2-digit',
     month: '2-digit',
@@ -38,18 +49,48 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
   }
 
   // Definir la variante para el badge del estado
-  let estadoVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
-  switch (ticket.estado?.toLowerCase()) {
-    case 'abierto': estadoVariant = "default"; break; // Usar 'default' para un color primario
-    case 'cerrado': estadoVariant = "destructive"; break;
-    case 'en progreso': estadoVariant = "secondary"; break;
-    case 'pendiente': estadoVariant = "outline"; break;
-  }
+  const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (estado?.toLowerCase()) {
+      case 'abierto': return "default"; // Usar 'default' para un color primario
+      case 'cerrado': return "destructive";
+      case 'en progreso': return "secondary";
+      case 'pendiente': return "outline";
+      default: return "outline";
+    }
+  };
 
   // Formatear el número de caso
   const formattedNumeroCaso = formatTicketNumber(ticket.numeroCaso);
   // Obtener la URL del logo de la empresa
   const companyLogoUrl = getCompanyLogoUrl(ticket.empresa);
+
+  // Función para manejar el cambio de estado
+  const handleStatusChange = async (newStatus: string) => {
+    setIsUpdatingStatus(true); // Activar spinner
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: newStatus }), // Solo enviamos el estado
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
+        throw new Error(errorData.message || 'Error al actualizar el estado');
+      }
+
+      const updatedTicketData: Ticket = await response.json();
+      // Notificar al componente padre (TicketCard) para que actualice su estado en la lista
+      onTicketUpdatedInList(updatedTicketData);
+      // No llamar a onSelectTicket aquí, ya que onTicketUpdatedInList se encargará de la lista
+      // y si el ticket está seleccionado, el SelectedTicketPanel se actualizará solo.
+    } catch (err: any) {
+      console.error("Error al cambiar estado directamente:", err);
+      // Aquí podrías implementar una notificación al usuario sobre el error
+    } finally {
+      setIsUpdatingStatus(false); // Desactivar spinner
+    }
+  };
 
   return (
     <Card
@@ -84,9 +125,9 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
             {companyLogoUrl ? (
               <Badge 
                 variant="secondary" 
-                // Establecer un ancho y alto fijo para el badge
-                // h-6 es 24px de alto. w-10 es 40px de ancho. Esto lo hace rectangular.
-                // p-0 elimina el padding interno del badge.
+                // Clases para que el badge tenga el mismo tamaño que el badge de estado y sea rectangular
+                // w-10 (40px) para el ancho, h-6 (24px) para el alto
+                // p-0 para eliminar el padding interno del badge
                 className="w-10 h-6 p-0 flex items-center justify-center overflow-hidden rounded-md" 
               >
                 <Image 
@@ -106,10 +147,29 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, isSelecte
                 {ticket.empresa}
               </Badge>
             )}
-            {/* Badge para el estado del ticket */}
-            <Badge variant={estadoVariant} className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6">
-              {ticket.estado || 'N/A'}
-            </Badge>
+            {/* Badge de Estado INTERACTIVA */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={getEstadoBadgeVariant(ticket.estado)}
+                  className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6 cursor-pointer"
+                  size="sm" // Usar size="sm" para que el botón tenga el tamaño de un badge
+                  disabled={isUpdatingStatus} // Deshabilitar mientras se actualiza
+                >
+                  {ticket.estado || 'N/A'}
+                  {isUpdatingStatus ? <Loader2 className="ml-2 h-3 w-3 animate-spin" /> : null}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2">
+                <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
+                <div className="flex flex-col gap-1">
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Abierto')}>Abierto</Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('En Progreso')}>En Progreso</Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Cerrado')}>Cerrado</Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Pendiente')}>Pendiente</Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardHeader>
