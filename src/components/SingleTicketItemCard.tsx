@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Hash } from 'lucide-react'; // Importar Hash
 import { useState } from 'react';
 
 interface SingleTicketItemCardProps {
@@ -96,10 +96,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     }
   };
 
-  // Definimos una altura común para los badges
-  const commonBadgeHeight = "h-6"; // 24px
+  // Estas son las constantes de tu código, no se modifican sus valores.
+  const commonBadgeHeight = "h-6";
   const commonBadgeTextSize = "text-xs";
-  const commonBadgePaddingX = "px-2.5"; // Padding horizontal
+  const commonBadgePaddingX = "px-2.5";
 
   return (
     <Card
@@ -114,34 +114,27 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
       onClick={() => ticket && onSelectTicket(ticket)}
     >
       <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
+        <div className="flex justify-between items-start gap-2">
           <div className="flex-grow">
             <CardTitle className="text-sm sm:text-base leading-tight">
               {ticket.titulo}
             </CardTitle>
           </div>
-          {/* Contenedor de Badges en la esquina superior derecha */}
-          <div className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center mt-1 sm:mt-0">
-            <Badge 
-              variant="secondary"
-              className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
-            >
-              Caso #{formattedNumeroCaso}
-            </Badge>
 
+          {/* Contenedor de Badges: Responsive y Nuevo Orden */}
+          <div className="flex flex-col items-end gap-1 flex-shrink-0 sm:flex-row sm:items-center sm:gap-1.5">
+            {/* 1. Empresa / Logo */}
             {companyLogoUrl ? (
               <Badge 
                 variant="secondary" 
-                // Ancho fijo para el logo, p-0 para que la imagen lo cubra todo.
-                // overflow-hidden para recortar la imagen si no encaja perfectamente.
                 className={cn("w-12 p-0 flex items-center justify-center overflow-hidden rounded-md", commonBadgeHeight)}
               >
                 <Image 
                   src={companyLogoUrl} 
                   alt={`${ticket.empresa} logo`} 
-                  width={48} // Corresponde a w-12
-                  height={24} // Corresponde a h-6
-                  className="object-cover w-full h-full" // object-cover es clave aquí
+                  width={48}
+                  height={24}
+                  className="object-cover w-full h-full"
                 />
               </Badge>
             ) : (
@@ -153,12 +146,25 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               </Badge>
             )}
 
+            {/* 2. Número de Caso */}
+            <Badge 
+              variant="secondary"
+              className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
+            >
+              <Hash size={12} className="mr-0.5" />{formattedNumeroCaso}
+            </Badge>
+            
+            {/* 3. Estado */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={getEstadoBadgeVariant(ticket.estado)}
-                  className={cn("whitespace-nowrap cursor-pointer flex items-center", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
-                  size="sm" // Usar size="sm" de Button puede ayudar a controlar mejor el padding si es necesario
+                  // La clase w-full aquí se aplicará cuando sea flex-col. 
+                  // En flex-row, su ancho será determinado por su contenido y padding, 
+                  // a menos que el contenedor flex-row tenga un ancho específico y este item sea flex-grow.
+                  // Dado que no es flex-grow, debería comportarse bien.
+                  className={cn("whitespace-nowrap cursor-pointer flex items-center w-full justify-center sm:w-auto", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
+                  size="sm"
                   disabled={isUpdatingStatus}
                 >
                   {ticket.estado || 'N/A'}
@@ -189,7 +195,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
             <strong>Prioridad:</strong>{' '}
             <Badge 
               variant={prioridadVariant} 
-              className={cn(commonBadgeTextSize, commonBadgeHeight, "px-2 py-0.5")} // Ajustar padding si es necesario
+              className={cn(commonBadgeTextSize, commonBadgeHeight, "px-2 py-0.5")}
             >
               {ticket.prioridad?.toUpperCase() || 'N/A'}
             </Badge>
