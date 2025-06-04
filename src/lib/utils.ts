@@ -1,4 +1,4 @@
-// src/lib/utils.ts (ACTUALIZADO - Añadir función para logos de empresa)
+// src/lib/utils.ts (FINAL - Sin cambios desde la última versión funcional)
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
