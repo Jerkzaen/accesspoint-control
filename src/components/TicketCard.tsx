@@ -1,4 +1,4 @@
-// src/components/TicketCard.tsx (ACTUALIZADO - Con todas las funcionalidades y correcciones)
+// src/components/TicketCard.tsx (ACTUALIZADO - Añadir botón de Crear Ticket)
 'use client';
 
 import * as React from 'react';
@@ -15,14 +15,14 @@ import {
   SheetDescription,
   SheetClose,
 } from '@/components/ui/sheet';
-import { AlertTriangle, Loader2, X as CloseIcon, Search as SearchIcon, Filter as FilterIcon, PlusCircle } from 'lucide-react';
+import { AlertTriangle, Loader2, X as CloseIcon, Search as SearchIcon, Filter as FilterIcon, PlusCircle } from 'lucide-react'; // Importar PlusCircle
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
-import { TicketModal } from './TicketModal';
-import { loadLastTicketNro } from '@/app/actions/ticketActions';
+import { TicketModal } from './TicketModal'; // Importar TicketModal
+import { loadLastTicketNro } from '@/app/actions/ticketActions'; // Importar la acción para obtener el último número de caso
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
@@ -39,8 +39,8 @@ export default function TicketCard() {
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [nextTicketNumber, setNextTicketNumber] = useState(0);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Nuevo estado para el modal de creación
+  const [nextTicketNumber, setNextTicketNumber] = useState(0); // Nuevo estado para el siguiente número de ticket
 
   // Estados locales para los filtros de búsqueda
   const [searchText, setSearchText] = useState(currentFilters.searchText || '');
@@ -75,10 +75,10 @@ export default function TicketCard() {
         // Manejar el error, quizás mostrando un mensaje al usuario
       }
     };
-    if (isCreateModalOpen || tickets.length === 0) {
+    if (isCreateModalOpen || tickets.length === 0) { // Cargar al abrir el modal o si no hay tickets aún
       fetchNextTicketNumber();
     }
-  }, [isCreateModalOpen, tickets.length]);
+  }, [isCreateModalOpen, tickets.length]); // Depende de si el modal está abierto o si la lista de tickets está vacía
 
   const handleSelectTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -91,16 +91,14 @@ export default function TicketCard() {
     setIsSheetOpen(false);
   };
 
-  // Esta función se pasa a SelectedTicketPanel y es crucial para actualizar la lista
-  const handleTicketUpdated = useCallback((updatedTicket: Ticket) => {
+  const handleTicketUpdated = (updatedTicket: Ticket) => {
     setTickets(prevTickets =>
       prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
     );
-    // Asegurarse de que el ticket seleccionado también se actualice
     if (selectedTicket?.id === updatedTicket.id) {
       setSelectedTicket(updatedTicket);
     }
-  }, [selectedTicket, setTickets]); // Dependencias: selectedTicket y setTickets
+  };
 
   const handleApplyFilters = () => {
     applyFilters({
@@ -128,7 +126,8 @@ export default function TicketCard() {
   };
 
   const handleFormSubmitSuccess = () => {
-    handleCloseCreateModal();
+    // Esto se llama desde TicketModal cuando el formulario se envía con éxito
+    handleCloseCreateModal(); // Cierra el modal y refresca los tickets
   };
 
   if (isLoading) {
@@ -255,7 +254,7 @@ export default function TicketCard() {
           >
             <SelectedTicketPanel
               selectedTicket={selectedTicket} 
-              onTicketUpdated={handleTicketUpdated} // Pasa la función de actualización
+              onTicketUpdated={handleTicketUpdated}
               headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
             />
           </div>
@@ -287,7 +286,7 @@ export default function TicketCard() {
                 <div className="flex-grow overflow-y-auto">
                   <SelectedTicketPanel
                     selectedTicket={selectedTicket} 
-                    onTicketUpdated={handleTicketUpdated} // Pasa la función de actualización
+                    onTicketUpdated={handleTicketUpdated}
                     headerAndPagePaddingOffset="0px" 
                   />
                 </div>
