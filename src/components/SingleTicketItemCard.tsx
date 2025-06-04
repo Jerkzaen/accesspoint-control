@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (ACTUALIZADO - Badge de Estado Interactiva y Actualización de Lista)
+// src/components/SingleTicketItemCard.tsx (FINAL - Badge de Estado Interactiva y Actualización de Lista)
 'use client';
 
 import Image from 'next/image'; // Importar el componente Image de Next.js
@@ -75,15 +75,13 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
+        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${res.status}` }));
         throw new Error(errorData.message || 'Error al actualizar el estado');
       }
 
       const updatedTicketData: Ticket = await response.json();
       // Notificar al componente padre (TicketCard) para que actualice su estado en la lista
       onTicketUpdatedInList(updatedTicketData);
-      // No llamar a onSelectTicket aquí, ya que onTicketUpdatedInList se encargará de la lista
-      // y si el ticket está seleccionado, el SelectedTicketPanel se actualizará solo.
     } catch (err: any) {
       console.error("Error al cambiar estado directamente:", err);
       // Aquí podrías implementar una notificación al usuario sobre el error
@@ -147,7 +145,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
                 {ticket.empresa}
               </Badge>
             )}
-            {/* Badge de Estado INTERACTIVA */}
+            {/* Badge de Estado INTERACTIVA (CORRECTA: Solo aquí) */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
