@@ -1,10 +1,10 @@
-// src/components/SelectedTicketPanel.tsx (ACTUALIZADO - Con comprobaciones de seguridad y bitácora ampliada)
+// src/components/SelectedTicketPanel.tsx (FINAL Y CORREGIDO - Bitácora ampliada, Layout Fijo, SIN Badge Interactiva)
 'use client';
 
-import React, { useCallback } from 'react'; // Asegúrate de que useCallback esté importado
+import React, { useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/ui/textarea'; // CORREGIDO: Eliminado el "=>" extra
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,11 +12,9 @@ import { Edit3, AlertTriangle, Loader2 } from 'lucide-react';
 import { Ticket, ActionEntry } from '@/types/ticket';
 import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+// La importación de Popover se mantiene por si se usa en otro contexto, pero no para el estado del ticket aquí.
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; 
+import { Badge } from '@/components/ui/badge'; // Importar Badge para el estado estático
 
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
@@ -95,35 +93,12 @@ export default function SelectedTicketPanel({
     : null;
 
 
-  // Lógica para el cambio de estado desde el Popover
+  // handleStatusChange ya no es necesario aquí, ya que la interacción se mueve a SingleTicketItemCard
+  // Se mantiene la función dummy para evitar errores si se llama accidentalmente
   const handleStatusChange = useCallback(async (newStatus: string) => {
-    // Si el ticket está en modo edición, actualizamos el campo 'estado' en editableTicketData.
-    // El usuario tendrá que guardar los cambios manualmente.
-    if (isEditingTicket && editableTicketData) {
-      handleTicketInputChange('estado', newStatus);
-    } else {
-      // Si no estamos en modo edición, realizamos una actualización directa del estado
-      // enviando una solicitud PUT al endpoint de la API.
-      try {
-        const response = await fetch(`/api/tickets/${selectedTicket.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado: newStatus }), // Solo enviamos el estado
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
-          throw new Error(errorData.message || 'Error al actualizar el estado');
-        }
-
-        const updatedTicketData: Ticket = await response.json();
-        onTicketUpdated(updatedTicketData); // Notificar al componente padre que el ticket ha sido actualizado
-      } catch (err: any) {
-        console.error("Error al cambiar estado directamente:", err);
-        // Aquí podrías implementar una notificación al usuario sobre el error
-      }
-    }
-  }, [selectedTicket, isEditingTicket, editableTicketData, handleTicketInputChange, onTicketUpdated]);
+    console.log(`Intento de cambiar estado a ${newStatus} desde SelectedTicketPanel (acción movida).`);
+    // Esta función no hará nada funcionalmente relevante aquí.
+  }, []);
 
 
   const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -142,34 +117,19 @@ export default function SelectedTicketPanel({
       className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col"
       style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
     >
-      <div className="flex flex-col h-full overflow-y-auto pr-1"> {/* Div interno para scroll */}
+      <div className="flex flex-col h-full pr-1"> {/* Eliminado overflow-y-auto aquí, se maneja en sub-secciones */}
         <div className="mb-3 pb-2 border-b flex-shrink-0">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso} - {selectedTicket.titulo}</CardTitle>
-              {/* Badge de Estado INTERACTIVA - En SelectedTicketPanel, no en SingleTicketItemCard */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={getEstadoBadgeVariant(selectedTicket.estado)}
-                    className="mt-1 whitespace-nowrap text-xs px-2 py-0.5 h-auto rounded-full cursor-pointer"
-                    size="sm"
-                  >
-                    Estado: {selectedTicket.estado}
-                    {isSavingTicket || isProcessingAction ? <Loader2 className="ml-2 h-3 w-3 animate-spin" /> : null}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2">
-                  <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
-                  <div className="flex flex-col gap-1">
-                    <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Abierto')}>Abierto</Button>
-                    <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('En Progreso')}>En Progreso</Button>
-                    <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Cerrado')}>Cerrado</Button>
-                    <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Pendiente')}>Pendiente</Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
+              {/* Badge de Estado ESTATICA (NO INTERACTIVA) en SelectedTicketPanel */}
+              {/* Se eliminó el PopoverTrigger y PopoverContent */}
+              <Badge 
+                variant={getEstadoBadgeVariant(selectedTicket.estado)}
+                className="mt-1 whitespace-nowrap text-xs px-2 py-0.5 h-auto rounded-full"
+              >
+                Estado: {selectedTicket.estado}
+              </Badge>
             </div>
             {!isEditingTicket && (
               <Button variant="outline" size="sm" onClick={startEditingTicket} className="ml-auto">
@@ -265,8 +225,8 @@ export default function SelectedTicketPanel({
         )}
 
         {!isEditingTicket && (
-          <>
-            <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
+          <div className="flex flex-col flex-grow overflow-hidden"> {/* Contenedor para detalles y bitácora, con flex-grow */}
+            <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0 overflow-y-auto max-h-[180px]"> {/* Detalles del ticket, con scroll si es largo */}
               <p><strong>Título:</strong> {selectedTicket.titulo}</p>
               <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
               <p><strong>Ubicación:</strong> {selectedTicket.ubicacion}</p>
@@ -278,7 +238,7 @@ export default function SelectedTicketPanel({
               {selectedTicket.descripcionDetallada && (
                 <div className="mt-2">
                   <strong>Descripción Detallada:</strong>
-                  <div className="mt-1 text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border">
+                  <div className="mt-1 text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border max-h-[100px] overflow-y-auto"> {/* Descripción detallada con scroll */}
                     {selectedTicket.descripcionDetallada}
                   </div>
                 </div>
@@ -289,7 +249,7 @@ export default function SelectedTicketPanel({
               <span className="text-sm font-semibold">Bitácora de acciones</span>
             </div>
 
-            <div className="overflow-y-auto space-y-2 mb-3 flex-grow" style={{ maxHeight: 'calc(100% - 200px)' }}>
+            <div className="overflow-y-auto space-y-2 mb-3 flex-grow"> {/* Bitácora con flex-grow para ocupar el espacio restante */}
               {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act) => (
                 <div key={act.id} className="text-xs border-b pb-1 flex items-start justify-between gap-2">
                   {editingActionId === act.id ? (
@@ -339,10 +299,8 @@ export default function SelectedTicketPanel({
                 {isProcessingAction ? 'Guardando...' : 'Guardar acción'}
               </Button>
             </div>
-          </>
+          </div>
         )}
-        
-        <div className="flex-grow"></div> {/* Div para ocupar espacio y empujar footer visualmente */}
       </div>
     </Card>
   );
