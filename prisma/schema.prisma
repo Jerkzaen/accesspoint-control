@@ -17,18 +17,18 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String? // Removido @db.Text
+  access_token      String? // Removido @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String? // Removido @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts") // Nombre de tabla sugerido por NextAuth
+  @@map("accounts") 
 }
 
 model Session {
@@ -38,33 +38,28 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions") // Nombre de tabla sugerido por NextAuth
+  @@map("sessions") 
 }
 
-// Modelo Usuario adaptado para NextAuth y tu aplicación
-// Este reemplaza/fusiona tu modelo 'Usuario' anterior.
 model User {
-  id            String    @id @default(cuid()) // NextAuth usa cuid() por defecto
-  name          String?   // Nombre del usuario (viene de Google, antes 'nombreCompleto')
-  email         String?   @unique // Email (viene de Google)
-  emailVerified DateTime? // Para verificar el email
-  image         String?   // URL de la imagen de perfil (viene de Google)
+  id            String    @id @default(cuid()) 
+  name          String?   
+  email         String?   @unique 
+  emailVerified DateTime? 
+  image         String?   
   
-  // Campos específicos de tu aplicación
-  rol           RoleUsuario @default(TECNICO) // Tu campo 'rol' se mantiene
+  rol           RoleUsuario @default(TECNICO) 
 
-  // Relaciones de NextAuth
   accounts      Account[]
   sessions      Session[]
 
-  // Relaciones de tu aplicación (antes en 'Usuario')
   ticketsAsignados    Ticket[]      @relation("TecnicoTickets")
   accionesRealizadas  AccionTicket[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  @@map("users") // Nombre de tabla sugerido por NextAuth, o puedes usar "personal_interno"
+  @@map("users") 
 }
 
 model VerificationToken {
@@ -73,10 +68,10 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_tokens") // Nombre de tabla sugerido por NextAuth
+  @@map("verification_tokens") 
 }
 
-// --- Tus modelos existentes (con ajustes menores si es necesario) ---
+// --- Tus modelos existentes ---
 
 enum RoleUsuario {
   ADMIN
@@ -152,13 +147,14 @@ model Ticket {
   ubicacion             Ubicacion?    @relation(fields: [ubicacionId], references: [id])
   ubicacionId           String?       
 
-  tecnicoAsignado       User?         @relation(name: "TecnicoTickets", fields: [tecnicoAsignadoId], references: [id]) // Relacionado con el nuevo 'User'
+  tecnicoAsignado       User?         @relation(name: "TecnicoTickets", fields: [tecnicoAsignadoId], references: [id]) 
   tecnicoAsignadoId     String?       
 
   acciones              AccionTicket[] 
 
   fechaCreacion         DateTime      @default(now())
-  fechaSolucion         DateTime?
+  fechaSolucionEstimada DateTime?     // Cambiado desde fechaSolucion a fechaSolucionEstimada
+  fechaSolucionReal     DateTime?     // Nuevo campo para la fecha real de solución
   updatedAt             DateTime      @updatedAt
   
   equiposEnPrestamo     EquipoEnPrestamo[]
@@ -170,7 +166,7 @@ model AccionTicket {
   ticketId      String
   descripcion   String
   fechaAccion   DateTime @default(now())
-  realizadaPor  User     @relation(fields: [usuarioId], references: [id]) // Relacionado con el nuevo 'User'
+  realizadaPor  User     @relation(fields: [usuarioId], references: [id]) 
   usuarioId     String   
 }
 
@@ -259,8 +255,8 @@ model EquipoEnPrestamo {
   notasPrestamo             String?   
   notasDevolucion           String?   
 
-  entregadoPorUsuarioId     String?   // Podría ser un User.id
-  recibidoPorUsuarioId      String?   // Podría ser un User.id
+  entregadoPorUsuarioId     String?   
+  recibidoPorUsuarioId      String?   
 
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
@@ -273,3 +269,4 @@ enum EstadoPrestamoEquipo {
   RENOVADO
   PERDIDO_POR_CLIENTE
 }
+
