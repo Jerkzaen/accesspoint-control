@@ -1,7 +1,7 @@
-// src/components/SingleTicketItemCard.tsx (FINAL Y CORREGIDO - Badge de Estado Interactiva y Actualización de Lista)
+// src/components/SingleTicketItemCard.tsx
 'use client';
 
-import Image from 'next/image'; // Importar el componente Image de Next.js
+import Image from 'next/image';
 import {
   Card,
   CardHeader,
@@ -11,25 +11,38 @@ import {
 } from '@/components/ui/card';
 import { Ticket } from '@/types/ticket';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatTicketNumber, getCompanyLogoUrl } from '@/lib/utils'; // Importar getCompanyLogoUrl
+import { cn, formatTicketNumber, getCompanyLogoUrl } from '@/lib/utils';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"; // Importar Popover
-import { Button } from "@/components/ui/button"; // Importar Button
-import { Loader2 } from 'lucide-react'; // Importar Loader2 para el spinner
-import { useState } from 'react'; // Importar useState para el estado de carga local
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface SingleTicketItemCardProps {
-  ticket: Ticket;
-  onSelectTicket: (ticket: Ticket) => void; // Para seleccionar el ticket y mostrar detalles
-  onTicketUpdatedInList: (updatedTicket: Ticket) => void; // NUEVA PROP: Para actualizar el ticket en la lista principal
+  ticket: Ticket | undefined | null; // Permitir que ticket sea undefined o null
+  onSelectTicket: (ticket: Ticket) => void;
+  onTicketUpdatedInList: (updatedTicket: Ticket) => void;
   isSelected: boolean;
 }
 
 export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected }: SingleTicketItemCardProps) {
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false); // Nuevo estado para el spinner en el badge
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Verificación para ticket y ticket.fechaCreacion
+  if (!ticket || typeof ticket.fechaCreacion === 'undefined') {
+    console.error("Error: El objeto ticket o ticket.fechaCreacion es undefined.", ticket);
+    // Puedes retornar un componente de error o null para no renderizar esta tarjeta
+    return (
+      <Card className="mb-3 p-4 border-destructive bg-destructive/10">
+        <p className="text-destructive-foreground text-sm">
+          Error al cargar datos de un ticket. Faltan datos esenciales.
+        </p>
+      </Card>
+    );
+  }
 
   const fechaCreacionDate = new Date(ticket.fechaCreacion).toLocaleString('es-CL', {
     day: '2-digit',
@@ -48,10 +61,9 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     default: prioridadVariant = "outline";
   }
 
-  // Definir la variante para el badge del estado
   const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (estado?.toLowerCase()) {
-      case 'abierto': return "default"; // Usar 'default' para un color primario
+      case 'abierto': return "default";
       case 'cerrado': return "destructive";
       case 'en progreso': return "secondary";
       case 'pendiente': return "outline";
@@ -59,35 +71,30 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     }
   };
 
-  // Formatear el número de caso
   const formattedNumeroCaso = formatTicketNumber(ticket.numeroCaso);
-  // Obtener la URL del logo de la empresa
   const companyLogoUrl = getCompanyLogoUrl(ticket.empresa);
 
-  // Función para manejar el cambio de estado
   const handleStatusChange = async (newStatus: string) => {
-    setIsUpdatingStatus(true); // Activar spinner
+    if (!ticket) return; // Asegurarse que ticket existe
+    setIsUpdatingStatus(true);
     try {
       const response = await fetch(`/api/tickets/${ticket.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: newStatus }), // Solo enviamos el estado
+        body: JSON.stringify({ estado: newStatus }),
       });
 
       if (!response.ok) {
-        // CORREGIDO: Acceder a response.status directamente, no a 'res.status'
         const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
         throw new Error(errorData.message || 'Error al actualizar el estado');
       }
 
       const updatedTicketData: Ticket = await response.json();
-      // Notificar al componente padre (TicketCard) para que actualice su estado en la lista
       onTicketUpdatedInList(updatedTicketData);
     } catch (err: any) {
       console.error("Error al cambiar estado directamente:", err);
-      // Aquí podrías implementar una notificación al usuario sobre el error
     } finally {
-      setIsUpdatingStatus(false); // Desactivar spinner
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -101,79 +108,70 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
         }
       )}
-      onClick={() => onSelectTicket(ticket)}
+      onClick={() => ticket && onSelectTicket(ticket)} // Asegurarse que ticket existe
     >
       <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
           <div className="flex-grow">
-            {/* Mantener el título como el CardTitle principal */}
-            <CardTitle className="text-base sm:text-lg md:text-xl leading-tight">
+            <CardTitle className="text-sm sm:text-base leading-tight">
               {ticket.titulo}
             </CardTitle>
           </div>
-          {/* Contenedor para las tres Badges: Número de Caso, Empresa y Estado */}
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-start mt-1 sm:mt-0">
-            {/* Badge para el número de caso, con texto "Caso" */}
             <Badge 
-              variant="secondary" // Usar secondary para un estilo que no sea afectado por el hover de la tarjeta
-              className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6"
+              variant="secondary"
+              className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5"
             >
               Caso #{formattedNumeroCaso}
             </Badge>
-            {/* Badge para la empresa, con logo si existe */}
             {companyLogoUrl ? (
               <Badge 
                 variant="secondary" 
-                // Clases para que el badge tenga el mismo tamaño que el badge de estado y sea rectangular
-                // w-10 (40px) para el ancho, h-6 (24px) para el alto
-                // p-0 para eliminar el padding interno del badge
-                className="w-10 h-6 p-0 flex items-center justify-center overflow-hidden rounded-md" 
+                className="w-10 h-5 p-0 flex items-center justify-center overflow-hidden rounded-md"
               >
                 <Image 
                   src={companyLogoUrl} 
                   alt={`${ticket.empresa} logo`} 
-                  width={40} // Coincidir con el ancho del badge (w-10 = 40px)
-                  height={24} // Coincidir con el alto del badge (h-6 = 24px)
-                  className="object-cover w-full h-full" // object-cover para que la imagen llene el espacio, recortando si es necesario
+                  width={40}
+                  height={20}
+                  className="object-cover w-full h-full"
                 />
               </Badge>
             ) : (
-              // Si no hay logo, mostrar solo el nombre de la empresa como badge
               <Badge 
                 variant="secondary" 
-                className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6"
+                className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5"
               >
                 {ticket.empresa}
               </Badge>
             )}
-            {/* Badge de Estado INTERACTIVA (CORRECTA: Solo aquí) */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={getEstadoBadgeVariant(ticket.estado)}
-                  className="whitespace-nowrap text-xs sm:text-sm px-2.5 py-1 h-auto sm:h-6 cursor-pointer"
-                  size="sm" // Usar size="sm" para que el botón tenga el tamaño de un badge
-                  disabled={isUpdatingStatus} // Deshabilitar mientras se actualiza
+                  className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5 cursor-pointer" 
+                  size="sm" 
+                  disabled={isUpdatingStatus}
                 >
                   {ticket.estado || 'N/A'}
-                  {isUpdatingStatus ? <Loader2 className="ml-2 h-3 w-3 animate-spin" /> : null}
+                  {isUpdatingStatus ? <Loader2 className="ml-1.5 h-3 w-3 animate-spin" /> : null}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-2">
                 <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
                 <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Abierto')}>Abierto</Button>
-                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('En Progreso')}>En Progreso</Button>
-                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Cerrado')}>Cerrado</Button>
-                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleStatusChange('Pendiente')}>Pendiente</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Abierto')}>Abierto</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('En Progreso')}>En Progreso</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Cerrado')}>Cerrado</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Pendiente')}>Pendiente</Button>
                 </div>
               </PopoverContent>
             </Popover>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="text-sm space-y-2 pt-2 pb-3 px-4 sm:px-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:text-sm pt-2 mt-1">
+      <CardContent className="text-xs space-y-1.5 pt-2 pb-3 px-4 sm:px-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
           <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente}</div>
           <div><strong>Ubicación:</strong> {ticket.ubicacion}</div>
           <div><strong>Técnico:</strong> {ticket.tecnicoAsignado}</div>
@@ -181,7 +179,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDate}</div>
           <div>
             <strong>Prioridad:</strong>{' '}
-            <Badge variant={prioridadVariant} className="px-2 py-0.5 text-xs sm:text-sm h-auto">
+            <Badge variant={prioridadVariant} className="px-1.5 py-0.5 text-xs h-auto">
               {ticket.prioridad?.toUpperCase() || 'N/A'}
             </Badge>
           </div>
