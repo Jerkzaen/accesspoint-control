@@ -1,180 +1,332 @@
-// src/components/SingleTicketItemCard.tsx
+// src/components/TicketCard.tsx
 'use client';
 
-import Image from 'next/image';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
+import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import SingleTicketItemCard from './SingleTicketItemCard'; 
+import SelectedTicketPanel from './SelectedTicketPanel';
 import { Ticket } from '@/types/ticket';
-import { Badge } from '@/components/ui/badge';
-import { cn, formatTicketNumber, getCompanyLogoUrl } from '@/lib/utils';
+import { useMediaQuery } from 'usehooks-ts';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose,
+} from '@/components/ui/sheet';
+import { AlertTriangle, Loader2, X as CloseIcon, Search as SearchIcon, Filter as FilterIcon, PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTickets, TicketFilters } from '@/hooks/useTickets';
+import { TicketModal } from './TicketModal';
+import { loadLastTicketNro } from '@/app/actions/ticketActions';
 
-interface SingleTicketItemCardProps {
-  ticket: Ticket;
-  onSelectTicket: (ticket: Ticket) => void;
-  onTicketUpdatedInList: (updatedTicket: Ticket) => void;
-  isSelected: boolean;
-}
+const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
-export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected }: SingleTicketItemCardProps) {
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+export default function TicketCard() {
+  const {
+    tickets, // Este es el array original de tickets
+    setTickets,
+    isLoading,
+    error: fetchTicketsError,
+    refreshTickets,
+    applyFilters,
+    currentFilters,
+  } = useTickets();
 
-  const fechaCreacionDate = new Date(ticket.fechaCreacion).toLocaleString('es-CL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [nextTicketNumber, setNextTicketNumber] = useState(0);
 
-  let prioridadVariant: "default" | "secondary" | "destructive" | "outline" = "default";
-  switch (ticket.prioridad?.toLowerCase()) {
-    case 'baja': prioridadVariant = "secondary"; break;
-    case 'media': prioridadVariant = "default"; break;
-    case 'alta': prioridadVariant = "outline"; break;
-    case 'urgente': prioridadVariant = "destructive"; break;
-    default: prioridadVariant = "outline";
+  const [searchText, setSearchText] = useState(currentFilters.searchText || '');
+  const [estadoFilter, setEstadoFilter] = useState(currentFilters.estado || 'all');
+  const [prioridadFilter, setPrioridadFilter] = useState(currentFilters.prioridad || 'all');
+
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+
+  useEffect(() => {
+    if (!isDesktop && selectedTicket) {
+      setIsSheetOpen(true);
+    } else if (isDesktop) {
+      setIsSheetOpen(false);
+    }
+  }, [selectedTicket, isDesktop]);
+
+  useEffect(() => {
+    setSearchText(currentFilters.searchText || '');
+    setEstadoFilter(currentFilters.estado || 'all'); 
+    setPrioridadFilter(currentFilters.prioridad || 'all');
+  }, [currentFilters]);
+
+  useEffect(() => {
+    const fetchNextTicketNumber = async () => {
+      try {
+        const lastNro = await loadLastTicketNro();
+        setNextTicketNumber(lastNro + 1);
+      } catch (err) {
+        console.error("Error al cargar el siguiente número de ticket:", err);
+      }
+    };
+    if (isCreateModalOpen || (tickets && tickets.length === 0)) { // Verificación adicional para tickets
+      fetchNextTicketNumber();
+    }
+  }, [isCreateModalOpen, tickets]);
+
+  const handleSelectTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    if (!isDesktop) {
+      setIsSheetOpen(true);
+    }
+  };
+
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+  };
+
+  const handleTicketUpdated = useCallback((updatedTicket: Ticket) => {
+    setTickets(prevTickets =>
+      prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
+    );
+    if (selectedTicket?.id === updatedTicket.id) {
+      setSelectedTicket(updatedTicket);
+    }
+  }, [selectedTicket, setTickets]);
+
+  const handleApplyFilters = () => {
+    applyFilters({
+      searchText: searchText.trim(),
+      estado: estadoFilter === 'all' ? undefined : estadoFilter,
+      prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setSearchText('');
+    setEstadoFilter('all');
+    setPrioridadFilter('all');
+    applyFilters({});
+  };
+
+  const handleOpenCreateModal = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+  
+  const handleFormSubmitSuccessInModal = () => {
+    handleCloseCreateModal();
+    refreshTickets();
+  };
+
+  // Filtrar tickets para asegurar que tienen fechaCreacion antes de mapear
+  // Esto es una medida defensiva. El problema principal debería ser atajado
+  // por la guarda dentro de SingleTicketItemCard o en la fuente de datos (API/useTickets).
+  // Si la línea 34 de ESTE archivo (TicketCard.tsx) es la que da error,
+  // significa que 'ticket.fechaCreacion' se usa ANTES de este map,
+  // posiblemente con 'selectedTicket'.
+  const validTickets = React.useMemo(() => {
+    if (!tickets) return [];
+    return tickets.filter(t => t && typeof t.fechaCreacion === 'string' && t.fechaCreacion.trim() !== '');
+  }, [tickets]);
+
+  // Si el error está en la línea 34 de ESTE archivo (TicketCard.tsx)
+  // y esa línea es "const fechaCreacionDate = new Date(ticket.fechaCreacion)...",
+  // entonces necesitas una guarda para el 'ticket' que se esté usando en ESE CONTEXTO.
+  // Por ejemplo, si fuera para selectedTicket:
+  // let selectedTicketFechaCreacionFormatted = 'N/A';
+  // if (selectedTicket && typeof selectedTicket.fechaCreacion === 'string') {
+  //   try {
+  //      selectedTicketFechaCreacionFormatted = new Date(selectedTicket.fechaCreacion).toLocaleString('es-CL', {...});
+  //   } catch (e) { console.error("Error formateando fecha de selectedTicket", e); }
+  // }
+  // Y luego usar selectedTicketFechaCreacionFormatted.
+  // Como no sé exactamente dónde está esa línea 34 en tu versión actual de TicketCard.tsx,
+  // el filtro de 'validTickets' es la medida más general que puedo aplicar aquí.
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin mb-2" />
+        <p>Cargando tickets...</p>
+      </div>
+    );
   }
 
-  const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (estado?.toLowerCase()) {
-      case 'abierto': return "default";
-      case 'cerrado': return "destructive";
-      case 'en progreso': return "secondary";
-      case 'pendiente': return "outline";
-      default: return "outline";
-    }
-  };
-
-  const formattedNumeroCaso = formatTicketNumber(ticket.numeroCaso);
-  const companyLogoUrl = getCompanyLogoUrl(ticket.empresa);
-
-  const handleStatusChange = async (newStatus: string) => {
-    setIsUpdatingStatus(true);
-    try {
-      const response = await fetch(`/api/tickets/${ticket.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: newStatus }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
-        throw new Error(errorData.message || 'Error al actualizar el estado');
-      }
-
-      const updatedTicketData: Ticket = await response.json();
-      onTicketUpdatedInList(updatedTicketData);
-    } catch (err: any) {
-      console.error("Error al cambiar estado directamente:", err);
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
+  if (fetchTicketsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4 text-red-600 dark:text-red-400">
+        <AlertTriangle className="h-8 w-8 mb-2" />
+        <p className="mb-1 text-center">Error al cargar los tickets:</p>
+        <p className="text-xs text-center mb-3">{fetchTicketsError}</p>
+        <Button 
+          onClick={refreshTickets} 
+          variant="default"
+          size="sm"
+          className="px-4 py-2 text-sm"
+        >
+          Reintentar
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <Card
-      className={cn(
-        "mb-3 cursor-pointer transition-all duration-150 ease-in-out",
-        "hover:shadow-xl",
-        {
-          "shadow-lg bg-primary/15 dark:bg-primary/25": isSelected,
-          "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
-        }
-      )}
-      onClick={() => onSelectTicket(ticket)}
-    >
-      <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
-          <div className="flex-grow">
-            {/* Tamaño de fuente del título reducido */}
-            <CardTitle className="text-sm sm:text-base leading-tight">
-              {ticket.titulo}
-            </CardTitle>
+    <div className="flex flex-col md:flex-row flex-grow h-full p-1 sm:p-4 gap-4">
+      <div className={`flex flex-col h-full overflow-hidden ${isDesktop ? 'md:w-[calc(65%-0.5rem)] lg:w-[calc(70%-0.5rem)]' : 'w-full'}`}>
+        <div className="bg-card p-4 rounded-lg shadow-sm mb-4 flex-shrink-0">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <FilterIcon className="h-5 w-5 text-primary" />
+              Filtros de Búsqueda
+            </h2>
+            <Button onClick={handleOpenCreateModal} size="sm">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Crear Ticket
+            </Button>
           </div>
-          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-start mt-1 sm:mt-0">
-            {/* Tamaño de fuente de los badges reducido a text-xs */}
-            <Badge 
-              variant="secondary"
-              className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5" // Altura ajustada
-            >
-              Caso #{formattedNumeroCaso}
-            </Badge>
-            {companyLogoUrl ? (
-              <Badge 
-                variant="secondary" 
-                className="w-10 h-5 p-0 flex items-center justify-center overflow-hidden rounded-md" // Altura ajustada
-              >
-                <Image 
-                  src={companyLogoUrl} 
-                  alt={`${ticket.empresa} logo`} 
-                  width={40}
-                  height={20} // Altura ajustada
-                  className="object-cover w-full h-full"
-                />
-              </Badge>
-            ) : (
-              <Badge 
-                variant="secondary" 
-                className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5" // Altura ajustada
-              >
-                {ticket.empresa}
-              </Badge>
-            )}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={getEstadoBadgeVariant(ticket.estado)}
-                  // Tamaño del botón/badge de estado ajustado
-                  className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5 cursor-pointer" 
-                  size="sm" 
-                  disabled={isUpdatingStatus}
-                >
-                  {ticket.estado || 'N/A'}
-                  {isUpdatingStatus ? <Loader2 className="ml-1.5 h-3 w-3 animate-spin" /> : null}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-2">
-                <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Abierto')}>Abierto</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('En Progreso')}>En Progreso</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Cerrado')}>Cerrado</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Pendiente')}>Pendiente</Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="searchText">Buscar por texto</Label>
+              <Input
+                id="searchText"
+                type="text"
+                placeholder="Título, Descripción, Empresa, Contacto, Técnico..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="estadoFilter">Estado</Label>
+              <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+                <SelectTrigger id="estadoFilter" className="h-9">
+                  <SelectValue placeholder="Todos los estados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="Abierto">Abierto</SelectItem>
+                  <SelectItem value="En Progreso">En Progreso</SelectItem>
+                  <SelectItem value="Cerrado">Cerrado</SelectItem>
+                  <SelectItem value="Pendiente">Pendiente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="prioridadFilter">Prioridad</Label>
+              <Select value={prioridadFilter} onValueChange={setPrioridadFilter}>
+                <SelectTrigger id="prioridadFilter" className="h-9">
+                  <SelectValue placeholder="Todas las prioridades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las prioridades</SelectItem>
+                  <SelectItem value="baja">BAJA</SelectItem>
+                  <SelectItem value="media">MEDIA</SelectItem>
+                  <SelectItem value="alta">ALTA</SelectItem>
+                  <SelectItem value="urgente">URGENTE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={handleClearFilters}>
+              Limpiar Filtros
+            </Button>
+            <Button size="sm" onClick={handleApplyFilters}>
+              <SearchIcon className="h-4 w-4 mr-2" />
+              Buscar Tickets
+            </Button>
+          </div>
+        </div>
+
+        <div 
+          className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2" 
+          style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}
+        >
+          {/* Se mapea sobre 'validTickets' en lugar de 'tickets' */}
+          {validTickets.length > 0 ? (
+            validTickets.map((ticket) => ( 
+              <SingleTicketItemCard
+                key={ticket.id}
+                ticket={ticket} 
+                onSelectTicket={handleSelectTicket}
+                onTicketUpdatedInList={handleTicketUpdated}
+                isSelected={selectedTicket?.id === ticket.id && isDesktop} 
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+              <p>No hay tickets para mostrar con los filtros actuales o algunos tickets tienen datos incompletos.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isDesktop ? (
+        selectedTicket && ( 
+          <div 
+            className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]"
+          >
+            <SelectedTicketPanel
+              selectedTicket={selectedTicket} 
+              onTicketUpdated={handleTicketUpdated}
+              headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
+            />
+          </div>
+        )
+      ) : (
+        <Sheet open={isSheetOpen} onOpenChange={(open) => {
+          if (!open) {
+            handleCloseSheet();
+          } else {
+            setIsSheetOpen(true);
+          }
+        }}>
+          <SheetContent side="right" className="w-[90vw] sm:w-[75vw] p-0 flex flex-col">
+            {selectedTicket && ( 
+              <>
+                <SheetHeader className="p-4 border-b flex-row justify-between items-center">
+                  <div>
+                    <SheetTitle>Detalles del Ticket #{selectedTicket.numeroCaso}</SheetTitle>
+                    <SheetDescription className="sr-only">
+                      Información y bitácora del ticket seleccionado.
+                    </SheetDescription>
+                  </div>
+                  <SheetClose asChild>
+                    <Button variant="ghost" size="icon" aria-label="Cerrar panel de detalles">
+                      <CloseIcon className="h-5 w-5" />
+                    </Button>
+                  </SheetClose>
+                </SheetHeader>
+                <div className="flex-grow overflow-y-auto">
+                  {/* Asegurarse de que selectedTicket es válido antes de pasarlo */}
+                  {selectedTicket && typeof selectedTicket.fechaCreacion === 'string' ? (
+                    <SelectedTicketPanel
+                      selectedTicket={selectedTicket} 
+                      onTicketUpdated={handleTicketUpdated}
+                      headerAndPagePaddingOffset="0px"
+                    />
+                  ) : (
+                    <div className="p-4 text-sm text-muted-foreground">Cargando detalles o datos incompletos...</div>
+                  )}
                 </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-      </CardHeader>
-      {/* Contenido de la tarjeta con texto consistentemente más pequeño (text-xs) */}
-      <CardContent className="text-xs space-y-1.5 pt-2 pb-3 px-4 sm:px-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-          <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente}</div>
-          <div><strong>Ubicación:</strong> {ticket.ubicacion}</div>
-          <div><strong>Técnico:</strong> {ticket.tecnicoAsignado}</div>
-          <div><strong>Contacto:</strong> {ticket.solicitante}</div>
-          <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDate}</div>
-          <div>
-            <strong>Prioridad:</strong>{' '}
-            <Badge variant={prioridadVariant} className="px-1.5 py-0.5 text-xs h-auto"> {/* Padding y altura ajustados */}
-              {ticket.prioridad?.toUpperCase() || 'N/A'}
-            </Badge>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
+      )}
+
+      <TicketModal
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
+        nextNroCaso={nextTicketNumber}
+        onFormSubmitSuccess={handleFormSubmitSuccessInModal}
+      />
+    </div>
   );
 }
