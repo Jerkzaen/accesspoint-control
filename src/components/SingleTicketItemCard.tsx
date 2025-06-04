@@ -22,7 +22,7 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface SingleTicketItemCardProps {
-  ticket: Ticket | undefined | null; // Permitir que ticket sea undefined o null
+  ticket: Ticket | undefined | null;
   onSelectTicket: (ticket: Ticket) => void;
   onTicketUpdatedInList: (updatedTicket: Ticket) => void;
   isSelected: boolean;
@@ -31,10 +31,8 @@ interface SingleTicketItemCardProps {
 export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected }: SingleTicketItemCardProps) {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // Verificación para ticket y ticket.fechaCreacion
   if (!ticket || typeof ticket.fechaCreacion === 'undefined') {
     console.error("Error: El objeto ticket o ticket.fechaCreacion es undefined.", ticket);
-    // Puedes retornar un componente de error o null para no renderizar esta tarjeta
     return (
       <Card className="mb-3 p-4 border-destructive bg-destructive/10">
         <p className="text-destructive-foreground text-sm">
@@ -75,7 +73,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
   const companyLogoUrl = getCompanyLogoUrl(ticket.empresa);
 
   const handleStatusChange = async (newStatus: string) => {
-    if (!ticket) return; // Asegurarse que ticket existe
+    if (!ticket) return;
     setIsUpdatingStatus(true);
     try {
       const response = await fetch(`/api/tickets/${ticket.id}`, {
@@ -98,6 +96,11 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     }
   };
 
+  // Definimos una altura común para los badges
+  const commonBadgeHeight = "h-6"; // 24px
+  const commonBadgeTextSize = "text-xs";
+  const commonBadgePaddingX = "px-2.5"; // Padding horizontal
+
   return (
     <Card
       className={cn(
@@ -108,7 +111,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
         }
       )}
-      onClick={() => ticket && onSelectTicket(ticket)} // Asegurarse que ticket existe
+      onClick={() => ticket && onSelectTicket(ticket)}
     >
       <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-1 sm:gap-2">
@@ -117,40 +120,45 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               {ticket.titulo}
             </CardTitle>
           </div>
-          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-start mt-1 sm:mt-0">
+          {/* Contenedor de Badges en la esquina superior derecha */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center mt-1 sm:mt-0">
             <Badge 
               variant="secondary"
-              className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5"
+              className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
             >
               Caso #{formattedNumeroCaso}
             </Badge>
+
             {companyLogoUrl ? (
               <Badge 
                 variant="secondary" 
-                className="w-10 h-5 p-0 flex items-center justify-center overflow-hidden rounded-md"
+                // Ancho fijo para el logo, p-0 para que la imagen lo cubra todo.
+                // overflow-hidden para recortar la imagen si no encaja perfectamente.
+                className={cn("w-12 p-0 flex items-center justify-center overflow-hidden rounded-md", commonBadgeHeight)}
               >
                 <Image 
                   src={companyLogoUrl} 
                   alt={`${ticket.empresa} logo`} 
-                  width={40}
-                  height={20}
-                  className="object-cover w-full h-full"
+                  width={48} // Corresponde a w-12
+                  height={24} // Corresponde a h-6
+                  className="object-cover w-full h-full" // object-cover es clave aquí
                 />
               </Badge>
             ) : (
               <Badge 
                 variant="secondary" 
-                className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5"
+                className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
               >
                 {ticket.empresa}
               </Badge>
             )}
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={getEstadoBadgeVariant(ticket.estado)}
-                  className="whitespace-nowrap text-xs px-2 py-0.5 h-auto sm:h-5 cursor-pointer" 
-                  size="sm" 
+                  className={cn("whitespace-nowrap cursor-pointer flex items-center", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
+                  size="sm" // Usar size="sm" de Button puede ayudar a controlar mejor el padding si es necesario
                   disabled={isUpdatingStatus}
                 >
                   {ticket.estado || 'N/A'}
@@ -170,7 +178,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           </div>
         </div>
       </CardHeader>
-      <CardContent className="text-xs space-y-1.5 pt-2 pb-3 px-4 sm:px-5">
+      <CardContent className={cn("space-y-1.5 pt-2 pb-3 px-4 sm:px-5", commonBadgeTextSize)}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
           <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente}</div>
           <div><strong>Ubicación:</strong> {ticket.ubicacion}</div>
@@ -179,7 +187,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDate}</div>
           <div>
             <strong>Prioridad:</strong>{' '}
-            <Badge variant={prioridadVariant} className="px-1.5 py-0.5 text-xs h-auto">
+            <Badge 
+              variant={prioridadVariant} 
+              className={cn(commonBadgeTextSize, commonBadgeHeight, "px-2 py-0.5")} // Ajustar padding si es necesario
+            >
               {ticket.prioridad?.toUpperCase() || 'N/A'}
             </Badge>
           </div>
