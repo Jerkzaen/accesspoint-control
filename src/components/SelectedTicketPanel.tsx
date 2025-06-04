@@ -207,7 +207,6 @@ export default function SelectedTicketPanel({
 
         {!isEditingTicket && (
           <div className="flex flex-col flex-grow overflow-hidden">
-            {/* Se eliminó overflow-y-auto y max-h-[180px] de esta sección de detalles */}
             <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
               <p><strong>Título:</strong> {selectedTicket.titulo}</p>
               <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
@@ -220,7 +219,6 @@ export default function SelectedTicketPanel({
               {selectedTicket.descripcionDetallada && (
                 <div className="mt-2">
                   <strong>Descripción Detallada:</strong>
-                  {/* Se eliminó max-h-[100px] y overflow-y-auto de la descripción detallada también */}
                   <div className="mt-1 text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border">
                     {selectedTicket.descripcionDetallada}
                   </div>
@@ -262,7 +260,8 @@ export default function SelectedTicketPanel({
               )) : <p className="text-xs text-muted-foreground">No hay acciones registradas.</p>}
             </div>
 
-            <div className="pt-2 border-t flex-shrink-0">
+            {/* Se añadió pb-4 a esta sección para darle espacio inferior */}
+            <div className="pt-2 border-t flex-shrink-0 pb-4">
               <div className="mb-2">
                 <span className="text-sm font-semibold">Agregar nueva acción</span>
               </div>
