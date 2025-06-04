@@ -1,10 +1,10 @@
-// src/components/SelectedTicketPanel.tsx (FINAL Y CORREGIDO - Bitácora ampliada, Layout Fijo, SIN Badge Interactiva)
+// src/components/SelectedTicketPanel.tsx
 'use client';
 
 import React, { useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea'; // CORREGIDO: Eliminado el "=>" extra
+import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,9 +12,8 @@ import { Edit3, AlertTriangle, Loader2 } from 'lucide-react';
 import { Ticket, ActionEntry } from '@/types/ticket';
 import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
-// La importación de Popover se mantiene por si se usa en otro contexto, pero no para el estado del ticket aquí.
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; 
-import { Badge } from '@/components/ui/badge'; // Importar Badge para el estado estático
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from '@/components/ui/badge';
 
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
@@ -55,12 +54,11 @@ export default function SelectedTicketPanel({
     saveEditedAction,
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
-  // Comprobación de seguridad al inicio del componente
   if (!selectedTicket) {
     return (
       <Card
         className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center"
-        style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
+        style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})`, maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }}
       >
         <div className="text-sm text-muted-foreground text-center">
           <Edit3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -73,33 +71,23 @@ export default function SelectedTicketPanel({
 
   const combinedError = ticketEditorError || actionsManagerError;
 
-  // Se añaden comprobaciones de seguridad con `?.` para evitar errores si las propiedades son undefined
   const fechaActualizacionFormatted = selectedTicket?.fechaActualizacion
     ? new Date(selectedTicket.fechaActualizacion).toLocaleString('es-CL', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
-    : 'N/A'; // Fallback si no hay fecha
+    : 'N/A';
 
   const fechaCreacionFormatted = selectedTicket?.fechaCreacion
     ? new Date(selectedTicket.fechaCreacion).toLocaleString('es-CL', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
-    : 'N/A'; // Fallback si no hay fecha
+    : 'N/A';
 
   const fechaSolucionFormatted = selectedTicket?.fechaSolucion
     ? new Date(selectedTicket.fechaSolucion).toLocaleString('es-CL', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     : null;
-
-
-  // handleStatusChange ya no es necesario aquí, ya que la interacción se mueve a SingleTicketItemCard
-  // Se mantiene la función dummy para evitar errores si se llama accidentalmente
-  const handleStatusChange = useCallback(async (newStatus: string) => {
-    console.log(`Intento de cambiar estado a ${newStatus} desde SelectedTicketPanel (acción movida).`);
-    // Esta función no hará nada funcionalmente relevante aquí.
-  }, []);
-
 
   const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (estado?.toLowerCase()) {
@@ -111,19 +99,16 @@ export default function SelectedTicketPanel({
     }
   };
 
-
   return (
     <Card
       className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col"
-      style={{ maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})`, overflowY: 'hidden' }}
+      style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})`, maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }}
     >
-      <div className="flex flex-col h-full pr-1"> {/* Eliminado overflow-y-auto aquí, se maneja en sub-secciones */}
+      <div className="flex flex-col h-full overflow-hidden">
         <div className="mb-3 pb-2 border-b flex-shrink-0">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso} - {selectedTicket.titulo}</CardTitle>
-              {/* Badge de Estado ESTATICA (NO INTERACTIVA) en SelectedTicketPanel */}
-              {/* Se eliminó el PopoverTrigger y PopoverContent */}
               <Badge 
                 variant={getEstadoBadgeVariant(selectedTicket.estado)}
                 className="mt-1 whitespace-nowrap text-xs px-2 py-0.5 h-auto rounded-full"
@@ -147,12 +132,11 @@ export default function SelectedTicketPanel({
         )}
 
         {isEditingTicket && editableTicketData && (
-          <Card className="mb-3 p-3 border-dashed flex-shrink-0 bg-muted/30 dark:bg-muted/10">
+          <Card className="mb-3 p-3 border-dashed flex-shrink-0 bg-muted/30 dark:bg-muted/10 overflow-y-auto">
             <CardHeader className="p-1 pb-2">
               <CardTitle className="text-sm">Editando Ticket #{selectedTicket.numeroCaso}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-1 text-xs">
-              {/* Técnico Asignado */}
               <div className="space-y-0.5">
                 <Label htmlFor="tecnicoAsignadoEdit" className="text-xs">Técnico Asignado</Label>
                 <Select
@@ -169,7 +153,6 @@ export default function SelectedTicketPanel({
                   </SelectContent>
                 </Select>
               </div>
-              {/* Prioridad */}
               <div className="space-y-0.5">
                 <Label htmlFor="prioridadEdit" className="text-xs">Prioridad</Label>
                 <Select
@@ -186,7 +169,6 @@ export default function SelectedTicketPanel({
                   </SelectContent>
                 </Select>
               </div>
-              {/* Solicitante */}
               <div className="space-y-0.5">
                 <Label htmlFor="solicitanteEdit" className="text-xs">Solicitante</Label>
                 <Input
@@ -197,7 +179,6 @@ export default function SelectedTicketPanel({
                   disabled={isSavingTicket}
                 />
               </div>
-              {/* Estado - Se edita aquí si estamos en modo edición */}
               <div className="space-y-0.5">
                 <Label htmlFor="estadoEdit" className="text-xs">Estado</Label>
                 <Select
@@ -210,7 +191,7 @@ export default function SelectedTicketPanel({
                     <SelectItem value="Abierto">ABIERTO</SelectItem>
                     <SelectItem value="En Progreso">EN PROGRESO</SelectItem>
                     <SelectItem value="Cerrado">CERRADO</SelectItem>
-                    <SelectItem value="Pendiente">PENDiente</SelectItem>
+                    <SelectItem value="Pendiente">PENDIENTE</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -218,15 +199,16 @@ export default function SelectedTicketPanel({
             <CardFooter className="flex justify-end gap-2 p-1 pt-2">
               <Button variant="ghost" size="sm" onClick={cancelEditingTicket} disabled={isSavingTicket}>Cancelar</Button>
               <Button size="sm" onClick={saveTicketChanges} disabled={isSavingTicket}>
-                {isSavingTicket ? 'Guardando...' : 'Guardar Cambios'}
+                {isSavingTicket ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Guardando...</> : 'Guardar Cambios'}
               </Button>
             </CardFooter>
           </Card>
         )}
 
         {!isEditingTicket && (
-          <div className="flex flex-col flex-grow overflow-hidden"> {/* Contenedor para detalles y bitácora, con flex-grow */}
-            <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0 overflow-y-auto max-h-[180px]"> {/* Detalles del ticket, con scroll si es largo */}
+          <div className="flex flex-col flex-grow overflow-hidden">
+            {/* Se eliminó overflow-y-auto y max-h-[180px] de esta sección de detalles */}
+            <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
               <p><strong>Título:</strong> {selectedTicket.titulo}</p>
               <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
               <p><strong>Ubicación:</strong> {selectedTicket.ubicacion}</p>
@@ -238,7 +220,8 @@ export default function SelectedTicketPanel({
               {selectedTicket.descripcionDetallada && (
                 <div className="mt-2">
                   <strong>Descripción Detallada:</strong>
-                  <div className="mt-1 text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border max-h-[100px] overflow-y-auto"> {/* Descripción detallada con scroll */}
+                  {/* Se eliminó max-h-[100px] y overflow-y-auto de la descripción detallada también */}
+                  <div className="mt-1 text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border">
                     {selectedTicket.descripcionDetallada}
                   </div>
                 </div>
@@ -249,7 +232,7 @@ export default function SelectedTicketPanel({
               <span className="text-sm font-semibold">Bitácora de acciones</span>
             </div>
 
-            <div className="overflow-y-auto space-y-2 mb-3 flex-grow"> {/* Bitácora con flex-grow para ocupar el espacio restante */}
+            <div className="overflow-y-auto space-y-2 mb-3 flex-grow">
               {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act) => (
                 <div key={act.id} className="text-xs border-b pb-1 flex items-start justify-between gap-2">
                   {editingActionId === act.id ? (
@@ -267,12 +250,12 @@ export default function SelectedTicketPanel({
                     {editingActionId === act.id ? (
                       <>
                         <Button variant="default" size="sm" onClick={saveEditedAction} disabled={isProcessingAction}>
-                          {isProcessingAction ? 'Guardando...' : 'Guardar'}
+                          {isProcessingAction ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Guardando...</> : 'Guardar'}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={cancelEditingAction} disabled={isProcessingAction}>Cancelar</Button>
                       </>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => startEditingAction(act)} disabled={isProcessingAction}>Editar</Button>
+                      <Button variant="outline" size="sm" onClick={() => startEditingAction(act)} disabled={isProcessingAction || isEditingTicket}>Editar</Button>
                     )}
                   </div>
                 </div>
@@ -296,7 +279,7 @@ export default function SelectedTicketPanel({
                 onClick={addAction}
                 disabled={isProcessingAction || isEditingTicket || !newActionDescription.trim()}
               >
-                {isProcessingAction ? 'Guardando...' : 'Guardar acción'}
+                {isProcessingAction ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</> : 'Guardar acción'}
               </Button>
             </div>
           </div>
