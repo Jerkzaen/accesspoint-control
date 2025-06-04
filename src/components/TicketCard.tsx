@@ -1,4 +1,4 @@
-// src/components/TicketCard.tsx (FINAL - Con todas las funcionalidades y correcciones)
+// src/components/TicketCard.tsx (REVISADO - Con todas las funcionalidades y correcciones)
 'use client';
 
 import * as React from 'react';
@@ -253,7 +253,7 @@ export default function TicketCard() {
         selectedTicket && ( 
           <div 
             className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]"
-            style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})`, overflowY: 'hidden` }} 
+            style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})`, overflowY: 'hidden' }} 
           >
             <SelectedTicketPanel
               selectedTicket={selectedTicket} 

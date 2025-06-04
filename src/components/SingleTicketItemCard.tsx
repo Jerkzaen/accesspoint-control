@@ -1,4 +1,4 @@
-// src/components/SingleTicketItemCard.tsx (FINAL - Badge de Estado Interactiva y Actualización de Lista)
+// src/components/SingleTicketItemCard.tsx (FINAL Y CORREGIDO - Badge de Estado Interactiva y Actualización de Lista)
 'use client';
 
 import Image from 'next/image'; // Importar el componente Image de Next.js
@@ -75,7 +75,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${res.status}` }));
+        // CORREGIDO: Acceder a response.status directamente, no a 'res.status'
+        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
         throw new Error(errorData.message || 'Error al actualizar el estado');
       }
 
