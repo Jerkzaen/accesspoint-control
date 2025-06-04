@@ -1,44 +1,275 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model Ticket {
-  id                   String    @id @default(uuid())
-  numeroCaso           Int       @unique // Antes nroCaso
-  empresa              String
-  tipoIncidente        String    // Antes tipo
-  ubicacion            String
-  tecnicoAsignado      String    // Antes tecnico
-  solicitante          String    // Antes contacto
-  titulo               String    // Antes descripcion (para el resumen breve)
-  descripcionDetallada String?   // Nuevo campo para la descripción larga
-  prioridad            String
-  estado               String    @default("Abierto")
-  acciones             String    @default("[]") // Mantenido como String para JSON
-  fechaCreacion        DateTime  @default(now()) // Antes createdAt
-  fechaSolucion        DateTime?
-  fechaActualizacion   DateTime  @updatedAt // Nuevo campo para rastrear actualizaciones
-
-  // Aquí puedes añadir más campos a futuro si los necesitas
-  // ej: categoria String?
-  //     subCategoria String?
+datasource db {
+  provider = "sqlite" // O tu base de datos preferida: postgresql, mysql, etc.
+  url      = env("DATABASE_URL")
 }
 
-// Si tienes otros modelos, déjalos como están.
-// Ejemplo de otro modelo (si existiera):
-// model User {
-//   id    Int     @id @default(autoincrement())
-//   email String  @unique
-//   name  String?
-// }
+// Modelos para NextAuth Prisma Adapter
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts") // Nombre de tabla sugerido por NextAuth
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions") // Nombre de tabla sugerido por NextAuth
+}
+
+// Modelo Usuario adaptado para NextAuth y tu aplicación
+// Este reemplaza/fusiona tu modelo 'Usuario' anterior.
+model User {
+  id            String    @id @default(cuid()) // NextAuth usa cuid() por defecto
+  name          String?   // Nombre del usuario (viene de Google, antes 'nombreCompleto')
+  email         String?   @unique // Email (viene de Google)
+  emailVerified DateTime? // Para verificar el email
+  image         String?   // URL de la imagen de perfil (viene de Google)
+  
+  // Campos específicos de tu aplicación
+  rol           RoleUsuario @default(TECNICO) // Tu campo 'rol' se mantiene
+
+  // Relaciones de NextAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Relaciones de tu aplicación (antes en 'Usuario')
+  ticketsAsignados    Ticket[]      @relation("TecnicoTickets")
+  accionesRealizadas  AccionTicket[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users") // Nombre de tabla sugerido por NextAuth, o puedes usar "personal_interno"
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens") // Nombre de tabla sugerido por NextAuth
+}
+
+// --- Tus modelos existentes (con ajustes menores si es necesario) ---
+
+enum RoleUsuario {
+  ADMIN
+  TECNICO
+  VISUALIZADOR
+}
+
+model EmpresaCliente {
+  id            String    @id @default(uuid())
+  nombre        String    @unique
+  rut           String?   @unique
+  direccion     String?
+  telefono      String?
+  email         String?   @unique
+  logoUrl       String?
+  contactos     Cliente[]
+  tickets       Ticket[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  @@map("empresas_clientes")
+}
+
+model Cliente {
+  id                String              @id @default(uuid())
+  nombreCompleto    String
+  email             String?             @unique
+  telefono          String?
+  cargo             String?
+  empresaCliente    EmpresaCliente      @relation(fields: [empresaClienteId], references: [id])
+  empresaClienteId  String
+  ubicacion         Ubicacion?          @relation(fields: [ubicacionId], references: [id])
+  ubicacionId       String?
+  ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
+  equiposEnPrestamo EquipoEnPrestamo[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  @@map("contactos_clientes")
+}
+
+model Ubicacion {
+  id                  String    @id @default(uuid())
+  nombreReferencial   String?
+  direccionCompleta   String
+  ciudad              String?
+  region              String?
+  pais                String?
+  notas               String?
+  contactos           Cliente[]
+  tickets             Ticket[]
+  equiposInventario   EquipoInventario[] @relation("EquipoUbicacionActual")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Ticket {
+  id                    String        @id @default(uuid())
+  numeroCaso            Int           @unique
+  titulo                String
+  descripcionDetallada  String?
+  tipoIncidente         String        
+  prioridad             PrioridadTicket @default(MEDIA)
+  estado                EstadoTicket  @default(ABIERTO)
+  
+  solicitanteNombre     String        
+  solicitanteTelefono   String?       
+  solicitanteCorreo     String?       
+  solicitanteCliente    Cliente?      @relation(name: "SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
+  solicitanteClienteId  String?       
+
+  empresaCliente        EmpresaCliente? @relation(fields: [empresaClienteId], references: [id])
+  empresaClienteId      String?       
+  
+  ubicacion             Ubicacion?    @relation(fields: [ubicacionId], references: [id])
+  ubicacionId           String?       
+
+  tecnicoAsignado       User?         @relation(name: "TecnicoTickets", fields: [tecnicoAsignadoId], references: [id]) // Relacionado con el nuevo 'User'
+  tecnicoAsignadoId     String?       
+
+  acciones              AccionTicket[] 
+
+  fechaCreacion         DateTime      @default(now())
+  fechaSolucion         DateTime?
+  updatedAt             DateTime      @updatedAt
+  
+  equiposEnPrestamo     EquipoEnPrestamo[]
+}
+
+model AccionTicket {
+  id            String   @id @default(uuid())
+  ticket        Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId      String
+  descripcion   String
+  fechaAccion   DateTime @default(now())
+  realizadaPor  User     @relation(fields: [usuarioId], references: [id]) // Relacionado con el nuevo 'User'
+  usuarioId     String   
+}
+
+enum PrioridadTicket {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum EstadoTicket {
+  ABIERTO
+  EN_PROGRESO
+  PENDIENTE_TERCERO
+  PENDIENTE_CLIENTE
+  RESUELTO
+  CERRADO
+  CANCELADO
+}
+
+model EquipoInventario {
+  id                        String              @id @default(uuid())
+  nombreDescriptivo         String              
+  identificadorUnico        String              @unique 
+  tipoEquipo                TipoEquipoInventario
+  marca                     String?
+  modelo                    String?
+  descripcionAdicional      String?
+  estadoEquipo              EstadoEquipoInventario @default(DISPONIBLE)
+  fechaAdquisicion          DateTime?
+  proveedor                 String?
+  
+  ubicacionActual           Ubicacion?          @relation(name: "EquipoUbicacionActual", fields: [ubicacionActualId], references: [id])
+  ubicacionActualId         String?             
+
+  notasGenerales            String?
+  prestamos                 EquipoEnPrestamo[]  
+  
+  panelVtsSerie             String?             @map("panel_vts_serie")
+  pedalVtsSerie             String?             @map("pedal_vts_serie")
+  biarticTipoDispositivo    String?             @map("biartic_tipo_dispositivo") 
+
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+}
+
+enum TipoEquipoInventario {
+  VTS         
+  BIARTIC     
+  NOTEBOOK
+  CELULAR
+  TABLET
+  IMPRESORA
+  MONITOR
+  PERIFERICO  
+  OTRO
+}
+
+enum EstadoEquipoInventario {
+  DISPONIBLE
+  EN_USO_INTERNO
+  PRESTADO
+  EN_MANTENIMIENTO
+  DE_BAJA
+  PERDIDO_ROBADO
+}
+
+model EquipoEnPrestamo {
+  id                        String    @id @default(uuid())
+  equipo                    EquipoInventario @relation(fields: [equipoId], references: [id])
+  equipoId                  String
+  
+  prestadoAContacto         Cliente   @relation(fields: [prestadoAContactoId], references: [id])
+  prestadoAContactoId       String    
+  personaResponsableEnSitio String    
+
+  fechaPrestamo             DateTime  @default(now())
+  fechaDevolucionEstimada   DateTime
+  fechaDevolucionReal       DateTime?
+  
+  estadoPrestamo            EstadoPrestamoEquipo @default(PRESTADO)
+  
+  ticketAsociado            Ticket?   @relation(fields: [ticketId], references: [id])
+  ticketId                  String?   
+
+  notasPrestamo             String?   
+  notasDevolucion           String?   
+
+  entregadoPorUsuarioId     String?   // Podría ser un User.id
+  recibidoPorUsuarioId      String?   // Podría ser un User.id
+
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+}
+
+enum EstadoPrestamoEquipo {
+  PRESTADO
+  DEVUELTO
+  ATRASADO 
+  RENOVADO
+  PERDIDO_POR_CLIENTE
+}
