@@ -1,16 +1,16 @@
 // src/app/layout.tsx
-"use client"; // Necesario para usar hooks como useMediaQuery
+"use client"; 
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-// ThemeProvider se importará y usará dentro de Providers.tsx
+// ThemeProvider ya no se importa aquí directamente, se maneja dentro de Providers.tsx
 import Sidebar from "@/components/sidebar";
-import { Providers } from "@/app/Providers"; // Este componente contendrá SessionProvider y ThemeProvider
+import { Providers } from "@/app/Providers"; // Este componente ahora envuelve a ambos providers
 import Header from "@/components/Header";
-import { ClientOnly } from "@/components/ClientOnly";
+import { ClientOnly } from "@/components/ClientOnly"; // Asumo que lo sigues usando
 import { useMediaQuery } from "usehooks-ts"; 
 import { useEffect, useState } from "react"; 
 
@@ -19,9 +19,11 @@ const fontSans = FontSans({
   variable: "--font-sans",
 });
 
-// export const metadata: Metadata = { // Si quieres re-habilitar metadata estática, quita "use client" o usa generateMetadata
+// Si necesitas metadata y tienes "use client", considera usar generateMetadata
+// o definirla estáticamente y asegurar que no haya conflictos.
+// export const metadata = {
 //   title: "AccessPoint Control",
-//   description: "Control de AccessPoint",
+//   description: "Control de AccessPoint y Tickets",
 // };
 
 export default function RootLayout({
@@ -43,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
       <head>
-        <meta name="description" content="Control de AccessPoint" />
+        <meta name="description" content="Control de AccessPoint y Tickets" />
         <title>AccessPoint Control</title>
       </head>
       <body
@@ -52,7 +54,7 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <Providers> {/* Providers.tsx ahora envuelve con SessionProvider y ThemeProvider */}
+        <Providers> {/* Providers ahora envuelve a SessionProvider y ThemeProvider */}
           <ClientOnly fallback={null}>
             <div className="flex h-full" suppressHydrationWarning>
               <Sidebar />
@@ -61,9 +63,8 @@ export default function RootLayout({
                 style={{ marginLeft: mainContentMarginLeft }} 
               >
                 <Header />
-                {/* Considera añadir un padding general aquí si todas las páginas lo necesitan */}
-                <main className="flex-grow overflow-y-auto"> 
-                  {children} {/* Aquí se renderiza el contenido de tus páginas */}
+                <main className="flex-grow overflow-y-auto">
+                  {children}
                 </main>
               </div>
             </div>
