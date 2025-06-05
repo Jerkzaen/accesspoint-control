@@ -6,31 +6,25 @@ import { Analytics } from "@vercel/analytics/react";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-// ThemeProvider ya no se importa aquí directamente, se maneja dentro de Providers.tsx
 import Sidebar from "@/components/sidebar";
-import { Providers } from "@/app/Providers"; // Este componente ahora envuelve a ambos providers
+import { Providers } from "@/app/Providers"; 
 import Header from "@/components/Header";
-import { ClientOnly } from "@/components/ClientOnly"; // Asumo que lo sigues usando
+import { ClientOnly } from "@/components/ClientOnly"; 
 import { useMediaQuery } from "usehooks-ts"; 
 import { useEffect, useState } from "react"; 
+import { usePathname } from "next/navigation"; // Importar usePathname
 
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
-// Si necesitas metadata y tienes "use client", considera usar generateMetadata
-// o definirla estáticamente y asegurar que no haya conflictos.
-// export const metadata = {
-//   title: "AccessPoint Control",
-//   description: "Control de AccessPoint y Tickets",
-// };
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname(); // Obtener la ruta actual
   const sidebarDesktopWidth = "270px";
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [mounted, setMounted] = useState(false);
@@ -42,6 +36,9 @@ export default function RootLayout({
 
   const mainContentMarginLeft = mounted && isDesktop ? sidebarDesktopWidth : "0px";
 
+  // Determinar si estamos en la página de autenticación
+  const isAuthPage = pathname === "/auth/signin";
+
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
       <head>
@@ -50,25 +47,36 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          "h-full bg-background font-sans antialiased overflow-hidden",
+          "h-full bg-background font-sans antialiased", // overflow-hidden se maneja condicionalmente
+          isAuthPage ? "overflow-auto" : "overflow-hidden", // Permitir scroll en auth page si es necesario, oculto en el layout principal
           fontSans.variable
         )}
       >
-        <Providers> {/* Providers ahora envuelve a SessionProvider y ThemeProvider */}
-          <ClientOnly fallback={null}>
-            <div className="flex h-full" suppressHydrationWarning>
-              <Sidebar />
-              <div
-                className="flex-1 flex flex-col h-full transition-all duration-300 ease-in-out"
-                style={{ marginLeft: mainContentMarginLeft }} 
-              >
-                <Header />
-                <main className="flex-grow overflow-y-auto">
-                  {children}
-                </main>
+        <Providers> {/* Providers envuelve a SessionProvider y ThemeProvider */}
+          {isAuthPage ? (
+            // Si es la página de autenticación, solo renderizar los hijos (el contenido de SignInPage)
+            // ClientOnly podría no ser estrictamente necesario aquí si SignInPage ya es "use client"
+            // pero lo mantenemos por consistencia si SignInPage hace uso de hooks que lo requieran.
+            <ClientOnly fallback={<div>Cargando página de inicio de sesión...</div>}> 
+              {children}
+            </ClientOnly>
+          ) : (
+            // Para todas las demás páginas, renderizar el layout completo
+            <ClientOnly fallback={null}> {/* O un loader más completo para el layout principal */}
+              <div className="flex h-full" suppressHydrationWarning>
+                <Sidebar />
+                <div
+                  className="flex-1 flex flex-col h-full transition-all duration-300 ease-in-out"
+                  style={{ marginLeft: mainContentMarginLeft }} 
+                >
+                  <Header />
+                  <main className="flex-grow overflow-y-auto">
+                    {children}
+                  </main>
+                </div>
               </div>
-            </div>
-          </ClientOnly>
+            </ClientOnly>
+          )}
         </Providers>
         <Analytics />
         <SpeedInsights />
