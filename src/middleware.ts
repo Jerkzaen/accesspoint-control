@@ -1,73 +1,70 @@
-// Ruta: src/middleware.ts (DEBE estar en la raíz de src/ o del proyecto)
+/// src/middleware.ts
 
 import { withAuth, NextRequestWithAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-console.log("--- Middleware Cargado ---"); // Para saber si el archivo se carga
-
 export default withAuth(
+  // Esta función middleware se ejecuta DESPUÉS de que el callback `authorized`
+  // haya determinado que el usuario está autenticado (es decir, `authorized` devolvió true).
+  // Aquí puedes implementar lógica adicional basada en el token del usuario, como la autorización por roles.
   function middleware(req: NextRequestWithAuth) {
-    const { pathname } = req.nextUrl;
-    const token = req.nextauth.token;
+    // El token decodificado del usuario (incluyendo el 'id' y 'rol' que añadimos en los callbacks de NextAuth)
+    // está disponible en: req.nextauth.token
+    // const userRole = (req.nextauth.token as any)?.rol;
 
-    console.log(`[Middleware] Ruta solicitada: ${pathname}`);
-    console.log("[Middleware] Token:", token ? "Presente" : "Ausente");
-    if(token) {
-      console.log("[Middleware] Rol del token:", (token as any)?.rol);
-    }
-
-    // Lógica de roles (opcional, la activaremos después si es necesario)
-    // const userRole = (token as any)?.rol;
-    // if (pathname.startsWith("/admin") && userRole !== "ADMIN") {
-    //   console.log("[Middleware] Acceso denegado a /admin para rol:", userRole);
-    //   return NextResponse.redirect(new URL("/auth/acceso-denegado", req.url));
+    // Ejemplo de protección basada en roles (descomentar y adaptar si es necesario):
+    // if (req.nextUrl.pathname.startsWith("/admin") && userRole !== "ADMIN") {
+    //   // Redirige a una página de "acceso denegado" o a la página principal
+    //   return NextResponse.redirect(new URL("/acceso-denegado", req.url));
     // }
 
-    // Si el token está presente (verificado por el callback 'authorized'),
-    // y no hay otra lógica de redirección específica aquí, permite el acceso.
+    // Si no hay ninguna lógica de autorización específica aquí que bloquee el acceso,
+    // permite que la solicitud continúe.
     return NextResponse.next();
   },
   {
     callbacks: {
+      // Este callback se ejecuta ANTES que la función `middleware` de arriba.
+      // Su propósito es determinar si el usuario está "autorizado" para acceder
+      // a las rutas cubiertas por el `matcher`.
       authorized: ({ req, token }) => {
-        const { pathname } = req.nextUrl;
-        const isAuthorized = !!token;
-        console.log(`[Middleware Callback - authorized] Path: ${pathname}, Token presente: ${!!token}, Autorizado: ${isAuthorized}`);
-        
-        // Si el usuario no está autorizado (sin token) Y NO está ya en una ruta pública permitida,
-        // entonces la redirección a la página de signIn ocurrirá automáticamente por withAuth.
-        // El callback `authorized` solo necesita devolver true si el acceso debe permitirse
-        // a la ruta actual bajo las condiciones de withAuth.
-        return isAuthorized;
+        // Si `token` existe (es decir, el usuario ha iniciado sesión y tiene un token válido),
+        // entonces el usuario se considera autorizado para las rutas protegidas.
+        // Si `token` es `null` (usuario no autenticado), devuelve `false`.
+        // Cuando `authorized` devuelve `false`, `withAuth` redirige automáticamente
+        // al usuario a la página de inicio de sesión especificada en `pages.signIn`.
+        return !!token;
       },
     },
     pages: {
-      signIn: "/auth/signin", // Tu página de login personalizada
-      // error: "/auth/error", // Opcional
+      // Especifica la ruta a tu página de inicio de sesión personalizada.
+      // `withAuth` redirigirá aquí si el callback `authorized` devuelve `false`.
+      signIn: "/auth/signin",
+      // Opcional: puedes definir una página para errores de autenticación.
+      // error: "/auth/error", 
     },
   }
 );
 
+// El `config.matcher` define a qué rutas se aplicará este middleware de autenticación.
 export const config = {
   matcher: [
     /*
-     * Coincide con TODAS las rutas excepto aquellas explícitamente excluidas.
-     * Esto es crucial para asegurar que todo esté protegido por defecto.
+     * Esta expresión regular coincide con TODAS las rutas de solicitud,
+     * EXCEPTO aquellas que comienzan con:
+     * - api/auth/ (rutas de API de NextAuth para el proceso de autenticación, ej. el callback de Google)
+     * - _next/static/ (archivos estáticos generados por Next.js como JS, CSS)
+     * - _next/image/ (rutas para la optimización de imágenes de Next.js)
+     * - favicon.ico (el archivo del favicon)
+     * - /auth/signin (TU página de inicio de sesión personalizada, para evitar bucles de redirección)
+     * - /images/ (u otras carpetas que tengas en /public y quieras que sean siempre accesibles)
      *
-     * EXCLUSIONES:
-     * - /api/auth/... (Rutas de API de NextAuth)
-     * - /_next/static/... (Archivos estáticos de Next.js)
-     * - /_next/image/... (Optimización de imágenes de Next.js)
-     * - /favicon.ico
-     * - /auth/signin (Tu página de inicio de sesión)
-     * - /images/... (Carpeta pública de imágenes)
-     * - CUALQUIER OTRO archivo en /public (ej. .svg, .png, .jpg en la raíz de /public)
-     * Para excluir todos los archivos con extensiones comunes de la carpeta public,
-     * puedes añadir un lookahead más general para archivos con puntos.
-     * (?!.*\..+$) - esto es un poco agresivo, es mejor listar explícitamente.
-     *
-     * Si tu PÁGINA DE INICIO (/) debe ser pública, añádela a las exclusiones:
-     * ej: "/((?!api/auth|_next/static|_next/image|favicon.ico|auth/signin|images|$).*)", (el '$' excluye la raíz exacta)
+     * IMPORTANTE sobre la página de inicio ("/"):
+     * Con el matcher actual, la página de inicio ("/") ESTARÁ PROTEGIDA.
+     * Si quieres que tu página de inicio sea pública (ej. una landing page que no requiera login),
+     * necesitarás añadirla explícitamente a las exclusiones. Una forma es:
+     * "/((?!api/auth/|_next/static/|_next/image/|favicon.ico|auth/signin|images|$).*)",
+     * (el '$' al final de las exclusiones en el "negative lookahead" se refiere a la ruta raíz exacta)
      */
     "/((?!api/auth/|_next/static/|_next/image/|favicon.ico|auth/signin|images/).*)",
   ],
