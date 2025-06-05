@@ -70,7 +70,7 @@ function SignInPageContent() {
               AccessPoint Control
             </h1>
             <p className="text-base lg:text-xl leading-relaxed opacity-90 shadow-sm">
-              Gestión centralizada y eficiente para tus tickets de soporte y equipos.
+              Gestión centralizada y eficiente.
             </p>
           </div>
         </div>
