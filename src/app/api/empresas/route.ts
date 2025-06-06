@@ -12,10 +12,11 @@ export async function GET() {
       orderBy: { nombre: 'asc' },
     });
     return NextResponse.json(empresas);
-  } catch (error) {
+  } catch (error) { // 'error' es de tipo 'unknown' aquí
     console.error("Error en GET /api/empresas:", error);
+    // Verificar si 'error' es una instancia de Error antes de acceder a 'message'
     return NextResponse.json(
-      { message: "Error al obtener empresas", error: error.message },
+      { message: "Error al obtener empresas", error: error instanceof Error ? error.message : "Error desconocido" },
       { status: 500 }
     );
   }
