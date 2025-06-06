@@ -20,7 +20,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
-import { TicketModal } from './TicketModal';
+// Importación correcta: TicketModal es una exportación nombrada
+import { TicketModal } from './TicketModal'; 
 import { loadLastTicketNro } from '@/app/actions/ticketActions';
 import { Skeleton } from '@/components/ui/skeleton'; 
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
@@ -182,10 +183,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
       }
     };
     // Fetch next ticket number if modal is open or if tickets are empty and not loading from a filter
-    if (isCreateModalOpen || (tickets && tickets.length === 0 && !isLoading && !fetchTicketsError && !showFilterSkeleton)) { 
+    if (isCreateModalOpen || (tickets && tickets.length === 0 && !isLoading && !fetchTicketsError && !showFilterSkeleton && newlyCreatedTicketId === null)) { 
       fetchNextTicketNumber();
     }
-  }, [isCreateModalOpen, tickets, isLoading, fetchTicketsError, showFilterSkeleton]);
+  }, [isCreateModalOpen, tickets, isLoading, fetchTicketsError, showFilterSkeleton, newlyCreatedTicketId]);
 
   const handleSelectTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
