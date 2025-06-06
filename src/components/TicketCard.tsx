@@ -20,7 +20,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
-// Importación correcta: TicketModal es una exportación nombrada
 import { TicketModal } from './TicketModal'; 
 import { loadLastTicketNro } from '@/app/actions/ticketActions';
 import { Skeleton } from '@/components/ui/skeleton'; 
@@ -45,6 +44,7 @@ interface TicketCardProps {
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 const MIN_SKELETON_DISPLAY_TIME = 500; // Milisegundos que el skeleton debe mostrarse como mínimo
+const NEW_TICKET_HIGHLIGHT_DURATION = 1000; // Duración del resaltado del ticket nuevo en milisegundos
 
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
   const {
@@ -143,20 +143,20 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   }, [isLoading]); 
 
 
-  // Efecto para el cierre del modal y la animación del nuevo ticket
+  // Efecto para orquestar el resaltado del ticket y el cierre del modal DESPUÉS de la carga de tickets
   React.useEffect(() => {
-    // Si la carga terminó y tenemos un ID de ticket nuevo para resaltar
+    // Solo si la carga terminó Y hay un ticket nuevo para resaltar
     if (!isLoading && newlyCreatedTicketId !== null) {
-      const highlightDuration = 1000; // Duración del resaltado en milisegundos
+      const highlightTimer = setTimeout(() => {
+        setNewlyCreatedTicketId(null); // Quita el resaltado del ticket
+        // Ahora que el resaltado se quitó, podemos cerrar el modal
+        handleCloseCreateModal(); 
+      }, NEW_TICKET_HIGHLIGHT_DURATION);
 
-      const timer = setTimeout(() => {
-        setNewlyCreatedTicketId(null); // Quita el resaltado
-        handleCloseCreateModal();       // Cierra el modal después de que la animación termine
-      }, highlightDuration);
-
-      return () => clearTimeout(timer); // Limpiar el timer si el componente se desmonta o el estado cambia
+      return () => clearTimeout(highlightTimer);
     }
-  }, [isLoading, newlyCreatedTicketId]); // Depende de isLoading y newlyCreatedTicketId
+  }, [isLoading, newlyCreatedTicketId, handleCloseCreateModal]);
+
 
   React.useEffect(() => {
     if (!isDesktop && selectedTicket) {
@@ -223,30 +223,35 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setIsCreateModalOpen(true);
   };
 
-  const handleCloseCreateModal = React.useCallback(() => { // Memoized for useEffect dependency
+  const handleCloseCreateModal = React.useCallback(() => { 
     setIsCreateModalOpen(false);
   }, []);
   
-  // MODIFICADO: Ahora solo dispara el refresh y setea el ID para la animación
-  const handleFormSubmitSuccessInModal = React.useCallback((newTicket?: Ticket) => {
+  // MODIFICADO: Nuevo callback que se activa cuando TicketFormInModal ha COMPLETADO su animación
+  const handleTicketFormCompletion = React.useCallback((newTicket?: Ticket) => {
     if (newTicket) {
       setNewlyCreatedTicketId(newTicket.id); // Setea el ID para que la tarjeta se resalte
       refreshTickets(); // Dispara una recarga completa de la lista de tickets del servidor
-      // El modal no se cierra aquí. Se cerrará en el useEffect de animación cuando la carga termine.
+      // El cierre del modal y el borrado del highlight se gestionan en el useEffect principal
     } else {
-      refreshTickets(); // Fallback: Si no hay ticket nuevo, solo recarga la lista
+      // Si la acción del formulario no retornó un ticket (ej. hubo un error interno no capturado),
+      // solo recargamos y cerramos el modal.
+      refreshTickets(); 
+      handleCloseCreateModal(); // Cierra el modal si no hay ticket nuevo para resaltar
     }
-  }, [refreshTickets]);
+  }, [refreshTickets, handleCloseCreateModal]);
 
 
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
-    return tickets.filter(t => t && t.fechaCreacion); 
+    return [...tickets].sort((a, b) => {
+      const dateA = new Date(a.fechaCreacion).getTime();
+      const dateB = new Date(b.fechaCreacion).getTime();
+      return dateB - dateA; // Newest first
+    });
   }, [tickets]);
 
 
-  // Mostrar loader inicial si es la primera carga y no hay tickets,
-  // y no hay skeleton de filtro activo ni animación de ticket nuevo.
   if (isLoading && tickets.length === 0 && !fetchTicketsError && !showFilterSkeleton && newlyCreatedTicketId === null) { 
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
@@ -426,9 +431,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
       <TicketModal
         isOpen={isCreateModalOpen}
-        onClose={handleCloseCreateModal} // Pasa el callback memoizado
+        onClose={handleCloseCreateModal} 
         nextNroCaso={nextTicketNumber}
-        onFormSubmitSuccess={handleFormSubmitSuccessInModal} 
+        // MODIFICADO: Pasa el nuevo callback onCompletion a TicketModal
+        onCompletion={handleTicketFormCompletion} 
         empresasClientes={empresasClientes} 
         ubicacionesDisponibles={ubicacionesDisponibles} 
       />
