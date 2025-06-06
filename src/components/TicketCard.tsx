@@ -61,12 +61,38 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [nextTicketNumber, setNextTicketNumber] = React.useState(0);
 
-  // Inicializar estados de filtro con currentFilters
   const [searchText, setSearchText] = React.useState(currentFilters.searchText || '');
   const [estadoFilter, setEstadoFilter] = React.useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all'); 
   const [prioridadFilter, setPrioridadFilter] = React.useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
 
+  // Estado para el texto de búsqueda con debounce
+  const [debouncedSearchText, setDebouncedSearchText] = React.useState(searchText);
+
   const isDesktop = useMediaQuery('(min-width: 768px)');
+
+  // Efecto para aplicar debounce al searchText
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 500); // Retraso de 500ms
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchText]); // Solo se ejecuta cuando searchText cambia
+
+  // Efecto para aplicar filtros cuando el texto de búsqueda debounced cambia
+  React.useEffect(() => {
+    // Solo aplicar filtro si el texto debounced es diferente al actual, o si es la carga inicial
+    if (debouncedSearchText !== currentFilters.searchText) {
+      applyFilters({
+        searchText: debouncedSearchText.trim(),
+        estado: estadoFilter === 'all' ? undefined : estadoFilter,
+        prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
+      });
+    }
+  }, [debouncedSearchText, applyFilters, estadoFilter, prioridadFilter, currentFilters.searchText]);
+
 
   React.useEffect(() => {
     if (!isDesktop && selectedTicket) {
@@ -117,17 +143,21 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   }, [selectedTicket, setTickets]);
 
   const handleApplyFilters = () => {
+    // Si se hace clic en el botón, el debounce se ignora para esta acción
     applyFilters({
       searchText: searchText.trim(),
       estado: estadoFilter === 'all' ? undefined : estadoFilter,
       prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
     });
+    setDebouncedSearchText(searchText); // Sincroniza el debounced con el searchText actual inmediatamente
   };
 
   const handleClearFilters = () => {
     setSearchText('');
     setEstadoFilter('all');
     setPrioridadFilter('all');
+    // Actualizar también el debounced para que el filtro se aplique
+    setDebouncedSearchText(''); 
     applyFilters({});
   };
 
@@ -147,7 +177,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   // Filtrar tickets para asegurar que tienen fechaCreacion antes de mapear
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
-    // Ya que fechaCreacion es tipo Date, no es necesario verificar typeof string
     return tickets.filter(t => t && t.fechaCreacion); 
   }, [tickets]);
 
@@ -243,10 +272,11 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             <Button variant="outline" size="sm" onClick={handleClearFilters}>
               Limpiar Filtros
             </Button>
-            <Button size="sm" onClick={handleApplyFilters}>
+            {/* Se elimina el botón de búsqueda explícita si la búsqueda es en tiempo real */}
+            {/* <Button size="sm" onClick={handleApplyFilters}>
               <SearchIcon className="h-4 w-4 mr-2" />
               Buscar Tickets
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -254,7 +284,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2" 
           style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}
         >
-          {/* Se mapea sobre 'validTickets' en lugar de 'tickets' */}
           {validTickets.length > 0 ? (
             validTickets.map((ticket) => ( 
               <SingleTicketItemCard
