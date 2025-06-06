@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { useRef, useEffect, useState } from "react"; 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormState, useFormStatus } from "react-dom"; // Mantener useFormStatus aquí para FormSubmitButton si lo usa
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,8 +42,6 @@ interface UbicacionOption {
 
 interface TicketFormInModalProps {
   nextNroCaso: number;
-  // MODIFICADO: onFormSubmitSuccess ya no se usa para cerrar el modal desde aquí.
-  // Ahora es un callback de finalización que emite el ticket.
   onCompletion: (newTicket?: Ticket) => void; 
   onCancel: () => void;
   empresasClientes: EmpresaClienteOption[];    
@@ -67,12 +65,11 @@ const initialState: ActionState = {
   ticket: undefined,
 };
 
-// Internal states for the modal's animation flow
 type ModalInternalState = 'form' | 'loading' | 'success';
 
 export function TicketFormInModal({ 
   nextNroCaso, 
-  onCompletion, // MODIFICADO: Nueva prop onCompletion
+  onCompletion, 
   onCancel,
   empresasClientes,      
   ubicacionesDisponibles,
@@ -84,27 +81,50 @@ export function TicketFormInModal({
   const [successMessage, setSuccessMessage] = useState<string>('');
 
   const submissionStartTimeRef = useRef<number | null>(null);
+  const isSubmitting = useRef(false); // Flag para controlar si el formulario está en proceso de envío
 
-  const { pending } = useFormStatus();
-
-  // Efecto principal para gestionar las transiciones de estado interno del modal
+  // Efecto para gestionar las transiciones de estado interno del modal
   React.useEffect(() => {
-    if (pending) {
-      submissionStartTimeRef.current = Date.now();
-      setModalInternalState('loading'); 
-    } else if (formState.success) {
+    // Si la acción del formulario fue exitosa
+    if (formState.success) {
       setSuccessMessage(formState.message || 'Ticket creado con éxito.');
-      // NO CAMBIAR a 'success' aquí directamente. El timer de 'loading' lo hará.
-    } else if (formState.error) {
-      setSuccessMessage(''); 
-      setModalInternalState('form'); // En caso de error, vuelve al formulario
-      submissionStartTimeRef.current = null; 
-    } else {
-      setModalInternalState('form');
+      isSubmitting.current = false; // Resetear la bandera de envío
+      // El cambio a 'success' se gestionará en el timer de la fase de carga.
+      // O si la carga ya terminó, el timer de la fase de éxito lo hará.
+      console.log('TicketFormInModal: Server action SUCCESS. Pending animation transition.');
+    } 
+    // Si la acción del formulario resultó en un error
+    else if (formState.error) {
+      setSuccessMessage(formState.error); // Usar el mensaje de error directamente
+      setModalInternalState('form'); // Volver al estado del formulario para mostrar el error
+      submissionStartTimeRef.current = null; // Resetear el tiempo
+      isSubmitting.current = false; // Resetear la bandera de envío
+      console.log('TicketFormInModal: Server action ERROR. Back to form.');
+    } 
+    // Si formState no es ni éxito ni error, y no estamos en un envío activo (después de un reset o inicial)
+    // El estado 'loading' es activado por `handleSubmit` o `action` en el form.
+    else if (!isSubmitting.current) { // Solo si no estamos esperando una respuesta
+      setModalInternalState('form'); // Restablecer al estado de formulario
       setSuccessMessage('');
       submissionStartTimeRef.current = null;
+      console.log('TicketFormInModal: State -> Form (initial/reset or after action finished)');
     }
-  }, [pending, formState]);
+  }, [formState]);
+
+  // Función para manejar el envío del formulario (captura el inicio del envío)
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Previene el envío por defecto para controlar la acción manualmente
+    if (isSubmitting.current) return; // Evita envíos múltiples
+
+    isSubmitting.current = true; // Activa la bandera de envío
+    submissionStartTimeRef.current = Date.now(); // Marca el inicio del tiempo de la animación total
+    setModalInternalState('loading'); // Cambia el estado interno a 'loading'
+    
+    // Ejecuta la acción del servidor
+    formAction(new FormData(event.currentTarget));
+    console.log('TicketFormInModal: Form Submitted. State -> Loading.');
+  };
+
 
   // Efecto para la duración de la fase de 'loading' (spinner) y la transición a 'success'
   React.useEffect(() => {
@@ -115,24 +135,40 @@ export function TicketFormInModal({
 
       if (elapsedTime < requiredLoadingTime) {
         loadingPhaseTimer = setTimeout(() => {
+          // Después de 3 segundos, si la acción ya fue exitosa, transiciona a 'success'.
+          // Si no (todavía pendiente o error no capturado), permanece en 'loading' o vuelve a 'form' si ya no está pendiente.
           if (formState.success) {
             setModalInternalState('success');
-          } else if (!pending) { 
-              setModalInternalState('form');
+            console.log('TicketFormInModal: Loading phase done, transitioning to SUCCESS.');
+          } else if (formState.error && !isSubmitting.current) { // Si hay un error y ya no está enviando
+            setModalInternalState('form');
+            console.log('TicketFormInModal: Loading phase done, server error detected. Back to form.');
+          } else if (!isSubmitting.current) { // Si ya no está enviando y no es éxito/error (estado indeterminado)
+            setModalInternalState('form');
+            console.error('TicketFormInModal: Loading phase done, neither success/error nor pending. Back to form.');
           }
         }, requiredLoadingTime - elapsedTime);
       } else {
+        // Si ya pasaron los 3 segundos de loading o más, y la acción ya fue exitosa, transiciona inmediatamente a 'success'.
         if (formState.success) {
           setModalInternalState('success');
-        } else if (!pending) {
-            setModalInternalState('form');
+          console.log('TicketFormInModal: Already past 3s, transitioning to SUCCESS immediately.');
+        } else if (formState.error && !isSubmitting.current) {
+          setModalInternalState('form');
+          console.log('TicketFormInModal: Already past 3s, server error detected. Back to form.');
+        } else if (!isSubmitting.current) {
+          setModalInternalState('form');
+          console.error('TicketFormInModal: Already past 3s, neither success/error nor pending. Back to form.');
         }
+        // Si no está en 'success'/'error' y `isSubmitting.current` es true, significa que la acción del servidor aún está pendiente.
+        // En este caso, el modalInternalState permanece 'loading' y el spinner sigue girando.
       }
     }
     return () => {
       if (loadingPhaseTimer) clearTimeout(loadingPhaseTimer);
     };
-  }, [modalInternalState, pending, formState.success]);
+  }, [modalInternalState, isSubmitting.current, formState.success, formState.error]); // Depende de `isSubmitting.current`
+
 
   // Efecto para la duración de la fase de 'success' y la EMISIÓN del ticket al padre
   React.useEffect(() => {
@@ -143,12 +179,14 @@ export function TicketFormInModal({
       const remainingTimeForTotal = totalAnimationTime - elapsedTime;
 
       successPhaseTimer = setTimeout(() => {
-        onCompletion(formState.ticket); // <--- MODIFICADO: Emite el ticket a 'onCompletion'
-        formRef.current?.reset(); 
-        setModalInternalState('form'); 
+        onCompletion(formState.ticket); // Dispara el callback para que el padre cierre el modal
+        formRef.current?.reset(); // Reinicia el formulario
+        setModalInternalState('form'); // Vuelve al estado 'form' para la próxima apertura
         setSuccessMessage('');
-        submissionStartTimeRef.current = null; 
-      }, Math.max(0, remainingTimeForTotal));
+        submissionStartTimeRef.current = null;
+        isSubmitting.current = false; // Resetear la bandera de envío
+        console.log('TicketFormInModal: SUCCESS phase done. Calling parent callback.');
+      }, Math.max(0, remainingTimeForTotal)); // Asegura un retardo no negativo
 
     }
     return () => {
@@ -157,7 +195,18 @@ export function TicketFormInModal({
   }, [modalInternalState, onCompletion, formState.ticket]);
 
 
-  // Función para obtener la fecha y hora local actual en formato YYYY-MM-DDTHH:MM
+  // Efecto para restablecer el estado del modal cuando se abre o cierra (controlado por el padre)
+  React.useEffect(() => {
+    if (isModalOpen) {
+      setModalInternalState('form');
+      setSuccessMessage('');
+      submissionStartTimeRef.current = null;
+      isSubmitting.current = false; // Resetear la bandera de envío
+      console.log('TicketFormInModal: Modal opened by parent. Resetting state.');
+    }
+  }, [isModalOpen]);
+
+
   const getLocalDateTimeString = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -176,7 +225,6 @@ export function TicketFormInModal({
     modalInternalState === 'loading' ? 'h-40' : 
     (modalInternalState === 'success' ? 'h-fit' : 'max-h-[90vh]'); 
 
-  // Clases CSS para transiciones suaves de tamaño y justificación
   const cardClasses = `
     transition-all duration-300 ease-in-out 
     ${modalWidth} ${modalHeight}
@@ -185,7 +233,6 @@ export function TicketFormInModal({
 
   return (
     <Card className={`overflow-hidden shadow-none border-none ${cardClasses}`}>
-        {/* Renderizado condicional basado en el estado interno del modal */}
         {modalInternalState === 'form' && (
             <>
                 <CardHeader className="flex-shrink-0">
@@ -193,7 +240,8 @@ export function TicketFormInModal({
                     <CardDescription>Ingresa la información detallada del problema.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow overflow-y-auto p-4 sm:p-6">
-                    <form action={formAction} className="space-y-6"> 
+                    {/* El formulario ahora usa `onSubmit` para controlar el envío */}
+                    <form onSubmit={handleSubmit} className="space-y-6"> 
                         <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
                         {formState?.error && (
@@ -309,7 +357,9 @@ export function TicketFormInModal({
                         </div>
                         
                         <CardFooter className="px-0 pt-6 flex justify-end gap-3 flex-shrink-0">
-                            <Button variant="outline" type="button" onClick={onCancel} disabled={pending}>Cancelar</Button>
+                            {/* Deshabilita Cancelar si isSubmitting.current es true */}
+                            <Button variant="outline" type="button" onClick={onCancel} disabled={isSubmitting.current}>Cancelar</Button>
+                            {/* FormSubmitButton internamente usa useFormStatus para su 'pending' */}
                             <FormSubmitButton>Guardar Ticket</FormSubmitButton>
                         </CardFooter>
                     </form>
