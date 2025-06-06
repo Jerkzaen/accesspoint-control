@@ -44,13 +44,14 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     );
   }
 
-  // Las propiedades de fecha del ticket ahora son de tipo Date, como se definió en src/types/ticket.ts
+  // CORRECCIÓN: Formatear fecha y hora a 24 horas y sin AM/PM
   const fechaCreacionDate = ticket.fechaCreacion.toLocaleString('es-CL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false // Forzar formato de 24 horas
   });
 
   let prioridadVariant: "default" | "secondary" | "destructive" | "outline" = "default";
@@ -70,10 +71,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
       case EstadoTicket.ABIERTO: return "default";
       case EstadoTicket.CERRADO: return "destructive";
       case EstadoTicket.EN_PROGRESO: return "secondary";
-      case EstadoTicket.PENDIENTE_TERCERO: return "outline"; // Usar nombre exacto del enum
-      case EstadoTicket.PENDIENTE_CLIENTE: return "outline"; // Usar nombre exacto del enum
-      case EstadoTicket.RESUELTO: return "default"; // O el color que quieras para RESUELTO
-      case EstadoTicket.CANCELADO: return "destructive"; // O el color que quieras para CANCELADO
+      case EstadoTicket.PENDIENTE_TERCERO: return "outline"; 
+      case EstadoTicket.PENDIENTE_CLIENTE: return "outline"; 
+      case EstadoTicket.RESUELTO: return "default"; 
+      case EstadoTicket.CANCELADO: return "destructive"; 
       default: return "outline";
     }
   };
@@ -185,10 +186,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.ABIERTO)}>Abierto</Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.EN_PROGRESO)}>En Progreso</Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.CERRADO)}>Cerrado</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.PENDIENTE_TERCERO)}>Pendiente (Tercero)</Button> {/* Usar nombre exacto */}
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.PENDIENTE_CLIENTE)}>Pendiente (Cliente)</Button> {/* Usar nombre exacto */}
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.RESUELTO)}>Resuelto</Button> {/* Usar nombre exacto */}
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.CANCELADO)}>Cancelado</Button> {/* Usar nombre exacto */}
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.PENDIENTE_TERCERO)}>Pendiente (Tercero)</Button> 
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.PENDIENTE_CLIENTE)}>Pendiente (Cliente)</Button> 
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.RESUELTO)}>Resuelto</Button> 
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.CANCELADO)}>Cancelado</Button> 
                 </div>
               </PopoverContent>
             </Popover>
