@@ -26,6 +26,7 @@ import {
 import { createNewTicketAction } from "@/app/actions/ticketActions"; 
 import { AlertCircle, Loader2 } from "lucide-react"; 
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton"; 
+import { Ticket } from '@/types/ticket'; // Importar la interfaz Ticket
 
 // Definir tipos para las props que vienen de la base de datos
 interface EmpresaClienteOption {
@@ -40,8 +41,10 @@ interface UbicacionOption {
 }
 
 interface TicketFormInModalProps {
+  isOpen?: boolean; // Añadir opcionalmente si se usa para controlar visibilidad aquí
+  onClose?: () => void; // Añadir opcionalmente para cerrar desde aquí
   nextNroCaso: number;
-  onFormSubmitSuccess: () => void;
+  onFormSubmitSuccess: (newTicket?: Ticket) => void; // <--- MODIFICADO: Ahora pasa el ticket
   onCancel: () => void;
   empresasClientes: EmpresaClienteOption[];    
   ubicacionesDisponibles: UbicacionOption[]; 
@@ -52,7 +55,7 @@ interface ActionState {
   success?: boolean;
   message?: string;
   ticketId?: string;
-  ticket?: any; // Mantener 'any' aquí para evitar problemas de tipado complejos con Prisma.Date, ya que el cliente no siempre lo procesa igual.
+  ticket?: Ticket; // Añadir el objeto Ticket completo aquí
 }
 
 const initialState: ActionState = {
@@ -75,16 +78,14 @@ export function TicketFormInModal({
 
   useEffect(() => {
     if (formState?.success) {
-      onFormSubmitSuccess(); 
+      onFormSubmitSuccess(formState.ticket); // <--- MODIFICADO: Pasa el ticket al callback
+      formRef.current?.reset(); // Opcional: limpiar el formulario después de éxito
     }
   }, [formState, onFormSubmitSuccess]);
 
   // Función para obtener la fecha y hora local actual en formato YYYY-MM-DDTHH:MM
   const getLocalDateTimeString = () => {
     const now = new Date();
-    // Ajustar a la zona horaria de Chile (GMT-4 en invierno, GMT-3 en verano)
-    // Para simplificar, obtenemos la fecha y hora en el offset actual del navegador.
-    // Esto es suficiente para 'datetime-local' que siempre opera en la zona local.
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const day = now.getDate().toString().padStart(2, '0');
@@ -117,13 +118,11 @@ export function TicketFormInModal({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="fechaCreacionModal">Fecha Reporte</Label>
-              {/* CORRECCIÓN: Cambiar a type="datetime-local" para capturar fecha y hora */}
-              {/* Y usar getLocalDateTimeString para el valor por defecto */}
               <Input type="datetime-local" name="fechaCreacion" id="fechaCreacionModal" defaultValue={getLocalDateTimeString()} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="empresaClienteModal">Empresa Cliente</Label>
-              <Select name="empresaClienteId" /* Podrías hacerlo 'required' si es mandatorio */ > 
+              <Select name="empresaClienteId" > 
                 <SelectTrigger id="empresaClienteModal"><SelectValue placeholder="Seleccione Empresa Cliente" /></SelectTrigger>
                 <SelectContent>
                   {empresasClientes && empresasClientes.length > 0 ? (
@@ -166,7 +165,7 @@ export function TicketFormInModal({
             
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="ubicacionIdModal">Ubicación</Label>
-              <Select name="ubicacionId" /* No es 'required' para permitir no seleccionar */ > 
+              <Select name="ubicacionId" > 
                 <SelectTrigger id="ubicacionIdModal"><SelectValue placeholder="Seleccione Ubicación (Opcional)" /></SelectTrigger>
                 <SelectContent>
                   {ubicacionesDisponibles && ubicacionesDisponibles.length > 0 ? (

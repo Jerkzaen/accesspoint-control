@@ -48,7 +48,7 @@ const MIN_SKELETON_DISPLAY_TIME = 500; // Milisegundos que el skeleton debe most
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
   const {
     tickets,
-    setTickets,
+    setTickets, // Added setTickets to directly manipulate the list
     isLoading, 
     error: fetchTicketsError,
     refreshTickets,
@@ -71,6 +71,9 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [showFilterSkeleton, setShowFilterSkeleton] = React.useState(false); 
   // Reference to store the start time of a filter-induced loading, for minimum display time
   const filterStartTimeRef = React.useRef<number | null>(null);
+
+  // New state to manage the ID of the newly created ticket for animation purposes
+  const [newlyCreatedTicketId, setNewlyCreatedTicketId] = React.useState<string | null>(null);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -207,17 +210,8 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   // Handler for explicit filter button click (e.g., "Clear Filters" or a hypothetical "Apply Filter" button)
   // This will trigger the filter logic in the main useEffect.
   const handleTriggerFilter = () => {
-    const newFilters: TicketFilters = {
-      searchText: searchText.trim() || undefined,
-      estado: estadoFilter === 'all' ? undefined : estadoFilter,
-      prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
-    };
-    
     // Explicitly update debouncedSearchText to trigger the main useEffect for filters
     setDebouncedSearchText(searchText); 
-    // No need to call applyFilters directly here, the useEffect will handle it
-    // based on debouncedSearchText, estadoFilter, prioridadFilter changes.
-    // The skeleton logic is also handled by that useEffect.
   };
 
 
@@ -230,11 +224,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     // This will trigger the main useEffect, which handles the skeleton logic
     // based on the `isNewStateCompletelyEmpty` and `isCurrentStateCompletelyEmpty` checks.
     setDebouncedSearchText(''); 
-    
-    // The main filter useEffect (watching debouncedSearchText, etc.) will
-    // call applyFilters. We just need to make sure the state is set to 'all'
-    // for all filter types.
-    // No direct applyFilters call needed here, it's handled by the useEffect chain.
   };
 
   const handleOpenCreateModal = () => {
@@ -245,10 +234,28 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setIsCreateModalOpen(false);
   };
   
-  const handleFormSubmitSuccessInModal = () => {
+  // MODIFIED: Accepts the newly created ticket
+  const handleFormSubmitSuccessInModal = React.useCallback((newTicket?: Ticket) => {
     handleCloseCreateModal();
-    refreshTickets();
-  };
+    if (newTicket) {
+      // Add the new ticket to the existing list immediately for smooth animation
+      // We assume new tickets should appear at the top.
+      setTickets(prevTickets => [newTicket, ...prevTickets]);
+      setNewlyCreatedTicketId(newTicket.id); // Set the ID for the animation
+      
+      // Clear the animation ID and then refresh tickets from server
+      // This ensures data consistency without a jarring immediate refresh.
+      const timer = setTimeout(() => {
+        setNewlyCreatedTicketId(null);
+        refreshTickets(); // Now refresh to get any other new tickets/changes
+      }, 1000); // Highlight for 1 second
+      return () => clearTimeout(timer);
+    } else {
+      // If no new ticket is returned (shouldn't happen with current action), just refresh
+      refreshTickets();
+    }
+  }, [setTickets, refreshTickets]);
+
 
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
@@ -258,7 +265,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
   // Only show initial loader if it's the very first load and no tickets are present,
   // and no filter skeleton is active from previous filter actions.
-  if (isLoading && tickets.length === 0 && !fetchTicketsError && !showFilterSkeleton) { 
+  if (isLoading && tickets.length === 0 && !fetchTicketsError && !showFilterSkeleton && newlyCreatedTicketId === null) { 
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin mb-2" />
@@ -361,9 +368,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2" 
           style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}
         >
-          {/* Show skeleton if showFilterSkeleton is active or if isLoading AND it's a filter-triggered load */}
           {showFilterSkeleton || (isLoading && filterStartTimeRef.current !== null) ? ( 
-            // Render multiple skeletons to simulate list loading
             Array.from({ length: 5 }).map((_, index) => (
               <Skeleton key={index} className="h-32 w-full rounded-lg mb-3" />
             ))
@@ -376,6 +381,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                   onSelectTicket={handleSelectTicket}
                   onTicketUpdatedInList={handleTicketUpdated}
                   isSelected={selectedTicket?.id === ticket.id && isDesktop} 
+                  isNew={newlyCreatedTicketId === ticket.id} // Pass new prop for animation
                 />
               ))
             ) : (
@@ -445,7 +451,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
         isOpen={isCreateModalOpen}
         onClose={handleCloseCreateModal}
         nextNroCaso={nextTicketNumber}
-        onFormSubmitSuccess={handleFormSubmitSuccessInModal}
+        onFormSubmitSuccess={handleFormSubmitSuccessInModal} // Pass the modified handler
         empresasClientes={empresasClientes} 
         ubicacionesDisponibles={ubicacionesDisponibles} 
       />

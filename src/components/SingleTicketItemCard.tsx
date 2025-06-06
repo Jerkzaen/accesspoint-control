@@ -18,9 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Loader2, Hash } from 'lucide-react'; // Importar Hash
-import { useState } from 'react';
-// Importar los enums de Prisma
+import { Loader2, Hash } from 'lucide-react'; 
+import React, { useState } from 'react'; 
 import { EstadoTicket } from '@prisma/client'; 
 
 interface SingleTicketItemCardProps {
@@ -28,11 +27,14 @@ interface SingleTicketItemCardProps {
   onSelectTicket: (ticket: Ticket) => void;
   onTicketUpdatedInList: (updatedTicket: Ticket) => void;
   isSelected: boolean;
+  isNew?: boolean; // New prop for animation
 }
 
-export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected }: SingleTicketItemCardProps) {
+// Definimos el componente funcional principal
+function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected, isNew = false }: SingleTicketItemCardProps) {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  // Manejo de tickets no válidos o incompletos
   if (!ticket || typeof ticket.fechaCreacion === 'undefined') {
     console.error("Error: El objeto ticket o ticket.fechaCreacion es undefined.", ticket);
     return (
@@ -44,8 +46,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     );
   }
 
-  // CORRECCIÓN: Asegurarse de que ticket.fechaCreacion sea una instancia de Date antes de formatear
-  // Usar hourCycle: 'h23' para el formato de 24 horas y sin AM/PM
+  // Formatear fecha y hora a 24 horas y sin AM/PM
   const fechaCreacionDateObj = new Date(ticket.fechaCreacion);
   const fechaCreacionDateFormatted = fechaCreacionDateObj.toLocaleString('es-CL', {
     day: '2-digit',
@@ -53,9 +54,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hourCycle: 'h23' // Opción más robusta para formato de 24 horas
+    hourCycle: 'h23' 
   });
 
+  // Determinar la variante de color de la insignia de prioridad
   let prioridadVariant: "default" | "secondary" | "destructive" | "outline" = "default";
   switch (ticket.prioridad) { 
     case 'BAJA': prioridadVariant = "secondary"; break;
@@ -65,6 +67,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     default: prioridadVariant = "outline";
   }
 
+  // Determinar la variante de color de la insignia de estado
   const getEstadoBadgeVariant = (estado: EstadoTicket): "default" | "secondary" | "destructive" | "outline" => {
     switch (estado) { 
       case EstadoTicket.ABIERTO: return "default";
@@ -82,6 +85,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
   const companyNameForLogo = ticket.empresaCliente?.nombre;
   const companyLogoUrl = getCompanyLogoUrl(companyNameForLogo);
 
+  // Manejador de cambio de estado del ticket
   const handleStatusChange = async (newStatus: EstadoTicket) => { 
     if (!ticket) return;
     setIsUpdatingStatus(true);
@@ -106,6 +110,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     }
   };
 
+  // Clases comunes para insignias
   const commonBadgeHeight = "h-6";
   const commonBadgeTextSize = "text-xs";
   const commonBadgePaddingX = "px-2.5";
@@ -114,10 +119,10 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     <Card
       className={cn(
         "mb-3 cursor-pointer transition-all duration-150 ease-in-out",
-        "hover:shadow-xl",
         {
           "shadow-lg bg-primary/15 dark:bg-primary/25": isSelected,
           "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
+          "bg-blue-100 dark:bg-blue-900 transition-colors duration-1000 ease-out": isNew, // Animation for new ticket
         }
       )}
       onClick={() => ticket && onSelectTicket(ticket)}
@@ -198,7 +203,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           <div><strong>Ubicación:</strong> {ticket.ubicacion?.nombreReferencial || ticket.ubicacion?.direccionCompleta || 'N/A'}</div>
           <div><strong>Técnico:</strong> {ticket.tecnicoAsignado?.name || ticket.tecnicoAsignado?.email || 'No asignado'}</div>
           <div><strong>Contacto:</strong> {ticket.solicitanteNombre}</div>
-          <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDateFormatted}</div> {/* Usar la fecha formateada */}
+          <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDateFormatted}</div> 
           <div>
             <strong>Prioridad:</strong>{' '}
             <Badge
@@ -213,3 +218,5 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     </Card>
   );
 }
+
+export default SingleTicketItemCard; // Removed React.memo
