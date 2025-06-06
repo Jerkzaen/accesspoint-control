@@ -22,8 +22,6 @@ export interface ActionEntry {
   // CORRECCIÓN: fechaAccion es un objeto Date cuando se obtiene de Prisma
   fechaAccion: Date; 
   descripcion: string;
-  // CORRECCIÓN: Aseguramos que 'realizadaPor' sea exactamente UsuarioBasico o null/undefined
-  // La inclusión en Prisma ya se encarga de seleccionar los campos correctos (id, name, email)
   realizadaPor?: UsuarioBasico | null; 
   usuarioId?: string; // El ID del usuario, por si acaso
 }
@@ -53,8 +51,9 @@ export interface Ticket {
   // Ahora acciones es un array de ActionEntry, no un string JSON
   acciones?: ActionEntry[] | null; 
 
-  fechaCreacion: string; // Mantenemos string aquí, ya que a menudo se usa formateado en UI
-  fechaSolucionEstimada?: string | null;
-  fechaSolucionReal?: string | null; 
-  updatedAt: string; 
+  // CORRECCIÓN: Las propiedades de fecha de Ticket ahora son de tipo Date
+  fechaCreacion: Date; 
+  fechaSolucionEstimada?: Date | null;
+  fechaSolucionReal?: Date | null; 
+  updatedAt: Date; 
 }
