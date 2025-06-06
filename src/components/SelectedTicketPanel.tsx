@@ -24,15 +24,14 @@ interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
   onTicketUpdated: (updatedTicket: Ticket) => void;
   headerAndPagePaddingOffset?: string;
-  // Propiedad adicional para indicar si la carga global está activa y mostrar skeleton
-  isLoadingGlobal?: boolean; 
+  isLoadingGlobal?: boolean; // Propiedad adicional para indicar si la carga global está activa
 }
 
 export default function SelectedTicketPanel({
   selectedTicket,
   onTicketUpdated,
   headerAndPagePaddingOffset = '100px',
-  isLoadingGlobal = false, // Valor por defecto
+  isLoadingGlobal = false, // Valor por defecto para la prop
 }: SelectedTicketPanelProps) {
   
   const {
@@ -62,8 +61,8 @@ export default function SelectedTicketPanel({
     saveEditedAction,
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
-  // CORRECCIÓN: Si no hay ticket seleccionado O si la carga global está activa, mostrar skeleton
-  if (!selectedTicket || isLoadingGlobal) {
+  // CORRECCIÓN: Mostrar skeleton si no hay ticket seleccionado O si la carga global está activa
+  if (!selectedTicket || isLoadingGlobal) { // Si no hay ticket seleccionado O si la lista principal está cargando
     return (
       <Card
         className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center"
@@ -325,4 +324,3 @@ export default function SelectedTicketPanel({
     </Card>
   );
 }
-
