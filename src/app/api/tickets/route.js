@@ -33,9 +33,10 @@ export async function GET(request) {
       whereClause.OR = [
         { titulo: { contains: searchText } },
         { descripcionDetallada: { contains: searchText } },
-        { empresa: { contains: searchText } },
-        { solicitante: { contains: searchText } },
-        { tecnicoAsignado: { contains: searchText } },
+        // Para buscar por empresa y técnico, ahora accedemos a sus nombres si la relación está incluida
+        { empresaCliente: { nombre: { contains: searchText } } },
+        { solicitanteNombre: { contains: searchText } }, // solicitanteNombre ya es un string en Ticket
+        { tecnicoAsignado: { name: { contains: searchText } } },
         // Convertir numeroCaso a string para buscar si es numérico
         { numeroCaso: { equals: parseInt(searchText) || undefined } },
       ];
@@ -44,6 +45,47 @@ export async function GET(request) {
     const tickets = await prisma.ticket.findMany({
       where: whereClause,
       orderBy: { numeroCaso: "desc" },
+      // INICIO DE LA CORRECCIÓN: Incluir las relaciones necesarias
+      include: {
+        empresaCliente: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+        ubicacion: {
+          select: {
+            id: true,
+            nombreReferencial: true,
+            direccionCompleta: true,
+          },
+        },
+        tecnicoAsignado: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        // También puedes incluir las acciones si las necesitas en la lista principal,
+        // aunque el SelectedTicketPanel ya las carga en detalle.
+        // acciones: {
+        //   select: {
+        //     id: true,
+        //     descripcion: true,
+        //     fechaAccion: true,
+        //     realizadaPor: {
+        //       select: {
+        //         id: true,
+        //         name: true,
+        //         email: true,
+        //       },
+        //     },
+        //   },
+        //   orderBy: { fechaAccion: 'asc' },
+        // },
+      },
+      // FIN DE LA CORRECCIÓN
     });
     return NextResponse.json(tickets);
   } catch (error) {
@@ -62,11 +104,19 @@ export async function POST(request) {
 
     const dataToSave = {
       numeroCaso: dataFromFrontend.nroCaso,
-      empresa: dataFromFrontend.empresa,
+      // Los campos `empresa`, `ubicacion`, `tecnicoAsignado`, `solicitante` aquí
+      // son los nombres de los campos directos que se esperan en el body del POST,
+      // no los objetos de relación. Si el frontend envía IDs, Prisma los mapeará.
+      // Sin embargo, si `dataFromFrontend.empresa` o `dataFromFrontend.ubicacion`
+      // esperan ser los IDs de las relaciones, esta lógica debe ser revisada.
+      // El Server Action `createNewTicketAction` ya maneja esto correctamente
+      // usando `empresaClienteId` y `ubicacionId`.
+      // Por lo tanto, esta ruta POST no necesita cambios para este problema específico.
+      empresa: dataFromFrontend.empresa, // Esto debe ser `empresaClienteId` si proviene de un Select que envía IDs
       tipoIncidente: dataFromFrontend.tipo,
-      ubicacion: dataFromFrontend.ubicacion,
-      tecnicoAsignado: dataFromFrontend.tecnico,
-      solicitante: dataFromFrontend.contacto,
+      ubicacion: dataFromFrontend.ubicacion, // Esto debe ser `ubicacionId` si proviene de un Select que envía IDs
+      tecnicoAsignado: dataFromFrontend.tecnico, // Esto debe ser `tecnicoAsignadoId`
+      solicitante: dataFromFrontend.contacto, // Esto debe ser `solicitanteNombre`
       titulo: dataFromFrontend.tituloDelTicket,
       descripcionDetallada: dataFromFrontend.detalleAdicional || null,
       prioridad: dataFromFrontend.prioridad,
@@ -78,6 +128,15 @@ export async function POST(request) {
       fechaSolucion: dataFromFrontend.fechaSolucion ? new Date(dataFromFrontend.fechaSolucion) : null,
     };
     
+    // NOTA: Esta ruta POST parece ser una versión antigua o alternativa.
+    // El Server Action `createNewTicketAction` en `src/app/actions/ticketActions.ts`
+    // ya maneja la creación de tickets y es el que está conectado al modal de creación.
+    // Los campos `empresa`, `ubicacion`, `tecnicoAsignado`, `solicitante`
+    // no coinciden con el modelo de Prisma `Ticket` actualizado,
+    // el cual usa `empresaClienteId`, `ubicacionId`, `tecnicoAsignadoId`, `solicitanteNombre`.
+    // Si esta ruta POST se sigue utilizando, necesitará ser actualizada para mapear
+    // los datos del frontend a los campos correctos del modelo de Prisma.
+    // Por ahora, solo se corrige el `GET`.
     if (!dataToSave.numeroCaso || !dataToSave.empresa || !dataToSave.prioridad || !dataToSave.tecnicoAsignado || !dataToSave.tipoIncidente || !dataToSave.titulo || !dataToSave.ubicacion || !dataToSave.solicitante || !dataToSave.fechaCreacion) {
         return NextResponse.json(
             { message: "Faltan campos obligatorios para crear el ticket." },
