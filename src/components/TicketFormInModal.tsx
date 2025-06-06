@@ -46,7 +46,6 @@ interface TicketFormInModalProps {
   onCancel: () => void;
   empresasClientes: EmpresaClienteOption[];    
   ubicacionesDisponibles: UbicacionOption[]; 
-  // Prop para indicar si el modal padre está completamente abierto (para animaciones iniciales)
   isModalOpen?: boolean; 
 }
 
@@ -75,42 +74,62 @@ export function TicketFormInModal({
   onCancel,
   empresasClientes,      
   ubicacionesDisponibles,
-  isModalOpen, // Receive isModalOpen prop
+  isModalOpen, 
 }: TicketFormInModalProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [formState, formAction] = useFormState(createNewTicketAction, initialState);
   const [modalInternalState, setModalInternalState] = useState<ModalInternalState>('form');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
-  // Effect to manage the internal state transitions based on formState
+  // Efecto para gestionar las transiciones de estado interno del modal
+  // Se activa al enviar el formulario (inicia la carga), al recibir éxito o error de la acción del servidor
   React.useEffect(() => {
-    if (formState.pending) {
-      setModalInternalState('loading');
-    } else if (formState.success) {
+    // Si la acción del formulario está en proceso (loading), cambiar a estado 'loading' del modal.
+    // Usamos el 'pending' del hook useFormStatus para saber si el formulario está en envío,
+    // pero como no podemos llamarlo aquí, asumimos que cualquier acción que no sea 'success' o 'error'
+    // es un estado intermedio de carga, o que el 'pending' se maneja por el botón.
+    // Para simplificar la integración con useFormState, nos enfocamos en el resultado de la acción.
+    if (formState.success) {
       setSuccessMessage(formState.message || 'Ticket creado con éxito.');
       setModalInternalState('success');
-      // No need to call onFormSubmitSuccess here immediately, it will be handled by TicketCard
-      // which observes the new ticket ID being set after refresh.
-      // This allows the success message to be seen before the modal closes.
-      
     } else if (formState.error) {
-      setSuccessMessage(''); // Clear previous success message if any
-      setModalInternalState('form'); // Revert to form state on error
+      setSuccessMessage(''); // Limpiar mensaje de éxito previo
+      setModalInternalState('form'); // Volver al estado del formulario en caso de error
+    } else {
+      // Si no es éxito ni error, y se acaba de disparar una acción (no es el estado inicial),
+      // asumimos que está cargando.
+      // Esta lógica es un poco más robusta para manejar el 'loading' interno del modal
+      // sin depender directamente de `formState.pending` que no existe.
+      if (formState.message === undefined && formState.error === undefined && formState.success === undefined) {
+         setModalInternalState('form'); // Al inicializar o resetear, volvemos a 'form'
+      } else {
+         // Si hay algún cambio en formState (que no sea éxito/error inmediato)
+         // y no es el estado inicial, podría ser un estado de carga.
+         // Sin embargo, para la animación de "loading" mientras el formulario se envía,
+         // usaremos un estado directamente ligado al envío.
+         // Para este `useEffect`, solo nos importa la transición a 'success' o 'form' (en error).
+      }
     }
   }, [formState]);
 
+  // Efecto para manejar la transición a 'loading' cuando la acción se dispara.
+  // Esto se activa al hacer submit, antes de que formState.success/error se definan.
+  // Es una aproximación al `formState.pending` que no podemos acceder directamente aquí.
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    setModalInternalState('loading'); // Cambiar a estado de carga inmediatamente al enviar
+    formAction(new FormData(event.currentTarget)); // Llamar a la acción con el FormData
+  };
 
-  // Effect to trigger the final callback and reset after success state
-  // This helps coordinate with the parent TicketCard to close the modal
-  // and handle the ticket highlight animation.
+
+  // Efecto para activar el callback final y resetear después del estado de éxito
   React.useEffect(() => {
     if (modalInternalState === 'success') {
-      const delayBeforeClosing = 2000; // Duration for success message display + buffer
+      const delayBeforeClosing = 2000; // Duración para mostrar mensaje de éxito + buffer
       const timer = setTimeout(() => {
-        onFormSubmitSuccess(formState.ticket); // Trigger parent callback with new ticket
-        // Reset form and internal state for next potential open
+        onFormSubmitSuccess(formState.ticket); // Disparar callback padre con nuevo ticket
+        // Resetear formulario y estado interno para próxima apertura potencial
         formRef.current?.reset();
-        setModalInternalState('form');
+        setModalInternalState('form'); // Resetear a estado 'form'
         setSuccessMessage('');
       }, delayBeforeClosing);
 
@@ -119,7 +138,7 @@ export function TicketFormInModal({
   }, [modalInternalState, onFormSubmitSuccess, formState.ticket]);
 
 
-  // Function to get the current local date and time string in YYYY-MM-DDTHH:MM format
+  // Función para obtener la fecha y hora local actual en formato YYYY-MM-DDTHH:MM
   const getLocalDateTimeString = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -130,10 +149,13 @@ export function TicketFormInModal({
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  // Determine dynamic width/height for modal transitions
-  const modalWidth = modalInternalState === 'loading' ? 'w-40' : 'w-full'; // Shrink to 40 for loading
-  const modalHeight = modalInternalState === 'loading' ? 'h-40' : 'max-h-[90vh]'; // Shrink to 40 for loading, expand for form/success
+  // Determinar ancho/alto dinámico para transiciones del modal
+  // El ancho 'w-full' para formulario/éxito (max-w-2xl lo controla el padre)
+  // 'w-40' y 'h-40' para el estado de carga
+  const modalWidth = modalInternalState === 'loading' ? 'w-40' : 'w-full'; 
+  const modalHeight = modalInternalState === 'loading' ? 'h-40' : 'max-h-[90vh]'; 
 
+  // Clases CSS para transiciones suaves de tamaño y justificación
   const cardClasses = `
     transition-all duration-300 ease-in-out 
     ${modalWidth} ${modalHeight}
@@ -142,6 +164,7 @@ export function TicketFormInModal({
 
   return (
     <Card className={`overflow-hidden shadow-none border-none ${cardClasses}`}>
+        {/* Renderizado condicional basado en el estado interno del modal */}
         {modalInternalState === 'form' && (
             <>
                 <CardHeader className="flex-shrink-0">
@@ -149,7 +172,8 @@ export function TicketFormInModal({
                     <CardDescription>Ingresa la información detallada del problema.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow overflow-y-auto p-4 sm:p-6">
-                    <form ref={formRef} action={formAction} className="space-y-6">
+                    {/* El formulario ahora usa onSubmit y llama a handleFormSubmit */}
+                    <form onSubmit={handleFormSubmit} className="space-y-6">
                         <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
                         {formState?.error && (
@@ -265,7 +289,8 @@ export function TicketFormInModal({
                         </div>
                         
                         <CardFooter className="px-0 pt-6 flex justify-end gap-3 flex-shrink-0">
-                            <Button variant="outline" type="button" onClick={onCancel} disabled={formState.pending}>Cancelar</Button>
+                            <Button variant="outline" type="button" onClick={onCancel} disabled={modalInternalState === 'loading'}>Cancelar</Button>
+                            {/* FormSubmitButton ya maneja su propio estado 'pending' */}
                             <FormSubmitButton>Guardar Ticket</FormSubmitButton>
                         </CardFooter>
                     </form>
@@ -273,6 +298,7 @@ export function TicketFormInModal({
             </>
         )}
 
+        {/* Contenido para el estado de carga */}
         {modalInternalState === 'loading' && (
             <div className="flex flex-col items-center justify-center text-primary-foreground min-h-full">
                 <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
@@ -280,6 +306,7 @@ export function TicketFormInModal({
             </div>
         )}
 
+        {/* Contenido para el estado de éxito */}
         {modalInternalState === 'success' && (
             <div className="flex flex-col items-center justify-center text-center p-6 min-h-full">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-6 animate-bounce" />
