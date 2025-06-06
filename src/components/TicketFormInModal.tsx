@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { useRef, useEffect, useState } from "react"; 
-import { useFormState, useFormStatus } from "react-dom"; // Importar useFormStatus
+import { useFormState, useFormStatus } from "react-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +42,9 @@ interface UbicacionOption {
 
 interface TicketFormInModalProps {
   nextNroCaso: number;
-  onFormSubmitSuccess: (newTicket?: Ticket) => void; 
+  // MODIFICADO: onFormSubmitSuccess ya no se usa para cerrar el modal desde aquí.
+  // Ahora es un callback de finalización que emite el ticket.
+  onCompletion: (newTicket?: Ticket) => void; 
   onCancel: () => void;
   empresasClientes: EmpresaClienteOption[];    
   ubicacionesDisponibles: UbicacionOption[]; 
@@ -70,7 +72,7 @@ type ModalInternalState = 'form' | 'loading' | 'success';
 
 export function TicketFormInModal({ 
   nextNroCaso, 
-  onFormSubmitSuccess, 
+  onCompletion, // MODIFICADO: Nueva prop onCompletion
   onCancel,
   empresasClientes,      
   ubicacionesDisponibles,
@@ -81,41 +83,78 @@ export function TicketFormInModal({
   const [modalInternalState, setModalInternalState] = useState<ModalInternalState>('form');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
-  // Hook para obtener el estado de envío del formulario
+  const submissionStartTimeRef = useRef<number | null>(null);
+
   const { pending } = useFormStatus();
 
-  // Efecto para gestionar las transiciones de estado interno del modal
+  // Efecto principal para gestionar las transiciones de estado interno del modal
   React.useEffect(() => {
     if (pending) {
-      setModalInternalState('loading'); // Si el formulario está en proceso de envío, mostrar loader
+      submissionStartTimeRef.current = Date.now();
+      setModalInternalState('loading'); 
     } else if (formState.success) {
       setSuccessMessage(formState.message || 'Ticket creado con éxito.');
-      setModalInternalState('success'); // Si la acción fue exitosa, mostrar éxito
+      // NO CAMBIAR a 'success' aquí directamente. El timer de 'loading' lo hará.
     } else if (formState.error) {
-      setSuccessMessage(''); // Limpiar mensaje de éxito previo
-      setModalInternalState('form'); // En caso de error, volver al formulario
+      setSuccessMessage(''); 
+      setModalInternalState('form'); // En caso de error, vuelve al formulario
+      submissionStartTimeRef.current = null; 
     } else {
-        // Al inicializar o cuando el formulario no está pendiente y no hay éxito/error,
-        // asegurar que el estado interno sea 'form'. Esto es crucial para el reset.
-        setModalInternalState('form');
+      setModalInternalState('form');
+      setSuccessMessage('');
+      submissionStartTimeRef.current = null;
     }
-  }, [pending, formState]); // Depende de `pending` y `formState`
+  }, [pending, formState]);
 
-
-  // Efecto para activar el callback final y resetear después del estado de éxito
+  // Efecto para la duración de la fase de 'loading' (spinner) y la transición a 'success'
   React.useEffect(() => {
-    if (modalInternalState === 'success') {
-      const delayBeforeClosing = 2000; // Duración para mostrar mensaje de éxito + buffer
-      const timer = setTimeout(() => {
-        onFormSubmitSuccess(formState.ticket); // Disparar callback padre con nuevo ticket
-        formRef.current?.reset(); // Resetear formulario
-        setModalInternalState('form'); // Resetear a estado 'form' para la próxima apertura
-        setSuccessMessage('');
-      }, delayBeforeClosing);
+    let loadingPhaseTimer: NodeJS.Timeout | undefined;
+    if (modalInternalState === 'loading' && submissionStartTimeRef.current !== null) {
+      const elapsedTime = Date.now() - submissionStartTimeRef.current;
+      const requiredLoadingTime = 3000; // 3 segundos para el spinner
 
-      return () => clearTimeout(timer);
+      if (elapsedTime < requiredLoadingTime) {
+        loadingPhaseTimer = setTimeout(() => {
+          if (formState.success) {
+            setModalInternalState('success');
+          } else if (!pending) { 
+              setModalInternalState('form');
+          }
+        }, requiredLoadingTime - elapsedTime);
+      } else {
+        if (formState.success) {
+          setModalInternalState('success');
+        } else if (!pending) {
+            setModalInternalState('form');
+        }
+      }
     }
-  }, [modalInternalState, onFormSubmitSuccess, formState.ticket]);
+    return () => {
+      if (loadingPhaseTimer) clearTimeout(loadingPhaseTimer);
+    };
+  }, [modalInternalState, pending, formState.success]);
+
+  // Efecto para la duración de la fase de 'success' y la EMISIÓN del ticket al padre
+  React.useEffect(() => {
+    let successPhaseTimer: NodeJS.Timeout | undefined;
+    if (modalInternalState === 'success' && submissionStartTimeRef.current !== null) {
+      const elapsedTime = Date.now() - submissionStartTimeRef.current;
+      const totalAnimationTime = 5000; // Duración total de la animación: 5 segundos
+      const remainingTimeForTotal = totalAnimationTime - elapsedTime;
+
+      successPhaseTimer = setTimeout(() => {
+        onCompletion(formState.ticket); // <--- MODIFICADO: Emite el ticket a 'onCompletion'
+        formRef.current?.reset(); 
+        setModalInternalState('form'); 
+        setSuccessMessage('');
+        submissionStartTimeRef.current = null; 
+      }, Math.max(0, remainingTimeForTotal));
+
+    }
+    return () => {
+      if (successPhaseTimer) clearTimeout(successPhaseTimer);
+    };
+  }, [modalInternalState, onCompletion, formState.ticket]);
 
 
   // Función para obtener la fecha y hora local actual en formato YYYY-MM-DDTHH:MM
@@ -130,8 +169,12 @@ export function TicketFormInModal({
   };
 
   // Determinar ancho/alto dinámico para transiciones del modal
-  const modalWidth = modalInternalState === 'loading' ? 'w-40' : (modalInternalState === 'success' ? 'w-full max-w-sm' : 'w-full'); 
-  const modalHeight = modalInternalState === 'loading' ? 'h-40' : (modalInternalState === 'success' ? 'h-fit' : 'max-h-[90vh]'); 
+  const modalWidth = 
+    modalInternalState === 'loading' ? 'w-40' : 
+    (modalInternalState === 'success' ? 'w-full max-w-sm' : 'w-full max-w-2xl'); 
+  const modalHeight = 
+    modalInternalState === 'loading' ? 'h-40' : 
+    (modalInternalState === 'success' ? 'h-fit' : 'max-h-[90vh]'); 
 
   // Clases CSS para transiciones suaves de tamaño y justificación
   const cardClasses = `
@@ -150,8 +193,7 @@ export function TicketFormInModal({
                     <CardDescription>Ingresa la información detallada del problema.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow overflow-y-auto p-4 sm:p-6">
-                    {/* El formulario ahora usa directamente la acción del servidor */}
-                    <form action={formAction} className="space-y-6"> {/* <--- CORRECCIÓN AQUÍ: `action={formAction}` */}
+                    <form action={formAction} className="space-y-6"> 
                         <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
                         {formState?.error && (
@@ -267,8 +309,7 @@ export function TicketFormInModal({
                         </div>
                         
                         <CardFooter className="px-0 pt-6 flex justify-end gap-3 flex-shrink-0">
-                            <Button variant="outline" type="button" onClick={onCancel} disabled={pending}>Cancelar</Button> {/* <--- CORRECCIÓN AQUÍ: `disabled={pending}` */}
-                            {/* FormSubmitButton ya maneja su propio estado 'pending' */}
+                            <Button variant="outline" type="button" onClick={onCancel} disabled={pending}>Cancelar</Button>
                             <FormSubmitButton>Guardar Ticket</FormSubmitButton>
                         </CardFooter>
                     </form>
