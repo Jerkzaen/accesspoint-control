@@ -1,5 +1,5 @@
 // src/components/TicketFormInModal.tsx
-"use client";
+'use client';
 
 import * as React from "react";
 import { useRef, useEffect } from "react"; 
@@ -52,6 +52,7 @@ interface ActionState {
   success?: boolean;
   message?: string;
   ticketId?: string;
+  ticket?: any; // Mantener 'any' aquí para evitar problemas de tipado complejos con Prisma.Date, ya que el cliente no siempre lo procesa igual.
 }
 
 const initialState: ActionState = {
@@ -59,6 +60,7 @@ const initialState: ActionState = {
   success: undefined,
   message: undefined,
   ticketId: undefined,
+  ticket: undefined,
 };
 
 export function TicketFormInModal({ 
@@ -76,6 +78,20 @@ export function TicketFormInModal({
       onFormSubmitSuccess(); 
     }
   }, [formState, onFormSubmitSuccess]);
+
+  // Función para obtener la fecha y hora local actual en formato YYYY-MM-DDTHH:MM
+  const getLocalDateTimeString = () => {
+    const now = new Date();
+    // Ajustar a la zona horaria de Chile (GMT-4 en invierno, GMT-3 en verano)
+    // Para simplificar, obtenemos la fecha y hora en el offset actual del navegador.
+    // Esto es suficiente para 'datetime-local' que siempre opera en la zona local.
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 
   return (
     <Card className="overflow-hidden shadow-none border-none">
@@ -101,15 +117,15 @@ export function TicketFormInModal({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="fechaCreacionModal">Fecha Reporte</Label>
-              <Input type="date" name="fechaCreacion" id="fechaCreacionModal" defaultValue={new Date().toISOString().split('T')[0]} required />
+              {/* CORRECCIÓN: Cambiar a type="datetime-local" para capturar fecha y hora */}
+              {/* Y usar getLocalDateTimeString para el valor por defecto */}
+              <Input type="datetime-local" name="fechaCreacion" id="fechaCreacionModal" defaultValue={getLocalDateTimeString()} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="empresaClienteModal">Empresa Cliente</Label>
               <Select name="empresaClienteId" /* Podrías hacerlo 'required' si es mandatorio */ > 
                 <SelectTrigger id="empresaClienteModal"><SelectValue placeholder="Seleccione Empresa Cliente" /></SelectTrigger>
                 <SelectContent>
-                  {/* Opción para no seleccionar, si el campo es opcional */}
-                  {/* <SelectItem value="ID_NULO_O_VACIO_PERO_NO_CADENA_VACIA" disabled>Ninguna</SelectItem>  // Ejemplo, pero mejor manejarlo con campo no requerido */}
                   {empresasClientes && empresasClientes.length > 0 ? (
                     empresasClientes.map(empresa => (
                       <SelectItem key={empresa.id} value={empresa.id}>
@@ -153,7 +169,6 @@ export function TicketFormInModal({
               <Select name="ubicacionId" /* No es 'required' para permitir no seleccionar */ > 
                 <SelectTrigger id="ubicacionIdModal"><SelectValue placeholder="Seleccione Ubicación (Opcional)" /></SelectTrigger>
                 <SelectContent>
-                  {/* Ya no se incluye el <SelectItem value="">...</em></SelectItem> problemático */}
                   {ubicacionesDisponibles && ubicacionesDisponibles.length > 0 ? (
                     ubicacionesDisponibles.map(ubicacion => (
                       <SelectItem key={ubicacion.id} value={ubicacion.id}>
@@ -211,4 +226,3 @@ export function TicketFormInModal({
     </Card>
   );
 }
-
