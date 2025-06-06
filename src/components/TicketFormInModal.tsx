@@ -67,6 +67,12 @@ const initialState: ActionState = {
 
 type ModalInternalState = 'form' | 'loading' | 'success';
 
+// Duraciones de las fases de animación en milisegundos (puedes ajustar estos valores)
+const LOADING_PHASE_DURATION_MS = 3000; // Duración del spinner
+const SUCCESS_MESSAGE_DISPLAY_DURATION_MS = 2000; // Duración que el mensaje de éxito se mantiene visible
+// La duración total debe ser al menos la suma de las dos fases anteriores
+const TOTAL_ANIMATION_DURATION_MS = LOADING_PHASE_DURATION_MS + SUCCESS_MESSAGE_DISPLAY_DURATION_MS; 
+
 export function TicketFormInModal({ 
   nextNroCaso, 
   onCompletion, 
@@ -89,8 +95,7 @@ export function TicketFormInModal({
       setSuccessMessage(formState.message || 'Ticket creado con éxito.');
       isSubmitting.current = false; 
       setModalInternalState('success'); // Transiciona a estado de éxito para mostrar mensaje y animación
-      onCompletion(formState.ticket); // <--- CLAVE: Llama a onCompletion inmediatamente al éxito
-      console.log('TicketFormInModal: Server action SUCCESS. Signaling parent and starting success phase visual.');
+      console.log('TicketFormInModal: Server action SUCCESS. Transitioning to success phase visual.');
     } 
     else if (formState.error) {
       setSuccessMessage(formState.error); 
@@ -105,7 +110,8 @@ export function TicketFormInModal({
       submissionStartTimeRef.current = null;
       console.log('TicketFormInModal: State -> Form (initial/reset or after action finished)');
     }
-  }, [formState, onCompletion]); // onCompletion added to dependency array
+  }, [formState]); // onCompletion removed from dependency array, called only at final completion
+
 
   // Función para manejar el envío del formulario (captura el inicio del envío)
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -121,55 +127,67 @@ export function TicketFormInModal({
   };
 
 
-  // Efecto para la duración de la fase de 'loading' (spinner)
+  // Efecto para la duración de la fase de 'loading' (spinner) y la transición a 'success' visual
   React.useEffect(() => {
     let loadingPhaseTimer: NodeJS.Timeout | undefined;
     if (modalInternalState === 'loading' && submissionStartTimeRef.current !== null) {
       const elapsedTime = Date.now() - submissionStartTimeRef.current;
-      const requiredLoadingTime = 3000; // 3 segundos para el spinner
 
-      if (elapsedTime < requiredLoadingTime) {
+      if (elapsedTime < LOADING_PHASE_DURATION_MS) {
         loadingPhaseTimer = setTimeout(() => {
-          // Si la acción del servidor ya fue exitosa, el useEffect principal ya habrá cambiado a 'success'.
-          // Este timer asegura que el spinner se muestre al menos 3 segundos si la respuesta es muy rápida.
-          // Si no, el modalInternalState seguirá en 'loading' hasta que formState.success se actualice.
-          console.log('TicketFormInModal: Loading phase timer finished (3s).');
-        }, requiredLoadingTime - elapsedTime);
-      } 
-      // No necesitamos un 'else' aquí. Si ya pasaron 3s, el flujo normal de `formState` o `isSubmitting`
-      // debería haber cambiado el `modalInternalState` si la acción del servidor ya respondió.
+          // Después de LOADING_PHASE_DURATION_MS, si la acción ya fue exitosa, transiciona a 'success' visual.
+          // Si no (todavía pendiente o error no capturado), permanece en 'loading' o vuelve a 'form' si ya no está pendiente.
+          if (formState.success) {
+            setModalInternalState('success');
+            console.log('TicketFormInModal: Loading phase timer finished (3s). Transitioning to SUCCESS visual.');
+          } else if (!isSubmitting.current && !formState.error) { 
+             // Si el spinner terminó, pero no hay éxito/error y no está enviando, algo salió mal o la acción fue muy rápida.
+             setModalInternalState('form'); 
+             console.error('TicketFormInModal: Loading phase timer finished, neither success/error nor pending. Back to form.');
+          }
+        }, LOADING_PHASE_DURATION_MS - elapsedTime);
+      } else {
+        // Si ya pasaron los LOADING_PHASE_DURATION_MS, transiciona inmediatamente si ya hay éxito.
+        if (formState.success) {
+          setModalInternalState('success');
+          console.log('TicketFormInModal: Already past loading phase time, transitioning to SUCCESS visual immediately.');
+        }
+      }
     }
     return () => {
       if (loadingPhaseTimer) clearTimeout(loadingPhaseTimer);
     };
-  }, [modalInternalState, formState.success, formState.error, isSubmitting.current]); // Agregado isSubmitting.current a dependencias
+  }, [modalInternalState, formState.success, formState.error, isSubmitting.current]); 
 
 
-  // Efecto para la duración de la fase de 'success' visual
+  // Efecto para la duración total de la animación (desde el inicio de la sumisión hasta el final)
+  // Aquí es donde se llama a `onCompletion` para que el padre cierre el modal.
   React.useEffect(() => {
-    let successDisplayTimer: NodeJS.Timeout | undefined;
-    if (modalInternalState === 'success') {
-      const displayDuration = 2000; // 2 segundos para mostrar el mensaje de éxito
-      
-      successDisplayTimer = setTimeout(() => {
+    let totalAnimationTimer: NodeJS.Timeout | undefined;
+    // Solo si estamos en la fase de loading o success y el tiempo de inicio está registrado
+    if ((modalInternalState === 'loading' || modalInternalState === 'success') && submissionStartTimeRef.current !== null) {
+      const elapsedTime = Date.now() - submissionStartTimeRef.current;
+      const remainingTimeForTotal = TOTAL_ANIMATION_DURATION_MS - elapsedTime;
+
+      totalAnimationTimer = setTimeout(() => {
+        onCompletion(formState.ticket); // <--- CLAVE: Llama a onCompletion SOLO al final de la duración total
         formRef.current?.reset(); // Limpiar el formulario
         setModalInternalState('form'); // Volver al estado 'form' para la próxima apertura
         setSuccessMessage('');
         submissionStartTimeRef.current = null;
         isSubmitting.current = false; // Resetear la bandera de envío
-        console.log('TicketFormInModal: SUCCESS message display finished (2s). Resetting internal state.');
-        // Nota: onCompletion ya fue llamado al inicio de la fase 'success',
-        // por lo que el padre ya sabe que puede cerrar el modal.
-      }, displayDuration);
+        console.log('TicketFormInModal: TOTAL animation duration finished. Calling onCompletion and resetting internal state.');
+      }, Math.max(0, remainingTimeForTotal)); // Asegura un retardo no negativo
 
     }
     return () => {
-      if (successDisplayTimer) clearTimeout(successDisplayTimer);
+      if (totalAnimationTimer) clearTimeout(totalAnimationTimer);
     };
-  }, [modalInternalState]);
+  }, [modalInternalState, onCompletion, formState.ticket]); // Depende de modalInternalState y formState.ticket (para asegurar que el ticket sea el correcto)
 
 
   // Efecto para restablecer el estado del modal cuando se abre o cierra (controlado por el padre)
+  // Esto es vital para que el modal se muestre correctamente en su estado inicial cuando se reabre.
   React.useEffect(() => {
     if (isModalOpen) {
       setModalInternalState('form');
@@ -207,6 +225,7 @@ export function TicketFormInModal({
 
   return (
     <Card className={`overflow-hidden shadow-none border-none ${cardClasses}`}>
+        {/* Renderizado condicional basado en el estado interno del modal */}
         {modalInternalState === 'form' && (
             <>
                 <CardHeader className="flex-shrink-0">
