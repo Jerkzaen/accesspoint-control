@@ -1,5 +1,7 @@
 // src/types/ticket.ts
 
+import { EstadoTicket, PrioridadTicket } from '@prisma/client'; // Importar los enums de Prisma
+
 export interface EmpresaClienteRelacion {
   id: string;
   nombre: string;
@@ -19,11 +21,10 @@ export interface UsuarioBasico { // Para el técnico y el usuario que realiza la
 
 export interface ActionEntry {
   id: string;
-  // CORRECCIÓN: fechaAccion es un objeto Date cuando se obtiene de Prisma
   fechaAccion: Date; 
   descripcion: string;
   realizadaPor?: UsuarioBasico | null; 
-  usuarioId?: string; // El ID del usuario, por si acaso
+  usuarioId?: string; 
 }
 
 export interface Ticket {
@@ -32,8 +33,8 @@ export interface Ticket {
   titulo: string;
   descripcionDetallada?: string | null;
   tipoIncidente: string;
-  prioridad: string; 
-  estado: string;    
+  prioridad: PrioridadTicket; // Asegurar que sea del tipo enum PrioridadTicket
+  estado: EstadoTicket;    // CORRECCIÓN: El estado debe ser del tipo enum EstadoTicket
   
   solicitanteNombre: string; 
   solicitanteTelefono?: string | null;
@@ -48,10 +49,8 @@ export interface Ticket {
   ubicacionId?: string | null;
   tecnicoAsignadoId?: string | null;
 
-  // Ahora acciones es un array de ActionEntry, no un string JSON
   acciones?: ActionEntry[] | null; 
 
-  // CORRECCIÓN: Las propiedades de fecha de Ticket ahora son de tipo Date
   fechaCreacion: Date; 
   fechaSolucionEstimada?: Date | null;
   fechaSolucionReal?: Date | null; 
