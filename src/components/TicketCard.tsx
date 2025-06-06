@@ -405,7 +405,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           <SelectedTicketPanel
             selectedTicket={selectedTicket} 
             onTicketUpdated={handleTicketUpdated}
-            headerAndPagePaddingOffset={HEADER_AND_PAGE_OFFSET}
+            headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
           />
         </div>
       )}
