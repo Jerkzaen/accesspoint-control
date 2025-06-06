@@ -23,6 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
 import { TicketModal } from './TicketModal';
 import { loadLastTicketNro } from '@/app/actions/ticketActions';
+// Importar los enums de Prisma
+import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 
 // Interfaces para los datos que esperamos (deben coincidir con los de page.tsx y TicketModal.tsx)
 interface EmpresaClienteOption {
@@ -59,9 +61,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [nextTicketNumber, setNextTicketNumber] = useState(0);
 
+  // Los estados de filtro deben inicializarse con los valores del enum o 'all'
   const [searchText, setSearchText] = useState(currentFilters.searchText || '');
-  const [estadoFilter, setEstadoFilter] = useState(currentFilters.estado || 'all');
-  const [prioridadFilter, setPrioridadFilter] = useState(currentFilters.prioridad || 'all');
+  const [estadoFilter, setEstadoFilter] = useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all'); 
+  const [prioridadFilter, setPrioridadFilter] = useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -75,8 +78,8 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
   useEffect(() => {
     setSearchText(currentFilters.searchText || '');
-    setEstadoFilter(currentFilters.estado || 'all'); 
-    setPrioridadFilter(currentFilters.prioridad || 'all');
+    setEstadoFilter(currentFilters.estado as EstadoTicket || 'all'); 
+    setPrioridadFilter(currentFilters.prioridad as PrioridadTicket || 'all');
   }, [currentFilters]);
 
   useEffect(() => {
@@ -144,7 +147,8 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   // Filtrar tickets para asegurar que tienen fechaCreacion antes de mapear
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
-    return tickets.filter(t => t && typeof t.fechaCreacion === 'string' && t.fechaCreacion.trim() !== '');
+    // Ya que fechaCreacion es tipo Date, no es necesario verificar typeof string
+    return tickets.filter(t => t && t.fechaCreacion); 
   }, [tickets]);
 
 
@@ -203,31 +207,36 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="estadoFilter">Estado</Label>
-              <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+              <Select value={estadoFilter} onValueChange={(value: EstadoTicket | 'all') => setEstadoFilter(value)}>
                 <SelectTrigger id="estadoFilter" className="h-9">
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="Abierto">Abierto</SelectItem>
-                  <SelectItem value="En Progreso">En Progreso</SelectItem>
-                  <SelectItem value="Cerrado">Cerrado</SelectItem>
-                  <SelectItem value="Pendiente">Pendiente</SelectItem>
+                  {/* CORRECCIÓN: Los values de SelectItem deben ser los miembros del enum exactos de schema.prisma */}
+                  <SelectItem value={EstadoTicket.ABIERTO}>Abierto</SelectItem>
+                  <SelectItem value={EstadoTicket.EN_PROGRESO}>En Progreso</SelectItem>
+                  <SelectItem value={EstadoTicket.PENDIENTE_TERCERO}>Pendiente (Tercero)</SelectItem>
+                  <SelectItem value={EstadoTicket.PENDIENTE_CLIENTE}>Pendiente (Cliente)</SelectItem>
+                  <SelectItem value={EstadoTicket.RESUELTO}>Resuelto</SelectItem>
+                  <SelectItem value={EstadoTicket.CERRADO}>Cerrado</SelectItem>
+                  <SelectItem value={EstadoTicket.CANCELADO}>Cancelado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="prioridadFilter">Prioridad</Label>
-              <Select value={prioridadFilter} onValueChange={setPrioridadFilter}>
+              <Select value={prioridadFilter} onValueChange={(value: PrioridadTicket | 'all') => setPrioridadFilter(value)}>
                 <SelectTrigger id="prioridadFilter" className="h-9">
                   <SelectValue placeholder="Todas las prioridades" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las prioridades</SelectItem>
-                  <SelectItem value="baja">BAJA</SelectItem>
-                  <SelectItem value="media">MEDIA</SelectItem>
-                  <SelectItem value="alta">ALTA</SelectItem>
-                  <SelectItem value="urgente">URGENTE</SelectItem>
+                  {/* CORRECCIÓN: Los values de SelectItem deben ser los miembros del enum exactos de schema.prisma */}
+                  <SelectItem value={PrioridadTicket.BAJA}>BAJA</SelectItem>
+                  <SelectItem value={PrioridadTicket.MEDIA}>MEDIA</SelectItem>
+                  <SelectItem value={PrioridadTicket.ALTA}>ALTA</SelectItem>
+                  <SelectItem value={PrioridadTicket.URGENTE}>URGENTE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -301,10 +310,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                       <CloseIcon className="h-5 w-5" />
                     </Button>
                   </SheetClose>
-                </SheetHeader>
+                </div>
                 <div className="flex-grow overflow-y-auto">
                   {/* Asegurarse de que selectedTicket es válido antes de pasarlo */}
-                  {selectedTicket && typeof selectedTicket.fechaCreacion === 'string' ? (
+                  {selectedTicket && typeof selectedTicket.fechaCreacion === 'object' ? ( // 'Date' es un objeto
                     <SelectedTicketPanel
                       selectedTicket={selectedTicket} 
                       onTicketUpdated={handleTicketUpdated}
