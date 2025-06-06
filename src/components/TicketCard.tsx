@@ -24,9 +24,26 @@ import { useTickets, TicketFilters } from '@/hooks/useTickets';
 import { TicketModal } from './TicketModal';
 import { loadLastTicketNro } from '@/app/actions/ticketActions';
 
+// Interfaces para los datos que esperamos (deben coincidir con los de page.tsx y TicketModal.tsx)
+interface EmpresaClienteOption {
+  id: string;
+  nombre: string;
+}
+
+interface UbicacionOption {
+  id: string;
+  nombreReferencial: string | null;
+  direccionCompleta: string;
+}
+
+interface TicketCardProps {
+  empresasClientes: EmpresaClienteOption[];
+  ubicacionesDisponibles: UbicacionOption[];
+}
+
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
-export default function TicketCard() {
+export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
   const {
     tickets, // Este es el array original de tickets
     setTickets,
@@ -125,29 +142,11 @@ export default function TicketCard() {
   };
 
   // Filtrar tickets para asegurar que tienen fechaCreacion antes de mapear
-  // Esto es una medida defensiva. El problema principal debería ser atajado
-  // por la guarda dentro de SingleTicketItemCard o en la fuente de datos (API/useTickets).
-  // Si la línea 34 de ESTE archivo (TicketCard.tsx) es la que da error,
-  // significa que 'ticket.fechaCreacion' se usa ANTES de este map,
-  // posiblemente con 'selectedTicket'.
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
     return tickets.filter(t => t && typeof t.fechaCreacion === 'string' && t.fechaCreacion.trim() !== '');
   }, [tickets]);
 
-  // Si el error está en la línea 34 de ESTE archivo (TicketCard.tsx)
-  // y esa línea es "const fechaCreacionDate = new Date(ticket.fechaCreacion)...",
-  // entonces necesitas una guarda para el 'ticket' que se esté usando en ESE CONTEXTO.
-  // Por ejemplo, si fuera para selectedTicket:
-  // let selectedTicketFechaCreacionFormatted = 'N/A';
-  // if (selectedTicket && typeof selectedTicket.fechaCreacion === 'string') {
-  //   try {
-  //      selectedTicketFechaCreacionFormatted = new Date(selectedTicket.fechaCreacion).toLocaleString('es-CL', {...});
-  //   } catch (e) { console.error("Error formateando fecha de selectedTicket", e); }
-  // }
-  // Y luego usar selectedTicketFechaCreacionFormatted.
-  // Como no sé exactamente dónde está esa línea 34 en tu versión actual de TicketCard.tsx,
-  // el filtro de 'validTickets' es la medida más general que puedo aplicar aquí.
 
   if (isLoading) {
     return (
@@ -321,11 +320,14 @@ export default function TicketCard() {
         </Sheet>
       )}
 
+      {/* Actualización del componente TicketModal para recibir las props */}
       <TicketModal
         isOpen={isCreateModalOpen}
         onClose={handleCloseCreateModal}
         nextNroCaso={nextTicketNumber}
         onFormSubmitSuccess={handleFormSubmitSuccessInModal}
+        empresasClientes={empresasClientes} // Pasa la prop empresasClientes
+        ubicacionesDisponibles={ubicacionesDisponibles} // Pasa la prop ubicacionesDisponibles
       />
     </div>
   );
