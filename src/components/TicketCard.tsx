@@ -24,8 +24,6 @@ import { TicketModal } from './TicketModal';
 import { loadLastTicketNro } from '@/app/actions/ticketActions';
 // Importar los enums de Prisma
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
-// Importar el componente Skeleton
-import { Skeleton } from '@/components/ui/skeleton'; 
 
 // Interfaces para los datos que esperamos (deben coincidir con los de page.tsx y TicketModal.tsx)
 interface EmpresaClienteOption {
@@ -47,6 +45,7 @@ interface TicketCardProps {
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
+  // Desestructurar propiedades de useTickets()
   const {
     tickets,
     setTickets,
@@ -66,54 +65,40 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [estadoFilter, setEstadoFilter] = React.useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all'); 
   const [prioridadFilter, setPrioridadFilter] = React.useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
 
+  // Estado para el texto de búsqueda con debounce
   const [debouncedSearchText, setDebouncedSearchText] = React.useState(searchText);
-  const [showLoadingSkeletons, setShowLoadingSkeletons] = React.useState(false);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
+  // Efecto para aplicar debounce al searchText
   React.useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchText(searchText);
-    }, 500); 
+    }, 500); // Retraso de 500ms
 
     return () => {
       clearTimeout(handler);
     };
-  }, [searchText]);
+  }, [searchText]); // Solo se ejecuta cuando searchText cambia
 
   // Efecto para aplicar filtros cuando el texto de búsqueda debounced cambia
   React.useEffect(() => {
-    if (debouncedSearchText !== currentFilters.searchText) {
+    // Solo aplicar filtro si el texto debounced es diferente al actual, o si es la carga inicial
+    // y también, si los filtros cambian, deseleccionar cualquier ticket si ya no aplica
+    if (debouncedSearchText !== currentFilters.searchText || 
+        estadoFilter !== (currentFilters.estado as EstadoTicket || 'all') || 
+        prioridadFilter !== (currentFilters.prioridad as PrioridadTicket || 'all')) {
+      
       applyFilters({
         searchText: debouncedSearchText.trim(),
         estado: estadoFilter === 'all' ? undefined : estadoFilter,
         prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
       });
+      // Importante: Deseleccionar el ticket si los filtros cambian para que el panel derecho
+      // muestre el mensaje de "selecciona un ticket".
+      setSelectedTicket(null); 
     }
-  }, [debouncedSearchText, applyFilters, estadoFilter, prioridadFilter, currentFilters.searchText]);
-
-  // CORRECCIÓN: Deseleccionar el ticket si la lista filtrada queda vacía
-  React.useEffect(() => {
-    // Si la lista de tickets ya cargó (no está isLoading) y está vacía
-    // y hay un ticket seleccionado, entonces deselecciónalo.
-    if (!isLoading && tickets.length === 0 && selectedTicket) {
-      setSelectedTicket(null);
-    }
-  }, [isLoading, tickets, selectedTicket]);
-
-
-  // Efecto para controlar el delay del skeleton
-  React.useEffect(() => {
-    let delayTimer: NodeJS.Timeout;
-    if (isLoading) {
-      delayTimer = setTimeout(() => {
-        setShowLoadingSkeletons(true);
-      }, 1000); 
-    } else {
-      setShowLoadingSkeletons(false);
-    }
-    return () => clearTimeout(delayTimer);
-  }, [isLoading]);
+  }, [debouncedSearchText, applyFilters, estadoFilter, prioridadFilter, currentFilters.searchText, currentFilters.estado, currentFilters.prioridad]);
 
 
   React.useEffect(() => {
@@ -139,7 +124,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
         console.error("Error al cargar el siguiente número de ticket:", err);
       }
     };
-    if (isCreateModalOpen || (tickets && tickets.length === 0)) { 
+    if (isCreateModalOpen || (tickets && tickets.length === 0)) { // Verificación adicional para tickets
       fetchNextTicketNumber();
     }
   }, [isCreateModalOpen, tickets]);
@@ -153,34 +138,35 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
-    setSelectedTicket(null); 
   };
 
   const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
     setTickets(prevTickets =>
       prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
     );
+    // Si el ticket actualizado es el que está seleccionado, actualiza también el estado de selectedTicket
     if (selectedTicket?.id === updatedTicket.id) {
       setSelectedTicket(updatedTicket);
     }
   }, [selectedTicket, setTickets]);
 
   const handleApplyFilters = () => {
+    // Si se hace clic en el botón, el debounce se ignora para esta acción
     applyFilters({
       searchText: searchText.trim(),
       estado: estadoFilter === 'all' ? undefined : estadoFilter,
       prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
     });
-    setDebouncedSearchText(searchText);
+    setDebouncedSearchText(searchText); // Sincroniza el debounced con el searchText actual inmediatamente
   };
 
   const handleClearFilters = () => {
     setSearchText('');
     setEstadoFilter('all');
     setPrioridadFilter('all');
+    // Actualizar también el debounced para que el filtro se aplique
     setDebouncedSearchText(''); 
     applyFilters({});
-    setSelectedTicket(null); 
   };
 
   const handleOpenCreateModal = () => {
@@ -196,10 +182,21 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     refreshTickets();
   };
 
+  // Filtrar tickets para asegurar que tienen fechaCreacion antes de mapear
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
     return tickets.filter(t => t && t.fechaCreacion); 
   }, [tickets]);
+
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin mb-2" />
+        <p>Cargando tickets...</p>
+      </div>
+    );
+  }
 
   if (fetchTicketsError) {
     return (
@@ -283,7 +280,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             <Button variant="outline" size="sm" onClick={handleClearFilters}>
               Limpiar Filtros
             </Button>
-            {/* El botón de búsqueda explícita ha sido comentado ya que la búsqueda es automática con debounce */}
+            {/* Se elimina el botón de búsqueda explícita si la búsqueda es en tiempo real */}
             {/* <Button size="sm" onClick={handleApplyFilters}>
               <SearchIcon className="h-4 w-4 mr-2" />
               Buscar Tickets
@@ -295,13 +292,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2" 
           style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}
         >
-          {showLoadingSkeletons ? ( 
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => ( 
-                <Skeleton key={i} className="h-[120px] w-full rounded-lg" /> 
-              ))}
-            </div>
-          ) : validTickets.length > 0 ? (
+          {validTickets.length > 0 ? (
             validTickets.map((ticket) => ( 
               <SingleTicketItemCard
                 key={ticket.id}
@@ -313,40 +304,29 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             ))
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-              <p>No hay tickets para mostrar con los filtros actuales.</p>
+              <p>No hay tickets para mostrar con los filtros actuales o algunos tickets tienen datos incompletos.</p>
             </div>
           )}
         </div>
       </div>
 
-      {isDesktop ? (
-        // Mostrar Skeleton para el panel de la derecha si no hay ticket seleccionado O si está cargando
-        (showLoadingSkeletons || (tickets.length === 0 && !selectedTicket)) ? ( // Asegurar que isLoadingGlobal se use aquí
-          <div className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%] p-4 flex items-center justify-center"
-               style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}>
-            <Skeleton className="h-full w-full rounded-lg" />
-          </div>
-        ) : selectedTicket ? ( 
-          <div 
-            className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]"
-          >
-            <SelectedTicketPanel
-              selectedTicket={selectedTicket} 
-              onTicketUpdated={handleTicketUpdated}
-              headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
-              // Pasar isLoadingGlobal a SelectedTicketPanel para que sepa si la lista principal está cargando
-              isLoadingGlobal={showLoadingSkeletons} 
-            />
-          </div>
-        ) : (
-          <div className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%] p-4 flex flex-col items-center justify-center text-sm text-muted-foreground text-center"
-               style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}>
-            <FilterIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>Selecciona un ticket para ver sus detalles.</p>
-            <p>O aplica un filtro para encontrar tickets.</p>
-          </div>
-        )
-      ) : (
+      {/* Condición para renderizar el panel derecho en desktop, SIEMPRE */}
+      {isDesktop && ( 
+        <div 
+          className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]"
+          style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})`, maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}
+        >
+          {/* SelectedTicketPanel se encarga de mostrar el mensaje si selectedTicket es null */}
+          <SelectedTicketPanel
+            selectedTicket={selectedTicket} 
+            onTicketUpdated={handleTicketUpdated}
+            headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
+          />
+        </div>
+      )}
+
+      {/* Sheet para vista móvil (sin cambios, aún se basa en selectedTicket para abrirse) */}
+      {!isDesktop && (
         <Sheet open={isSheetOpen} onOpenChange={(open) => {
           if (!open) {
             handleCloseSheet();
@@ -377,7 +357,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                       selectedTicket={selectedTicket} 
                       onTicketUpdated={handleTicketUpdated}
                       headerAndPagePaddingOffset="0px"
-                      isLoadingGlobal={showLoadingSkeletons} // También pasar a la versión móvil si es necesario
                     />
                   ) : (
                     <div className="p-4 text-sm text-muted-foreground">Cargando detalles o datos incompletos...</div>
