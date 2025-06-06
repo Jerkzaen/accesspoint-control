@@ -2,7 +2,6 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useCallback } from 'react';
 import SingleTicketItemCard from './SingleTicketItemCard'; 
 import SelectedTicketPanel from './SelectedTicketPanel';
 import { Ticket } from '@/types/ticket';
@@ -46,29 +45,30 @@ interface TicketCardProps {
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
+  // Desestructurar propiedades de useTickets()
   const {
-    tickets, // Este es el array original de tickets
+    tickets,
     setTickets,
     isLoading,
     error: fetchTicketsError,
     refreshTickets,
     applyFilters,
-    currentFilters,
+    currentFilters, 
   } = useTickets();
 
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [nextTicketNumber, setNextTicketNumber] = useState(0);
+  const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [nextTicketNumber, setNextTicketNumber] = React.useState(0);
 
-  // Los estados de filtro deben inicializarse con los valores del enum o 'all'
-  const [searchText, setSearchText] = useState(currentFilters.searchText || '');
-  const [estadoFilter, setEstadoFilter] = useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all'); 
-  const [prioridadFilter, setPrioridadFilter] = useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
+  // Inicializar estados de filtro con currentFilters
+  const [searchText, setSearchText] = React.useState(currentFilters.searchText || '');
+  const [estadoFilter, setEstadoFilter] = React.useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all'); 
+  const [prioridadFilter, setPrioridadFilter] = React.useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isDesktop && selectedTicket) {
       setIsSheetOpen(true);
     } else if (isDesktop) {
@@ -76,13 +76,13 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     }
   }, [selectedTicket, isDesktop]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setSearchText(currentFilters.searchText || '');
     setEstadoFilter(currentFilters.estado as EstadoTicket || 'all'); 
     setPrioridadFilter(currentFilters.prioridad as PrioridadTicket || 'all');
   }, [currentFilters]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchNextTicketNumber = async () => {
       try {
         const lastNro = await loadLastTicketNro();
@@ -107,7 +107,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setIsSheetOpen(false);
   };
 
-  const handleTicketUpdated = useCallback((updatedTicket: Ticket) => {
+  const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
     setTickets(prevTickets =>
       prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
     );
@@ -213,7 +213,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
-                  {/* CORRECCIÓN: Los values de SelectItem deben ser los miembros del enum exactos de schema.prisma */}
                   <SelectItem value={EstadoTicket.ABIERTO}>Abierto</SelectItem>
                   <SelectItem value={EstadoTicket.EN_PROGRESO}>En Progreso</SelectItem>
                   <SelectItem value={EstadoTicket.PENDIENTE_TERCERO}>Pendiente (Tercero)</SelectItem>
@@ -232,7 +231,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las prioridades</SelectItem>
-                  {/* CORRECCIÓN: Los values de SelectItem deben ser los miembros del enum exactos de schema.prisma */}
                   <SelectItem value={PrioridadTicket.BAJA}>BAJA</SelectItem>
                   <SelectItem value={PrioridadTicket.MEDIA}>MEDIA</SelectItem>
                   <SelectItem value={PrioridadTicket.ALTA}>ALTA</SelectItem>
@@ -310,7 +308,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                       <CloseIcon className="h-5 w-5" />
                     </Button>
                   </SheetClose>
-                </div>
+                </SheetHeader> 
                 <div className="flex-grow overflow-y-auto">
                   {/* Asegurarse de que selectedTicket es válido antes de pasarlo */}
                   {selectedTicket && typeof selectedTicket.fechaCreacion === 'object' ? ( // 'Date' es un objeto
