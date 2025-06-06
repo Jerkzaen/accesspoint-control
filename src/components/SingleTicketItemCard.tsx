@@ -27,7 +27,7 @@ interface SingleTicketItemCardProps {
   onSelectTicket: (ticket: Ticket) => void;
   onTicketUpdatedInList: (updatedTicket: Ticket) => void;
   isSelected: boolean;
-  isNew?: boolean; // New prop for animation
+  isNew?: boolean; // Prop para la animación de nuevo ticket
 }
 
 // Definimos el componente funcional principal
@@ -119,10 +119,13 @@ function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, i
     <Card
       className={cn(
         "mb-3 cursor-pointer transition-all duration-150 ease-in-out",
+        "hover:shadow-xl",
         {
           "shadow-lg bg-primary/15 dark:bg-primary/25": isSelected,
           "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
-          "bg-blue-100 dark:bg-blue-900 transition-colors duration-1000 ease-out": isNew, // Animation for new ticket
+          // Apply a distinct highlight color when isNew is true.
+          // The existing 'transition-colors' will handle the fade out when 'isNew' becomes false.
+          "bg-indigo-100 dark:bg-indigo-800 transition-colors duration-1000 ease-out": isNew,
         }
       )}
       onClick={() => ticket && onSelectTicket(ticket)}
@@ -219,4 +222,5 @@ function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, i
   );
 }
 
-export default SingleTicketItemCard; // Removed React.memo
+export default SingleTicketItemCard;
+
