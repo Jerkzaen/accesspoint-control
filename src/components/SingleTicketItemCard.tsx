@@ -20,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, Hash } from 'lucide-react'; // Importar Hash
 import { useState } from 'react';
+// Importar los enums de Prisma
+import { EstadoTicket } from '@prisma/client'; 
 
 interface SingleTicketItemCardProps {
   ticket: Ticket | undefined | null;
@@ -42,7 +44,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     );
   }
 
-  const fechaCreacionDate = new Date(ticket.fechaCreacion).toLocaleString('es-CL', {
+  // Las propiedades de fecha del ticket ahora son de tipo Date, como se definió en src/types/ticket.ts
+  const fechaCreacionDate = ticket.fechaCreacion.toLocaleString('es-CL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -73,14 +76,14 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
   const companyNameForLogo = ticket.empresaCliente?.nombre;
   const companyLogoUrl = getCompanyLogoUrl(companyNameForLogo);
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: EstadoTicket) => { // Aceptar EstadoTicket como tipo
     if (!ticket) return;
     setIsUpdatingStatus(true);
     try {
       const response = await fetch(`/api/tickets/${ticket.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: newStatus }),
+        body: JSON.stringify({ estado: newStatus }), // Enviar el valor del enum directamente
       });
 
       if (!response.ok) {
@@ -132,10 +135,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               >
                 <Image
                   src={companyLogoUrl}
-                  // INICIO DE LA CORRECCIÓN PARA EL ERROR 'alt'
                   // Se aseguró que 'alt' reciba un string simple para evitar el error de tipado.
                   alt={companyNameForLogo ? `${companyNameForLogo} logo` : "Logo de la empresa"}
-                  // FIN DE LA CORRECCIÓN PARA EL ERROR 'alt'
                   width={48}
                   height={24}
                   className="object-cover w-full h-full"
@@ -163,10 +164,6 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               <PopoverTrigger asChild>
                 <Button
                   variant={getEstadoBadgeVariant(ticket.estado)}
-                  // La clase w-full aquí se aplicará cuando sea flex-col. 
-                  // En flex-row, su ancho será determinado por su contenido y padding, 
-                  // a menos que el contenedor flex-row tenga un ancho específico y este item sea flex-grow.
-                  // Dado que no es flex-grow, debería comportarse bien.
                   className={cn("whitespace-nowrap cursor-pointer flex items-center w-full justify-center sm:w-auto", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
                   size="sm"
                   disabled={isUpdatingStatus}
@@ -178,10 +175,11 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               <PopoverContent className="w-auto p-2">
                 <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
                 <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Abierto')}>Abierto</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('En Progreso')}>En Progreso</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Cerrado')}>Cerrado</Button>
-                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange('Pendiente')}>Pendiente</Button>
+                  {/* CORRECCIÓN FINAL: Usar los valores del enum EstadoTicket con sus nombres correctos (todo mayúsculas, guion bajo) */}
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.ABIERTO)}>Abierto</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.EN_PROGRESO)}>En Progreso</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.CERRADO)}>Cerrado</Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.PENDIENTE)}>Pendiente</Button>
                 </div>
               </PopoverContent>
             </Popover>
