@@ -49,12 +49,12 @@ const MIN_SKELETON_DISPLAY_TIME = 500; // Milisegundos que el skeleton debe most
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
   const {
     tickets,
-    setTickets, // Added setTickets to directly manipulate the list
+    setTickets, 
     isLoading, 
     error: fetchTicketsError,
     refreshTickets,
     applyFilters,
-    currentFilters, // Expose current active filters from the hook
+    currentFilters, 
   } = useTickets();
 
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
@@ -68,17 +68,14 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
   const [debouncedSearchText, setDebouncedSearchText] = React.useState(searchText);
 
-  // Explicit state to control skeleton visibility for filtering
   const [showFilterSkeleton, setShowFilterSkeleton] = React.useState(false); 
-  // Reference to store the start time of a filter-induced loading, for minimum display time
   const filterStartTimeRef = React.useRef<number | null>(null);
 
-  // New state to manage the ID of the newly created ticket for animation purposes
   const [newlyCreatedTicketId, setNewlyCreatedTicketId] = React.useState<string | null>(null);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
-  // Effect for debouncing search text
+  // Efecto para aplicar debounce al searchText
   React.useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchText(searchText);
@@ -88,59 +85,48 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     };
   }, [searchText]);
 
-  // Effect for applying filters (triggered by debouncedSearchText, estadoFilter, prioridadFilter changes)
+  // Efecto para aplicar filtros cuando los filtros debounced cambian
   React.useEffect(() => {
     const newFilters: TicketFilters = {
-      searchText: debouncedSearchText.trim() || undefined, // Use undefined for empty string
+      searchText: debouncedSearchText.trim() || undefined, 
       estado: estadoFilter === 'all' ? undefined : estadoFilter,
       prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
     };
 
-    // Deep compare current values with new values to avoid unnecessary filter application
     const areFiltersTrulyDifferent = 
       (newFilters.searchText !== currentFilters.searchText) ||
       (newFilters.estado !== currentFilters.estado) ||
       (newFilters.prioridad !== currentFilters.prioridad);
 
-    // Determine if the *new* filter state is completely "empty"
     const isNewStateCompletelyEmpty = !newFilters.searchText && !newFilters.estado && !newFilters.prioridad;
-    // Determine if the *current active* filter state is completely "empty"
     const isCurrentStateCompletelyEmpty = !currentFilters.searchText && !currentFilters.estado && !currentFilters.prioridad;
 
 
     if (areFiltersTrulyDifferent) {
       setSelectedTicket(null); 
 
-      // Condition for showing skeleton:
-      // Show skeleton if it's NOT a transition from a non-empty state TO a completely empty state
-      // (meaning, if we are clearing ALL filters back to the initial default state, don't show skeleton)
-      // Otherwise, show skeleton.
       const shouldShowSkeleton = !(isNewStateCompletelyEmpty && !isCurrentStateCompletelyEmpty);
 
       if (shouldShowSkeleton) {
         filterStartTimeRef.current = Date.now();
         setShowFilterSkeleton(true);
       } else {
-        // If clearing all filters to empty state, ensure skeleton is explicitly hidden immediately
         setShowFilterSkeleton(false);
-        filterStartTimeRef.current = null; // Clear ref if not showing skeleton
+        filterStartTimeRef.current = null; 
       }
       
       applyFilters(newFilters);
     }
-  }, [debouncedSearchText, estadoFilter, prioridadFilter, applyFilters, currentFilters]); // Added currentFilters to dependencies for comparison
+  }, [debouncedSearchText, estadoFilter, prioridadFilter, applyFilters, currentFilters]); 
 
-  // Effect to manage minimum skeleton display time and hide it once data is loaded
+  // Efecto para gestionar el tiempo mínimo de visualización del skeleton
   React.useEffect(() => {
     if (isLoading) {
-      // If loading starts due to a filter change or initial load, set skeleton to true
-      // and record the start time if not already recorded by filter change logic.
-      if (filterStartTimeRef.current === null) { // Only set if not already set by filter useEffect
+      if (filterStartTimeRef.current === null) { 
          filterStartTimeRef.current = Date.now();
          setShowFilterSkeleton(true);
       }
     } else {
-      // When data loading completes
       const elapsed = Date.now() - (filterStartTimeRef.current || 0);
       if (filterStartTimeRef.current && elapsed < MIN_SKELETON_DISPLAY_TIME) {
         const remainingTime = MIN_SKELETON_DISPLAY_TIME - elapsed;
@@ -150,13 +136,27 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
         }, remainingTime);
         return () => clearTimeout(timer);
       } else {
-        // If minimum time passed or no filter-induced skeleton was active, hide immediately
         setShowFilterSkeleton(false);
         filterStartTimeRef.current = null;
       }
     }
-  }, [isLoading]); // Only depends on isLoading to react to fetch state changes
+  }, [isLoading]); 
 
+
+  // Efecto para el cierre del modal y la animación del nuevo ticket
+  React.useEffect(() => {
+    // Si la carga terminó y tenemos un ID de ticket nuevo para resaltar
+    if (!isLoading && newlyCreatedTicketId !== null) {
+      const highlightDuration = 1000; // Duración del resaltado en milisegundos
+
+      const timer = setTimeout(() => {
+        setNewlyCreatedTicketId(null); // Quita el resaltado
+        handleCloseCreateModal();       // Cierra el modal después de que la animación termine
+      }, highlightDuration);
+
+      return () => clearTimeout(timer); // Limpiar el timer si el componente se desmonta o el estado cambia
+    }
+  }, [isLoading, newlyCreatedTicketId]); // Depende de isLoading y newlyCreatedTicketId
 
   React.useEffect(() => {
     if (!isDesktop && selectedTicket) {
@@ -167,7 +167,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   }, [selectedTicket, isDesktop]);
 
   React.useEffect(() => {
-    // Sync local filter states with currentFilters from hook after refresh or external changes
     setSearchText(currentFilters.searchText || '');
     setEstadoFilter(currentFilters.estado as EstadoTicket || 'all'); 
     setPrioridadFilter(currentFilters.prioridad as PrioridadTicket || 'all');
@@ -182,7 +181,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
         console.error("Error al cargar el siguiente número de ticket:", err);
       }
     };
-    // Fetch next ticket number if modal is open or if tickets are empty and not loading from a filter
     if (isCreateModalOpen || (tickets && tickets.length === 0 && !isLoading && !fetchTicketsError && !showFilterSkeleton && newlyCreatedTicketId === null)) { 
       fetchNextTicketNumber();
     }
@@ -208,10 +206,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     }
   }, [selectedTicket, setTickets]);
 
-  // Handler for explicit filter button click (e.g., "Clear Filters" or a hypothetical "Apply Filter" button)
-  // This will trigger the filter logic in the main useEffect.
   const handleTriggerFilter = () => {
-    // Explicitly update debouncedSearchText to trigger the main useEffect for filters
     setDebouncedSearchText(searchText); 
   };
 
@@ -221,9 +216,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setEstadoFilter('all');
     setPrioridadFilter('all');
     
-    // Explicitly set debounced search text to empty string.
-    // This will trigger the main useEffect, which handles the skeleton logic
-    // based on the `isNewStateCompletelyEmpty` and `isCurrentStateCompletelyEmpty` checks.
     setDebouncedSearchText(''); 
   };
 
@@ -231,31 +223,20 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setIsCreateModalOpen(true);
   };
 
-  const handleCloseCreateModal = () => {
+  const handleCloseCreateModal = React.useCallback(() => { // Memoized for useEffect dependency
     setIsCreateModalOpen(false);
-  };
+  }, []);
   
-  // MODIFIED: Accepts the newly created ticket
+  // MODIFICADO: Ahora solo dispara el refresh y setea el ID para la animación
   const handleFormSubmitSuccessInModal = React.useCallback((newTicket?: Ticket) => {
-    handleCloseCreateModal();
     if (newTicket) {
-      // Add the new ticket to the existing list immediately for smooth animation
-      // We assume new tickets should appear at the top.
-      setTickets(prevTickets => [newTicket, ...prevTickets]);
-      setNewlyCreatedTicketId(newTicket.id); // Set the ID for the animation
-      
-      // Clear the animation ID and then refresh tickets from server
-      // This ensures data consistency without a jarring immediate refresh.
-      const timer = setTimeout(() => {
-        setNewlyCreatedTicketId(null);
-        refreshTickets(); // Now refresh to get any other new tickets/changes
-      }, 1000); // Highlight for 1 second
-      return () => clearTimeout(timer);
+      setNewlyCreatedTicketId(newTicket.id); // Setea el ID para que la tarjeta se resalte
+      refreshTickets(); // Dispara una recarga completa de la lista de tickets del servidor
+      // El modal no se cierra aquí. Se cerrará en el useEffect de animación cuando la carga termine.
     } else {
-      // If no new ticket is returned (shouldn't happen with current action), just refresh
-      refreshTickets();
+      refreshTickets(); // Fallback: Si no hay ticket nuevo, solo recarga la lista
     }
-  }, [setTickets, refreshTickets]);
+  }, [refreshTickets]);
 
 
   const validTickets = React.useMemo(() => {
@@ -264,8 +245,8 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   }, [tickets]);
 
 
-  // Only show initial loader if it's the very first load and no tickets are present,
-  // and no filter skeleton is active from previous filter actions.
+  // Mostrar loader inicial si es la primera carga y no hay tickets,
+  // y no hay skeleton de filtro activo ni animación de ticket nuevo.
   if (isLoading && tickets.length === 0 && !fetchTicketsError && !showFilterSkeleton && newlyCreatedTicketId === null) { 
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
@@ -357,11 +338,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             <Button variant="outline" size="sm" onClick={handleClearFilters}>
               Limpiar Filtros
             </Button>
-            {/* The "Buscar Tickets" button is not needed if filtering is debounced/real-time */}
-            {/* <Button size="sm" onClick={handleTriggerFilter}> 
-              <SearchIcon className="h-4 w-4 mr-2" />
-              Buscar Tickets
-            </Button> */}
           </div>
         </div>
 
@@ -382,7 +358,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                   onSelectTicket={handleSelectTicket}
                   onTicketUpdatedInList={handleTicketUpdated}
                   isSelected={selectedTicket?.id === ticket.id && isDesktop} 
-                  isNew={newlyCreatedTicketId === ticket.id} // Pass new prop for animation
+                  isNew={newlyCreatedTicketId === ticket.id} 
                 />
               ))
             ) : (
@@ -450,9 +426,9 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
       <TicketModal
         isOpen={isCreateModalOpen}
-        onClose={handleCloseCreateModal}
+        onClose={handleCloseCreateModal} // Pasa el callback memoizado
         nextNroCaso={nextTicketNumber}
-        onFormSubmitSuccess={handleFormSubmitSuccessInModal} // Pass the modified handler
+        onFormSubmitSuccess={handleFormSubmitSuccessInModal} 
         empresasClientes={empresasClientes} 
         ubicacionesDisponibles={ubicacionesDisponibles} 
       />
