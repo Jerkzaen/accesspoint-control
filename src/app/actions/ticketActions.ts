@@ -1,12 +1,12 @@
 // src/app/actions/ticketActions.ts
-'use server';
+'use server'; // <--- ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ AL PRINCIPIO DEL ARCHIVO
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next"; 
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Asegúrate que la ruta sea correcta
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"; 
 import { PrioridadTicket, EstadoTicket, RoleUsuario } from "@prisma/client"; 
-import { Ticket } from '@/types/ticket'; // Importar la interfaz Ticket para el retorno
+import { Ticket } from '@/types/ticket'; 
 
 // Interfaz para el tipo de usuario esperado en la sesión (con id y rol)
 interface SessionUser {
@@ -21,7 +21,7 @@ interface SessionUser {
 // Actualizada para coincidir con los 'name' attributes del TicketFormInModal.tsx
 interface TicketFormInputFields {
   nroCaso: number;
-  fechaCreacion: string; // Ahora puede incluir la hora: YYYY-MM-DDTHH:MM
+  fechaCreacion: string; // Ahora puede incluir la hora:YYYY-MM-DDTHH:MM
   empresaClienteId?: string; // Ahora es el ID de EmpresaCliente, puede ser opcional
   tipoIncidente: string;    
   prioridad: string;        // El valor será una de las claves del Enum PrioridadTicket
@@ -84,8 +84,7 @@ export async function createNewTicketAction(
 
   const formInput: TicketFormInputFields = {
     nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
-    // CORRECCIÓN: Capturar fechaCreacion tal cual del formulario (YYYY-MM-DDTHH:MM)
-    fechaCreacion: formdata.get("fechaCreacion")?.toString() || new Date().toISOString().substring(0, 16), // substring para YYYY-MM-DDTHH:MM
+    fechaCreacion: formdata.get("fechaCreacion")?.toString() || new Date().toISOString().substring(0, 16), 
     empresaClienteId: formdata.get("empresaClienteId")?.toString() || undefined,
     tipoIncidente: formdata.get("tipoIncidente")?.toString() || "",
     prioridad: formdata.get("prioridad")?.toString() || "MEDIA", 
@@ -115,7 +114,6 @@ export async function createNewTicketAction(
     return { error: `Prioridad inválida: ${formInput.prioridad}. Valores permitidos: BAJA, MEDIA, ALTA, URGENTE.`, success: false };
   }
 
-  // CORRECCIÓN: Crear la fecha de creación directamente desde el string completo del formulario
   const fechaCreacionDate = new Date(formInput.fechaCreacion); 
   const fechaSolucionEstimadaDate = formInput.fechaSolucionEstimada ? new Date(formInput.fechaSolucionEstimada) : null;
 
