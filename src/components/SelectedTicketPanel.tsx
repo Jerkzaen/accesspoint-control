@@ -71,8 +71,8 @@ export default function SelectedTicketPanel({
 
   const combinedError = ticketEditorError || actionsManagerError;
 
-  const fechaActualizacionFormatted = selectedTicket?.fechaActualizacion
-    ? new Date(selectedTicket.fechaActualizacion).toLocaleString('es-CL', {
+  const fechaActualizacionFormatted = selectedTicket?.updatedAt // Cambiado de fechaActualizacion a updatedAt
+    ? new Date(selectedTicket.updatedAt).toLocaleString('es-CL', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     : 'N/A';
@@ -83,8 +83,8 @@ export default function SelectedTicketPanel({
       })
     : 'N/A';
 
-  const fechaSolucionFormatted = selectedTicket?.fechaSolucion
-    ? new Date(selectedTicket.fechaSolucion).toLocaleString('es-CL', {
+  const fechaSolucionFormatted = selectedTicket?.fechaSolucionReal // Cambiado de fechaSolucion a fechaSolucionReal
+    ? new Date(selectedTicket.fechaSolucionReal).toLocaleString('es-CL', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     : null;
@@ -210,9 +210,12 @@ export default function SelectedTicketPanel({
             <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
               <p><strong>Título:</strong> {selectedTicket.titulo}</p>
               <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
-              <p><strong>Ubicación:</strong> {selectedTicket.ubicacion}</p>
-              <p><strong>Técnico Asignado:</strong> {selectedTicket.tecnicoAsignado}</p>
-              <p><strong>Solicitante:</strong> {selectedTicket.solicitante}</p>
+              {/* CORRECCIÓN: Acceder a propiedades de UbicacionRelacion */}
+              <p><strong>Ubicación:</strong> {selectedTicket.ubicacion?.nombreReferencial || selectedTicket.ubicacion?.direccionCompleta || 'N/A'}</p>
+              {/* CORRECCIÓN: Acceder a propiedades de UsuarioBasico */}
+              <p><strong>Técnico Asignado:</strong> {selectedTicket.tecnicoAsignado?.name || selectedTicket.tecnicoAsignado?.email || 'No asignado'}</p>
+              {/* CORRECCIÓN: Usar solicitanteNombre */}
+              <p><strong>Solicitante:</strong> {selectedTicket.solicitanteNombre}</p>
               <p><strong>Prioridad:</strong> {selectedTicket.prioridad.toUpperCase()}</p>
               <p><strong>Fecha Creación:</strong> {fechaCreacionFormatted}</p>
               {fechaSolucionFormatted && <p><strong>Fecha Solución:</strong> {fechaSolucionFormatted}</p>}
@@ -242,7 +245,15 @@ export default function SelectedTicketPanel({
                       disabled={isProcessingAction}
                     />
                   ) : (
-                    <span className="font-medium flex-grow break-all pt-1">{act.fecha}: {act.descripcion}</span>
+                    <span className="font-medium flex-grow break-all pt-1">
+                      {new Date(act.fechaAccion).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}:{' '}
+                      {act.descripcion}
+                      {act.realizadaPor && (
+                        <span className="text-muted-foreground ml-1">
+                          (por: {act.realizadaPor.name || act.realizadaPor.email})
+                        </span>
+                      )}
+                    </span>
                   )}
                   <div className="flex-shrink-0 flex flex-col gap-1 items-end">
                     {editingActionId === act.id ? (

@@ -5,9 +5,9 @@ import { Ticket } from '@/types/ticket'; // Esta interfaz ya debería estar actu
 // Interfaz para los campos que son editables en el ticket principal
 // ACTUALIZADA con los nuevos nombres de campo
 export interface EditableTicketFields {
-  tecnicoAsignado: string; // Antes tecnico
+  tecnicoAsignado: string; // Espera el ID del técnico o un valor representativo
   prioridad: string;
-  solicitante: string;   // Antes contacto
+  solicitante: string;   // Espera el nombre del solicitante
   estado: string;
 }
 
@@ -23,36 +23,30 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Solo actualiza editableTicketData si estamos en modo edición.
-    // Si salimos del modo edición (isEditingTicket se vuelve false),
-    // editableTicketData se mantendrá con su último valor hasta que
-    // se vuelva a entrar en modo edición o se deseleccione el ticket.
     if (selectedTicket && isEditingTicket) {
       setEditableTicketData({
-        // ACTUALIZADO: Usar nuevos nombres de campo de selectedTicket
-        tecnicoAsignado: selectedTicket.tecnicoAsignado,
+        // CORRECCIÓN: Acceder a la propiedad de ID del técnico asignado o un string de fallback
+        tecnicoAsignado: selectedTicket.tecnicoAsignado?.id || 'No Asignado', // Pasa el ID si existe, o 'No Asignado'
         prioridad: selectedTicket.prioridad,
-        solicitante: selectedTicket.solicitante,
+        // CORRECCIÓN: Usar solicitanteNombre
+        solicitante: selectedTicket.solicitanteNombre,
         estado: selectedTicket.estado,
       });
     } else if (!selectedTicket) {
-      // Si no hay ticket seleccionado, salimos del modo edición y limpiamos los datos.
       setIsEditingTicket(false);
       setEditableTicketData(null);
     }
-    // La dependencia de isEditingTicket aquí es importante para que si
-    // externamente se cambia isEditingTicket a false, pero selectedTicket
-    // sigue siendo el mismo, no intentemos rellenar el formulario.
   }, [selectedTicket, isEditingTicket]);
 
 
   const startEditingTicket = useCallback(() => {
     if (selectedTicket) {
       setEditableTicketData({
-        // ACTUALIZADO: Usar nuevos nombres de campo de selectedTicket
-        tecnicoAsignado: selectedTicket.tecnicoAsignado,
+        // CORRECCIÓN: Acceder a la propiedad de ID del técnico asignado o un string de fallback
+        tecnicoAsignado: selectedTicket.tecnicoAsignado?.id || 'No Asignado', // Pasa el ID si existe, o 'No Asignado'
         prioridad: selectedTicket.prioridad,
-        solicitante: selectedTicket.solicitante,
+        // CORRECCIÓN: Usar solicitanteNombre
+        solicitante: selectedTicket.solicitanteNombre,
         estado: selectedTicket.estado,
       });
       setIsEditingTicket(true);
@@ -62,13 +56,9 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
 
   const cancelEditingTicket = useCallback(() => {
     setIsEditingTicket(false);
-    // No es necesario resetear editableTicketData aquí si no queremos perder los cambios no guardados
-    // al volver a entrar en modo edición para el mismo ticket.
-    // Si se selecciona otro ticket, el useEffect de arriba se encargará.
     setError(null);
   }, []);
 
-  // handleTicketInputChange debería funcionar como está, ya que 'field' será una key de la nueva EditableTicketFields
   const handleTicketInputChange = useCallback((field: keyof EditableTicketFields, value: string) => {
     setEditableTicketData(prev => {
       if (!prev) return null; // No debería pasar si isEditingTicket es true y hay un selectedTicket
@@ -86,14 +76,14 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
     setError(null);
 
     try {
-      // IMPORTANTE: El backend (API endpoint PUT /api/tickets/[id])
-      // ahora recibirá un cuerpo con { tecnicoAsignado, solicitante, prioridad, estado }
-      // y debe estar preparado para manejar estos nuevos nombres de campo.
-      // El archivo en el Canvas 'api_tickets_id_route_js_updated' ya está preparado para esto.
       const response = await fetch(`/api/tickets/${selectedTicket.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editableTicketData), // editableTicketData ahora tiene los nombres nuevos
+        // Asegúrate de que el backend pueda recibir el ID del técnico o el nombre del solicitante
+        // como un string si es lo que editableTicketData.tecnicoAsignado contiene.
+        // Si el backend espera un objeto para tecnicoAsignado, esta lógica debe ser revisada.
+        // Basado en el `route.js` que enviaste antes, el PUT de `/api/tickets/[id]` espera un string.
+        body: JSON.stringify(editableTicketData), 
       });
 
       if (!response.ok) {
@@ -101,9 +91,9 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
         throw new Error(errorData.message || 'Error al actualizar el ticket');
       }
 
-      const updatedTicketData: Ticket = await response.json(); // El backend debería devolver el ticket con los nuevos nombres
-      onTicketUpdated(updatedTicketData); // Notificar al componente padre
-      setIsEditingTicket(false); // Salir del modo edición después de guardar
+      const updatedTicketData: Ticket = await response.json(); 
+      onTicketUpdated(updatedTicketData); 
+      setIsEditingTicket(false); 
     } catch (err: any) {
       console.error("Error al actualizar ticket:", err);
       setError(err.message || "Ocurrió un error desconocido al guardar los cambios.");
@@ -121,6 +111,6 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
     cancelEditingTicket,
     handleTicketInputChange,
     saveTicketChanges,
-    setEditableTicketData, // Exponer por si se necesita manipulación más directa
+    setEditableTicketData,
   };
 }

@@ -70,7 +70,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
   };
 
   const formattedNumeroCaso = formatTicketNumber(ticket.numeroCaso);
-  const companyLogoUrl = getCompanyLogoUrl(ticket.empresa);
+  const companyNameForLogo = ticket.empresaCliente?.nombre;
+  const companyLogoUrl = getCompanyLogoUrl(companyNameForLogo);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!ticket) return;
@@ -125,29 +126,32 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           <div className="flex flex-col items-end gap-1 flex-shrink-0 sm:flex-row sm:items-center sm:gap-1.5">
             {/* 1. Empresa / Logo */}
             {companyLogoUrl ? (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={cn("w-12 p-0 flex items-center justify-center overflow-hidden rounded-md", commonBadgeHeight)}
               >
-                <Image 
-                  src={companyLogoUrl} 
-                  alt={`${ticket.empresa} logo`} 
+                <Image
+                  src={companyLogoUrl}
+                  // INICIO DE LA CORRECCIÓN PARA EL ERROR 'alt'
+                  // Se aseguró que 'alt' reciba un string simple para evitar el error de tipado.
+                  alt={companyNameForLogo ? `${companyNameForLogo} logo` : "Logo de la empresa"}
+                  // FIN DE LA CORRECCIÓN PARA EL ERROR 'alt'
                   width={48}
                   height={24}
                   className="object-cover w-full h-full"
                 />
               </Badge>
             ) : (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
               >
-                {ticket.empresa}
+                {companyNameForLogo || 'N/A'} {/* Usar companyNameForLogo aquí */}
               </Badge>
             )}
 
             {/* 2. Número de Caso */}
-            <Badge 
+            <Badge
               variant="secondary"
               className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
             >
@@ -187,14 +191,14 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
       <CardContent className={cn("space-y-1.5 pt-2 pb-3 px-4 sm:px-5", commonBadgeTextSize)}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
           <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente}</div>
-          <div><strong>Ubicación:</strong> {ticket.ubicacion}</div>
-          <div><strong>Técnico:</strong> {ticket.tecnicoAsignado}</div>
-          <div><strong>Contacto:</strong> {ticket.solicitante}</div>
+          <div><strong>Ubicación:</strong> {ticket.ubicacion?.nombreReferencial || ticket.ubicacion?.direccionCompleta || 'N/A'}</div>
+          <div><strong>Técnico:</strong> {ticket.tecnicoAsignado?.name || ticket.tecnicoAsignado?.email || 'No asignado'}</div>
+          <div><strong>Contacto:</strong> {ticket.solicitanteNombre}</div>
           <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDate}</div>
           <div>
             <strong>Prioridad:</strong>{' '}
-            <Badge 
-              variant={prioridadVariant} 
+            <Badge
+              variant={prioridadVariant}
               className={cn(commonBadgeTextSize, commonBadgeHeight, "px-2 py-0.5")}
             >
               {ticket.prioridad?.toUpperCase() || 'N/A'}
