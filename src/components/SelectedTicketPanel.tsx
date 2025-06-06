@@ -10,10 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit3, AlertTriangle, Loader2 } from 'lucide-react';
 import { Ticket, ActionEntry } from '@/types/ticket';
+// Importamos los enums necesarios para la interfaz EditableTicketFields
 import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from '@/components/ui/badge';
+// Importar los enums de Prisma
+import { EstadoTicket, PrioridadTicket } from '@prisma/client';
+
 
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
@@ -93,12 +97,16 @@ export default function SelectedTicketPanel({
     ? selectedTicket.fechaSolucionReal.toLocaleString('es-CL', commonDateTimeFormatOptions)
     : null;
 
-  const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (estado?.toLowerCase()) {
-      case 'abierto': return "default";
-      case 'cerrado': return "destructive";
-      case 'en progreso': return "secondary";
-      case 'pendiente': return "outline";
+  // CORRECCIÓN: getEstadoBadgeVariant ahora recibe el enum directamente
+  const getEstadoBadgeVariant = (estado: EstadoTicket): "default" | "secondary" | "destructive" | "outline" => {
+    switch (estado) { // Aquí 'estado' ya es un valor del enum
+      case EstadoTicket.ABIERTO: return "default";
+      case EstadoTicket.CERRADO: return "destructive";
+      case EstadoTicket.EN_PROGRESO: return "secondary";
+      case EstadoTicket.PENDIENTE_TERCERO: return "outline"; 
+      case EstadoTicket.PENDIENTE_CLIENTE: return "outline"; 
+      case EstadoTicket.RESUELTO: return "default"; 
+      case EstadoTicket.CANCELADO: return "destructive"; 
       default: return "outline";
     }
   };
@@ -166,10 +174,11 @@ export default function SelectedTicketPanel({
                 >
                   <SelectTrigger id="prioridadEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="baja">BAJA</SelectItem>
-                    <SelectItem value="media">MEDIA</SelectItem>
-                    <SelectItem value="alta">ALTA</SelectItem>
-                    <SelectItem value="urgente">URGENTE</SelectItem>
+                    {/* Asegurarse que los valores de los enums sean correctos */}
+                    <SelectItem value={PrioridadTicket.BAJA}>BAJA</SelectItem>
+                    <SelectItem value={PrioridadTicket.MEDIA}>MEDIA</SelectItem>
+                    <SelectItem value={PrioridadTicket.ALTA}>ALTA</SelectItem>
+                    <SelectItem value={PrioridadTicket.URGENTE}>URGENTE</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -192,10 +201,14 @@ export default function SelectedTicketPanel({
                 >
                   <SelectTrigger id="estadoEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Abierto">ABIERTO</SelectItem>
-                    <SelectItem value="En Progreso">EN PROGRESO</SelectItem>
-                    <SelectItem value="Cerrado">CERRADO</SelectItem>
-                    <SelectItem value="Pendiente">PENDIENTE</SelectItem>
+                    {/* Asegurarse que los valores de los enums sean correctos */}
+                    <SelectItem value={EstadoTicket.ABIERTO}>ABIERTO</SelectItem>
+                    <SelectItem value={EstadoTicket.EN_PROGRESO}>EN PROGRESO</SelectItem>
+                    <SelectItem value={EstadoTicket.PENDIENTE_TERCERO}>PENDIENTE (Tercero)</SelectItem>
+                    <SelectItem value={EstadoTicket.PENDIENTE_CLIENTE}>PENDIENTE (Cliente)</SelectItem>
+                    <SelectItem value={EstadoTicket.RESUELTO}>RESUELTO</SelectItem>
+                    <SelectItem value={EstadoTicket.CERRADO}>CERRADO</SelectItem>
+                    <SelectItem value={EstadoTicket.CANCELADO}>CANCELADO</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -214,11 +227,8 @@ export default function SelectedTicketPanel({
             <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
               <p><strong>Título:</strong> {selectedTicket.titulo}</p>
               <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
-              {/* CORRECCIÓN: Acceder a propiedades de UbicacionRelacion */}
               <p><strong>Ubicación:</strong> {selectedTicket.ubicacion?.nombreReferencial || selectedTicket.ubicacion?.direccionCompleta || 'N/A'}</p>
-              {/* CORRECCIÓN: Acceder a propiedades de UsuarioBasico */}
               <p><strong>Técnico Asignado:</strong> {selectedTicket.tecnicoAsignado?.name || selectedTicket.tecnicoAsignado?.email || 'No asignado'}</p>
-              {/* CORRECCIÓN: Usar solicitanteNombre */}
               <p><strong>Solicitante:</strong> {selectedTicket.solicitanteNombre}</p>
               <p><strong>Prioridad:</strong> {selectedTicket.prioridad.toUpperCase()}</p>
               <p><strong>Fecha Creación:</strong> {fechaCreacionFormatted}</p>
