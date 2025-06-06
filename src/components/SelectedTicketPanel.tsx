@@ -16,18 +16,23 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 // Importar los enums de Prisma
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
+// Importar el componente Skeleton
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
   onTicketUpdated: (updatedTicket: Ticket) => void;
   headerAndPagePaddingOffset?: string;
+  // Propiedad adicional para indicar si la carga global está activa y mostrar skeleton
+  isLoadingGlobal?: boolean; 
 }
 
 export default function SelectedTicketPanel({
   selectedTicket,
   onTicketUpdated,
   headerAndPagePaddingOffset = '100px',
+  isLoadingGlobal = false, // Valor por defecto
 }: SelectedTicketPanelProps) {
   
   const {
@@ -57,16 +62,29 @@ export default function SelectedTicketPanel({
     saveEditedAction,
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
-  if (!selectedTicket) {
+  // CORRECCIÓN: Si no hay ticket seleccionado O si la carga global está activa, mostrar skeleton
+  if (!selectedTicket || isLoadingGlobal) {
     return (
       <Card
         className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center"
         style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})`, maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }}
       >
-        <div className="text-sm text-muted-foreground text-center">
-          <Edit3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p>Selecciona un ticket de la lista</p>
-          <p>para ver sus detalles y acciones.</p>
+        {/* Usar un Skeleton para el estado sin ticket seleccionado o cargando */}
+        <div className="w-full h-full flex flex-col gap-4">
+          <Skeleton className="h-6 w-3/4" /> {/* Título simulado */}
+          <Skeleton className="h-4 w-1/2" />  {/* Subtítulo simulado */}
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <Skeleton className="h-20 w-full mt-4" /> {/* Descripción simulada */}
+          <Skeleton className="h-6 w-1/3 mt-4" /> {/* Sección bitácora */}
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" /> /* Acciones simuladas */
+          ))}
+          <Skeleton className="h-20 w-full mt-auto" /> {/* Nueva acción */}
         </div>
       </Card>
     );
@@ -74,17 +92,16 @@ export default function SelectedTicketPanel({
 
   const combinedError = ticketEditorError || actionsManagerError;
 
-  // CORRECCIÓN: Formatear fechas y horas a 24 horas y sin AM/PM
+  // Formatear fechas y horas a 24 horas y sin AM/PM
   const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hourCycle: 'h23' // Opción más robusta para formato de 24 horas
+    hourCycle: 'h23' 
   };
 
-  // Usar commonDateTimeFormatOptions para todas las fechas del panel, asegurando new Date()
   const fechaActualizacionFormatted = selectedTicket?.updatedAt
     ? new Date(selectedTicket.updatedAt).toLocaleString('es-CL', commonDateTimeFormatOptions)
     : 'N/A';
@@ -256,7 +273,7 @@ export default function SelectedTicketPanel({
                       disabled={isProcessingAction}
                     />
                   ) : (
-                    // CORRECCIÓN: Formatear fecha y hora a 24 horas y sin AM/PM en la bitácora
+                    // Formatear fecha y hora a 24 horas y sin AM/PM en la bitácora
                     <span className="font-medium flex-grow break-all pt-1">
                       {new Date(act.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)}:{' '}
                       {act.descripcion}
@@ -308,3 +325,4 @@ export default function SelectedTicketPanel({
     </Card>
   );
 }
+
