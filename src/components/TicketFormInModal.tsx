@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNewTicketAction } =%gt; "@/app/actions/ticketActions"; 
+import { createNewTicketAction } from "@/app/actions/ticketActions"; 
 import { AlertCircle, Loader2, CheckCircle } from "lucide-react"; 
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton"; 
 import { Ticket } from '@/types/ticket'; 
@@ -115,7 +115,9 @@ export function TicketFormInModal({
     submissionStartTimeRef.current = Date.now(); 
     setModalInternalState('loading'); 
     
-    formAction(new FormData(event.currentTarget));
+    // CORRECCIÓN CLAVE: Simplemente llama a formAction. No le pases argumentos explícitamente.
+    // formAction ya sabe cómo obtener los datos del formulario al que está vinculado.
+    formAction(new FormData(event.currentTarget)); // Pasa los datos del formulario explícitamente a formAction
     console.log('TicketFormInModal: Form Submitted. State -> Loading.');
   };
 
@@ -127,25 +129,21 @@ export function TicketFormInModal({
 
       if (elapsedTime < LOADING_PHASE_DURATION_MS) {
         loadingPhaseTimer = setTimeout(() => {
-          // Después de LOADING_PHASE_DURATION_MS, verifica la respuesta del servidor
           if (serverActionResponseRef.current) {
             if (serverActionResponseRef.current.success) {
               setModalInternalState('success');
               setDisplayMessage(serverActionResponseRef.current.message || 'Ticket creado con éxito.');
               console.log('TicketFormInModal: Loading phase timer finished. Transitioning to SUCCESS visual.');
             } else if (serverActionResponseRef.current.error) {
-              setModalInternalState('error'); // Transiciona a estado de error
+              setModalInternalState('error'); 
               setDisplayMessage(serverActionResponseRef.current.error || 'Error desconocido.');
               console.log('TicketFormInModal: Loading phase timer finished, server error detected. Transitioning to ERROR visual.');
             }
           } else {
-            // Si el tiempo de carga mínimo pasó pero el servidor no ha respondido,
-            // el modalInternalState permanece 'loading' y el spinner sigue girando.
             console.log('TicketFormInModal: Loading phase timer finished, server response still pending. Remaining in LOADING state.');
           }
         }, LOADING_PHASE_DURATION_MS - elapsedTime);
       } else {
-        // Si al entrar al useEffect ya pasaron los LOADING_PHASE_DURATION_MS:
         if (serverActionResponseRef.current) {
           if (serverActionResponseRef.current.success) {
             setModalInternalState('success');
@@ -157,13 +155,12 @@ export function TicketFormInModal({
             console.log('TicketFormInModal: Already past loading time, server response ERROR. Transitioning to ERROR visual immediately.');
           }
         }
-        // Si no hay respuesta del servidor, el modalInternalState se queda en 'loading'.
       }
     }
     return () => {
       if (loadingPhaseTimer) clearTimeout(loadingPhaseTimer);
     };
-  }, [modalInternalState, formState]); // Dependencia de formState para reaccionar a cambios en la respuesta del servidor
+  }, [modalInternalState, formState]); 
 
   // Efecto para la duración de la fase de 'success' o 'error' visual
   // y para la señal final al padre (`onCompletion` si fue éxito).
@@ -175,29 +172,26 @@ export function TicketFormInModal({
       const remainingTimeForTotal = totalAnimationTimeForVisual - elapsedTime;
 
       finalPhaseTimer = setTimeout(() => {
-        // Si fue un éxito, llamamos a onCompletion
         if (modalInternalState === 'success' && serverActionResponseRef.current?.success) {
-          onCompletion(serverActionResponseRef.current.ticket); // Emite el ticket creado
+          onCompletion(serverActionResponseRef.current.ticket); 
           console.log('TicketFormInModal: Animation completed. Calling onCompletion for success.');
         } else {
-          // Si fue un error o una finalización sin éxito, solo reseteamos sin llamar onCompletion
           console.log('TicketFormInModal: Animation completed for error/non-success. No onCompletion call.');
         }
         
-        // Resetear el estado interno del modal y el formulario
         formRef.current?.reset(); 
         setModalInternalState('form'); 
         setDisplayMessage('');
         submissionStartTimeRef.current = null;
         isSubmitting.current = false; 
-        serverActionResponseRef.current = null; // Limpiar la respuesta almacenada
+        serverActionResponseRef.current = null; 
         
       }, Math.max(0, remainingTimeForTotal)); 
     }
     return () => {
       if (finalPhaseTimer) clearTimeout(finalPhaseTimer);
     };
-  }, [modalInternalState, onCompletion, formState.ticket]); // Dependencia de formState.ticket para asegurar que el ticket sea el correcto
+  }, [modalInternalState, onCompletion, formState.ticket]); 
 
   // Efecto para restablecer el estado del modal cuando se abre o cierra (controlado por el padre)
   React.useEffect(() => {
@@ -206,7 +200,7 @@ export function TicketFormInModal({
       setDisplayMessage('');
       submissionStartTimeRef.current = null;
       isSubmitting.current = false; 
-      serverActionResponseRef.current = null; // Reinicia la referencia de respuesta
+      serverActionResponseRef.current = null; 
       console.log('TicketFormInModal: Modal opened by parent. Resetting state.');
     }
   }, [isModalOpen]);
