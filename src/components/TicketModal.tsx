@@ -1,22 +1,41 @@
+// src/components/TicketModal.tsx
 "use client";
 
 import * as React from "react";
 import { useEffect } from "react";
-import { TicketFormInModal } from "./TicketFormInModal"; // Ajusta la ruta si es necesario
+import { TicketFormInModal } from "./TicketFormInModal"; 
+
+// Definimos los tipos para las props aquí también para que TicketModal sepa qué esperar
+interface EmpresaClienteOption {
+  id: string;
+  nombre: string;
+}
+
+interface UbicacionOption {
+  id: string;
+  nombreReferencial: string | null;
+  direccionCompleta: string;
+}
 
 interface TicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   nextNroCaso: number;
   onFormSubmitSuccess: () => void;
+  // Nuevas props para pasar los datos a TicketFormInModal
+  empresasClientes: EmpresaClienteOption[];
+  ubicacionesDisponibles: UbicacionOption[];
 }
 
 export function TicketModal({ 
   isOpen, 
   onClose, 
   nextNroCaso, 
-  onFormSubmitSuccess 
+  onFormSubmitSuccess,
+  empresasClientes,      // Recibir la lista de empresas
+  ubicacionesDisponibles // Recibir la lista de ubicaciones
 }: TicketModalProps) {
+  
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -24,9 +43,13 @@ export function TicketModal({
       }
     };
     if (isOpen) {
+      document.body.style.overflow = 'hidden'; // Evitar scroll del body cuando el modal está abierto
       document.addEventListener('keydown', handleEsc);
+    } else {
+      document.body.style.overflow = 'unset';
     }
     return () => {
+      document.body.style.overflow = 'unset';
       document.removeEventListener('keydown', handleEsc);
     };
   }, [isOpen, onClose]);
@@ -35,20 +58,20 @@ export function TicketModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose} // Cierra el modal si se hace clic en el overlay
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose} 
     >
       <div 
-        className="bg-card dark:bg-gray-800 text-card-foreground w-full max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal lo cierre
+        className="bg-card dark:bg-slate-800 text-card-foreground w-full max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-hidden flex flex-col" // Añadido flex flex-col
+        onClick={(e) => e.stopPropagation()} 
       >
+        {/* TicketFormInModal ahora recibe las props necesarias */}
         <TicketFormInModal
           nextNroCaso={nextNroCaso}
-          onFormSubmitSuccess={() => {
-            onFormSubmitSuccess();
-            // onClose(); // El cierre ahora se maneja en onFormSubmitSuccess en la página del dashboard
-          }}
+          onFormSubmitSuccess={onFormSubmitSuccess}
           onCancel={onClose}
+          empresasClientes={empresasClientes}          // Pasar la prop
+          ubicacionesDisponibles={ubicacionesDisponibles} // Pasar la prop
         />
       </div>
     </div>

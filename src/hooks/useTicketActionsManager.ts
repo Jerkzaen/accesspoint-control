@@ -1,10 +1,15 @@
 // src/hooks/useTicketActionsManager.ts
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Ticket, ActionEntry } from '@/types/ticket'; // Asegúrate que la ruta a tus tipos sea correcta
+import { Ticket, ActionEntry, UsuarioBasico } from '@/types/ticket'; // Asegúrate que ActionEntry y UsuarioBasico estén bien definidos
+
+// Actualizar ActionEntry para que coincida con lo que devuelve la API
+interface ActionEntryWithUser extends ActionEntry {
+  realizadaPor?: UsuarioBasico | null; 
+}
 
 interface UseTicketActionsManagerProps {
   selectedTicket: Ticket | null;
-  onTicketUpdated: (updatedTicket: Ticket) => void; // Callback para notificar al padre
+  onTicketUpdated: (updatedTicket: Ticket) => void; 
 }
 
 export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: UseTicketActionsManagerProps) {
@@ -14,32 +19,20 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
   const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Parsear las acciones del ticket seleccionado
-  const actionsForSelectedTicket = useMemo((): ActionEntry[] => {
-    if (!selectedTicket || !selectedTicket.acciones) return [];
-    try {
-      const parsed = JSON.parse(selectedTicket.acciones);
-      if (Array.isArray(parsed)) {
-        return parsed.map(act => {
-          // Asegurar que cada acción tenga la estructura esperada
-          if (typeof act === 'object' && act !== null && typeof act.id === 'string') {
-            return {
-              id: act.id,
-              fecha: typeof act.fecha === 'string' ? act.fecha : new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }),
-              descripcion: typeof act.descripcion === 'string' ? act.descripcion : '',
-            };
-          }
-          return null;
-        }).filter(act => act !== null) as ActionEntry[];
-      }
-      return [];
-    } catch (e) {
-      console.error('Error al parsear acciones del ticket:', e);
-      return [];
+  // Las acciones ahora vendrán del ticket actualizado que incluye la relación 'acciones'
+  // y cada acción incluye 'realizadaPor'.
+  const actionsForSelectedTicket = useMemo((): ActionEntryWithUser[] => {
+    // El tipo Ticket en el frontend debe reflejar que 'acciones' es un array de objetos
+    // que ya vienen parseados desde la API, no un string JSON.
+    // Si tu API devuelve el ticket con `include: { acciones: { include: { realizadaPor: true } } }`
+    // entonces selectedTicket.acciones ya será el array correcto.
+    if (selectedTicket && Array.isArray(selectedTicket.acciones)) {
+      return selectedTicket.acciones as ActionEntryWithUser[]; // Castear si es necesario
     }
+    return [];
   }, [selectedTicket]);
 
-  // Resetear estados de edición cuando el ticket seleccionado cambia
+
   useEffect(() => {
     setNewActionDescription('');
     setEditingActionId(null);
@@ -47,7 +40,7 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
     setError(null);
   }, [selectedTicket]);
 
-  const startEditingAction = useCallback((action: ActionEntry) => {
+  const startEditingAction = useCallback((action: ActionEntryWithUser) => {
     setEditingActionId(action.id);
     setEditedActionDescription(action.descripcion);
     setError(null);
@@ -68,20 +61,12 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
     setIsProcessingAction(true);
     setError(null);
 
-    const newActionEntry: ActionEntry = {
-      id: crypto.randomUUID(), // Generar ID único en el cliente
-      fecha: new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }),
-      descripcion: newActionDescription.trim(),
-    };
-
-    const updatedActions = [...actionsForSelectedTicket, newActionEntry];
-
     try {
+      // Ahora solo enviamos la descripción de la nueva acción
       const response = await fetch(`/api/tickets/${selectedTicket.id}/accion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // El backend espera un objeto con una propiedad "acciones" que es el array completo
-        body: JSON.stringify({ acciones: updatedActions }),
+        body: JSON.stringify({ descripcion: newActionDescription.trim() }),
       });
 
       if (!response.ok) {
@@ -89,42 +74,42 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
         throw new Error(errorData.message || 'Error al agregar la acción');
       }
 
+      // La API ahora devuelve el ticket completo y actualizado con todas sus acciones
       const updatedTicketData: Ticket = await response.json();
-      onTicketUpdated(updatedTicketData); // Notificar al componente padre
-      setNewActionDescription(''); // Limpiar el campo después de agregar
+      onTicketUpdated(updatedTicketData); 
+      setNewActionDescription(''); 
     } catch (err: any) {
       console.error('Error al agregar acción:', err);
       setError(err.message || "Ocurrió un error desconocido al agregar la acción.");
     } finally {
       setIsProcessingAction(false);
     }
-  }, [selectedTicket, newActionDescription, actionsForSelectedTicket, onTicketUpdated]);
+  }, [selectedTicket, newActionDescription, onTicketUpdated]);
 
+  // La edición de una acción individual (PUT a /api/tickets/[id]/accion/[accionId])
+  // también necesitará ajustes si el backend cambia.
+  // Por ahora, asumimos que ese endpoint sigue funcionando como antes,
+  // pero idealmente también debería devolver el ticket actualizado.
   const saveEditedAction = useCallback(async () => {
     if (!selectedTicket || !editingActionId || !editedActionDescription.trim()) {
       setError("La descripción de la acción editada no puede estar vacía.");
       return;
     }
-
     setIsProcessingAction(true);
     setError(null);
-
     try {
-      // El endpoint PUT para editar una acción específica espera solo la descripción
       const response = await fetch(`/api/tickets/${selectedTicket.id}/accion/${editingActionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ descripcion: editedActionDescription.trim() }),
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
         throw new Error(errorData.message || 'Error al guardar la acción editada');
       }
-
       const updatedTicketData: Ticket = await response.json();
-      onTicketUpdated(updatedTicketData); // Notificar al componente padre
-      setEditingActionId(null); // Salir del modo edición de acción
+      onTicketUpdated(updatedTicketData);
+      setEditingActionId(null);
       setEditedActionDescription('');
     } catch (err: any) {
       console.error('Error al editar acción:', err);

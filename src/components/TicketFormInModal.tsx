@@ -25,14 +25,26 @@ import {
 } from "@/components/ui/select";
 import { createNewTicketAction } from "@/app/actions/ticketActions"; 
 import { AlertCircle, Loader2 } from "lucide-react"; 
-// Asegúrate de tener este componente FormSubmitButton o reemplázalo con un Button normal
-// y maneja el estado 'pending' de useFormStatus si es necesario.
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton"; 
+
+// Definir tipos para las props que vienen de la base de datos
+interface EmpresaClienteOption {
+  id: string;
+  nombre: string;
+}
+
+interface UbicacionOption {
+  id: string;
+  nombreReferencial: string | null; 
+  direccionCompleta: string;      
+}
 
 interface TicketFormInModalProps {
   nextNroCaso: number;
   onFormSubmitSuccess: () => void;
   onCancel: () => void;
+  empresasClientes: EmpresaClienteOption[];    
+  ubicacionesDisponibles: UbicacionOption[]; 
 }
 
 interface ActionState {
@@ -52,7 +64,9 @@ const initialState: ActionState = {
 export function TicketFormInModal({ 
   nextNroCaso, 
   onFormSubmitSuccess, 
-  onCancel 
+  onCancel,
+  empresasClientes,      
+  ubicacionesDisponibles 
 }: TicketFormInModalProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [formState, formAction] = useFormState(createNewTicketAction, initialState);
@@ -86,25 +100,30 @@ export function TicketFormInModal({
               <Input id="nroCasoModalDisplay" value={nextNroCaso} readOnly className="bg-muted dark:bg-gray-700"/>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="fechaCreacionModal">Fecha Reporte</Label> {/* Cambiado name a fechaCreacion */}
+              <Label htmlFor="fechaCreacionModal">Fecha Reporte</Label>
               <Input type="date" name="fechaCreacion" id="fechaCreacionModal" defaultValue={new Date().toISOString().split('T')[0]} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="empresaClienteModal">Empresa Cliente</Label>
-              {/* Asumiendo que pasarás el ID de la empresa cliente */}
-              <Select name="empresaClienteId" required> 
+              <Select name="empresaClienteId" /* Podrías hacerlo 'required' si es mandatorio */ > 
                 <SelectTrigger id="empresaClienteModal"><SelectValue placeholder="Seleccione Empresa Cliente" /></SelectTrigger>
                 <SelectContent>
-                  {/* Estos valores deberían ser los IDs de tus EmpresaCliente */}
-                  {/* Idealmente, cargar dinámicamente desde la BD */}
-                  <SelectItem value="id_achs_ejemplo">ACHS</SelectItem> 
-                  <SelectItem value="id_esachs_ejemplo">ESACHS</SelectItem>
-                  <SelectItem value="id_cmt_ejemplo">CMT</SelectItem>
+                  {/* Opción para no seleccionar, si el campo es opcional */}
+                  {/* <SelectItem value="ID_NULO_O_VACIO_PERO_NO_CADENA_VACIA" disabled>Ninguna</SelectItem>  // Ejemplo, pero mejor manejarlo con campo no requerido */}
+                  {empresasClientes && empresasClientes.length > 0 ? (
+                    empresasClientes.map(empresa => (
+                      <SelectItem key={empresa.id} value={empresa.id}>
+                        {empresa.nombre}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-empresas" disabled>No hay empresas para seleccionar</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="tipoIncidenteModal">Tipo de Incidente</Label> {/* Cambiado name a tipoIncidente */}
+              <Label htmlFor="tipoIncidenteModal">Tipo de Incidente</Label>
               <Select name="tipoIncidente" required defaultValue="Software"> 
                 <SelectTrigger id="tipoIncidenteModal"><SelectValue placeholder="Seleccione Tipo" /></SelectTrigger>
                 <SelectContent>
@@ -118,7 +137,7 @@ export function TicketFormInModal({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="prioridadModal">Prioridad</Label>
-              <Select name="prioridad" defaultValue="MEDIA" required> {/* Asegúrate que los values coincidan con tu Enum PrioridadTicket */}
+              <Select name="prioridad" defaultValue="MEDIA" required>
                 <SelectTrigger id="prioridadModal"><SelectValue placeholder="Prioridad" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BAJA">BAJA</SelectItem>
@@ -129,16 +148,25 @@ export function TicketFormInModal({
               </Select>
             </div>
             
-            {/* Selector de Técnico Asignado ELIMINADO */}
-            {/* El técnico se asignará automáticamente desde la sesión del usuario logueado en la Server Action */}
-
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="ubicacionModal">Ubicación (Ej: Oficina, Piso, Ciudad)</Label>
-              {/* Asumiendo que se refiere a un UbicacionId o a un texto libre. Si es ID, el name debería ser ubicacionId */}
-              <Input name="ubicacion" id="ubicacionModal" placeholder="Detalle de la ubicación" required />
+              <Label htmlFor="ubicacionIdModal">Ubicación</Label>
+              <Select name="ubicacionId" /* No es 'required' para permitir no seleccionar */ > 
+                <SelectTrigger id="ubicacionIdModal"><SelectValue placeholder="Seleccione Ubicación (Opcional)" /></SelectTrigger>
+                <SelectContent>
+                  {/* Ya no se incluye el <SelectItem value="">...</em></SelectItem> problemático */}
+                  {ubicacionesDisponibles && ubicacionesDisponibles.length > 0 ? (
+                    ubicacionesDisponibles.map(ubicacion => (
+                      <SelectItem key={ubicacion.id} value={ubicacion.id}>
+                        {ubicacion.nombreReferencial || ubicacion.direccionCompleta}
+                      </SelectItem>
+                    ))
+                  ) : (
+                     <SelectItem value="no-ubicaciones" disabled>No hay ubicaciones para seleccionar</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             
-            {/* Información del Solicitante */}
             <div className="md:col-span-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 mt-3 border-t pt-3">Información del Solicitante:</div>
             
             <div className="space-y-1.5">
@@ -153,16 +181,15 @@ export function TicketFormInModal({
               <Label htmlFor="solicitanteCorreoModal">Correo Solicitante (Opcional)</Label>
               <Input type="email" name="solicitanteCorreo" id="solicitanteCorreoModal" placeholder="Ej: contacto@empresa.com" />
             </div>
-            {/* Podrías añadir aquí un Select para 'solicitanteClienteId' si quieres vincular a un Cliente existente */}
             
             <div className="md:col-span-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 mt-3 border-t pt-3">Detalles del Ticket:</div>
 
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="tituloModal">Título del Ticket (Resumen Breve)</Label> {/* Cambiado name a titulo */}
+              <Label htmlFor="tituloModal">Título del Ticket</Label>
               <Input name="titulo" id="tituloModal" placeholder="Ej: Impresora no enciende en Contabilidad" required />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="descripcionDetalladaModal">Descripción Detallada del Problema</Label> {/* Cambiado name a descripcionDetallada */}
+              <Label htmlFor="descripcionDetalladaModal">Descripción Detallada</Label>
               <Textarea name="descripcionDetallada" id="descripcionDetalladaModal" placeholder="Proporciona todos los detalles relevantes..." rows={4}/>
             </div>
             <div className="md:col-span-2 space-y-1.5">
@@ -184,3 +211,4 @@ export function TicketFormInModal({
     </Card>
   );
 }
+
