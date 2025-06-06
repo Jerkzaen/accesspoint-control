@@ -92,24 +92,33 @@ export async function PUT(request, { params }) {
     }
     
     if (estado !== undefined) {
-      // INICIO DE LA CORRECCIÓN: Convertir el string de estado a su valor de enum correspondiente
-      // Asegúrate de que los strings del frontend coincidan con los nombres de los enums de Prisma
+      // INICIO DE LA CORRECCIÓN: Los case del switch deben coincidir EXACTAMENTE con los valores del enum de Prisma (TODO EN MAYÚSCULAS)
       switch (estado) {
-        case "Abierto":
+        case EstadoTicket.ABIERTO: // Corregido: usar EstadoTicket.ABIERTO
           dataToUpdateInDb.estado = EstadoTicket.ABIERTO;
           break;
-        case "En Progreso":
+        case EstadoTicket.EN_PROGRESO: // Corregido: usar EstadoTicket.EN_PROGRESO
           dataToUpdateInDb.estado = EstadoTicket.EN_PROGRESO;
           break;
-        case "Cerrado":
+        case EstadoTicket.CERRADO: // Corregido: usar EstadoTicket.CERRADO
           dataToUpdateInDb.estado = EstadoTicket.CERRADO;
           break;
-        case "Pendiente":
-          dataToUpdateInDb.estado = EstadoTicket.PENDIENTE;
+        case EstadoTicket.PENDIENTE_TERCERO: // Corregido: usar EstadoTicket.PENDIENTE_TERCERO
+          dataToUpdateInDb.estado = EstadoTicket.PENDIENTE_TERCERO;
+          break;
+        case EstadoTicket.PENDIENTE_CLIENTE: // Corregido: usar EstadoTicket.PENDIENTE_CLIENTE
+          dataToUpdateInDb.estado = EstadoTicket.PENDIENTE_CLIENTE;
+          break;
+        case EstadoTicket.RESUELTO: // Corregido: usar EstadoTicket.RESUELTO
+          dataToUpdateInDb.estado = EstadoTicket.RESUELTO;
+          break;
+        case EstadoTicket.CANCELADO: // Corregido: usar EstadoTicket.CANCELADO
+          dataToUpdateInDb.estado = EstadoTicket.CANCELADO;
           break;
         default:
-          // Si el estado no coincide con ningún enum, puedes lanzar un error o ignorarlo
           console.warn(`Estado inválido recibido: ${estado}. Se ignorará la actualización de estado.`);
+          // Si el estado no coincide con ningún enum válido, podrías lanzar un error
+          // throw new Error(`Valor de estado no reconocido: ${estado}`);
           break;
       }
       // FIN DE LA CORRECCIÓN
