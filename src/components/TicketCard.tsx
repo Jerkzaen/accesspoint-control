@@ -47,7 +47,6 @@ interface TicketCardProps {
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
-  // Desestructurar propiedades de useTickets()
   const {
     tickets,
     setTickets,
@@ -67,27 +66,23 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [estadoFilter, setEstadoFilter] = React.useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all'); 
   const [prioridadFilter, setPrioridadFilter] = React.useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
 
-  // Estado para el texto de búsqueda con debounce
   const [debouncedSearchText, setDebouncedSearchText] = React.useState(searchText);
-  // Estado para controlar el delay del skeleton
   const [showLoadingSkeletons, setShowLoadingSkeletons] = React.useState(false);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
-  // Efecto para aplicar debounce al searchText
   React.useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchText(searchText);
-    }, 500); // Retraso de 500ms
+    }, 500); 
 
     return () => {
       clearTimeout(handler);
     };
-  }, [searchText]); // Solo se ejecuta cuando searchText cambia
+  }, [searchText]);
 
   // Efecto para aplicar filtros cuando el texto de búsqueda debounced cambia
   React.useEffect(() => {
-    // Solo aplicar filtro si el texto debounced es diferente al actual, o si es la carga inicial
     if (debouncedSearchText !== currentFilters.searchText) {
       applyFilters({
         searchText: debouncedSearchText.trim(),
@@ -97,13 +92,23 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     }
   }, [debouncedSearchText, applyFilters, estadoFilter, prioridadFilter, currentFilters.searchText]);
 
+  // CORRECCIÓN: Deseleccionar el ticket si la lista filtrada queda vacía
+  React.useEffect(() => {
+    // Si la lista de tickets ya cargó (no está isLoading) y está vacía
+    // y hay un ticket seleccionado, entonces deselecciónalo.
+    if (!isLoading && tickets.length === 0 && selectedTicket) {
+      setSelectedTicket(null);
+    }
+  }, [isLoading, tickets, selectedTicket]);
+
+
   // Efecto para controlar el delay del skeleton
   React.useEffect(() => {
     let delayTimer: NodeJS.Timeout;
     if (isLoading) {
       delayTimer = setTimeout(() => {
         setShowLoadingSkeletons(true);
-      }, 1000); // Mostrar skeletons después de 1 segundo
+      }, 1000); 
     } else {
       setShowLoadingSkeletons(false);
     }
@@ -134,7 +139,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
         console.error("Error al cargar el siguiente número de ticket:", err);
       }
     };
-    if (isCreateModalOpen || (tickets && tickets.length === 0)) { // Verificación adicional para tickets
+    if (isCreateModalOpen || (tickets && tickets.length === 0)) { 
       fetchNextTicketNumber();
     }
   }, [isCreateModalOpen, tickets]);
@@ -148,7 +153,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
-    setSelectedTicket(null); // Deseleccionar ticket al cerrar la sheet
+    setSelectedTicket(null); 
   };
 
   const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
@@ -161,23 +166,21 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   }, [selectedTicket, setTickets]);
 
   const handleApplyFilters = () => {
-    // Si se hace clic en el botón, el debounce se ignora para esta acción
     applyFilters({
       searchText: searchText.trim(),
       estado: estadoFilter === 'all' ? undefined : estadoFilter,
       prioridad: prioridadFilter === 'all' ? undefined : prioridadFilter,
     });
-    setDebouncedSearchText(searchText); // Sincroniza el debounced con el searchText actual inmediatamente
+    setDebouncedSearchText(searchText);
   };
 
   const handleClearFilters = () => {
     setSearchText('');
     setEstadoFilter('all');
     setPrioridadFilter('all');
-    // Actualizar también el debounced para que el filtro se aplique
     setDebouncedSearchText(''); 
     applyFilters({});
-    setSelectedTicket(null); // Deseleccionar cualquier ticket al limpiar filtros
+    setSelectedTicket(null); 
   };
 
   const handleOpenCreateModal = () => {
@@ -193,13 +196,11 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     refreshTickets();
   };
 
-  // Filtrar tickets para asegurar que tienen fechaCreacion antes de mapear
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
     return tickets.filter(t => t && t.fechaCreacion); 
   }, [tickets]);
 
-  // Si hay un error de carga, mostramos el mensaje de error completo
   if (fetchTicketsError) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-red-600 dark:text-red-400">
@@ -269,7 +270,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                   <SelectValue placeholder="Todas las prioridades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos las prioridades</SelectItem>
+                  <SelectItem value="all">Todas las prioridades</SelectItem>
                   <SelectItem value={PrioridadTicket.BAJA}>BAJA</SelectItem>
                   <SelectItem value={PrioridadTicket.MEDIA}>MEDIA</SelectItem>
                   <SelectItem value={PrioridadTicket.ALTA}>ALTA</SelectItem>
@@ -294,8 +295,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2" 
           style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}
         >
-          {/* INICIO DE LA CORRECCIÓN: Mostrar Skeletons o la lista de tickets */}
-          {showLoadingSkeletons ? ( // Si showLoadingSkeletons es true, mostrar skeletons
+          {showLoadingSkeletons ? ( 
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => ( 
                 <Skeleton key={i} className="h-[120px] w-full rounded-lg" /> 
@@ -316,13 +316,12 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
               <p>No hay tickets para mostrar con los filtros actuales.</p>
             </div>
           )}
-          {/* FIN DE LA CORRECCIÓN */}
         </div>
       </div>
 
       {isDesktop ? (
-        // INICIO DE LA CORRECCIÓN: Mostrar Skeleton para el panel de la derecha si no hay ticket seleccionado O si está cargando
-        (isLoading && !selectedTicket) || (selectedTicket && showLoadingSkeletons) ? (
+        // Mostrar Skeleton para el panel de la derecha si no hay ticket seleccionado O si está cargando
+        (showLoadingSkeletons || (tickets.length === 0 && !selectedTicket)) ? ( // Asegurar que isLoadingGlobal se use aquí
           <div className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%] p-4 flex items-center justify-center"
                style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}>
             <Skeleton className="h-full w-full rounded-lg" />
@@ -335,16 +334,18 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
               selectedTicket={selectedTicket} 
               onTicketUpdated={handleTicketUpdated}
               headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
+              // Pasar isLoadingGlobal a SelectedTicketPanel para que sepa si la lista principal está cargando
+              isLoadingGlobal={showLoadingSkeletons} 
             />
           </div>
         ) : (
           <div className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%] p-4 flex flex-col items-center justify-center text-sm text-muted-foreground text-center"
                style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}>
             <FilterIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>Selecciona un ticket o aplica un filtro para ver los detalles.</p>
+            <p>Selecciona un ticket para ver sus detalles.</p>
+            <p>O aplica un filtro para encontrar tickets.</p>
           </div>
         )
-        // FIN DE LA CORRECCIÓN
       ) : (
         <Sheet open={isSheetOpen} onOpenChange={(open) => {
           if (!open) {
@@ -376,6 +377,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
                       selectedTicket={selectedTicket} 
                       onTicketUpdated={handleTicketUpdated}
                       headerAndPagePaddingOffset="0px"
+                      isLoadingGlobal={showLoadingSkeletons} // También pasar a la versión móvil si es necesario
                     />
                   ) : (
                     <div className="p-4 text-sm text-muted-foreground">Cargando detalles o datos incompletos...</div>
