@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { useRef, useEffect, useState } from "react"; 
-import { useFormState } from "react-dom"; 
+import { useFormState, useFormStatus } from "react-dom"; // Importar useFormStatus
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createNewTicketAction } from "@/app/actions/ticketActions"; 
-import { AlertCircle, Loader2, CheckCircle } from "lucide-react"; // Added CheckCircle icon
+import { AlertCircle, Loader2, CheckCircle } from "lucide-react"; 
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton"; 
 import { Ticket } from '@/types/ticket'; 
 
@@ -81,44 +81,25 @@ export function TicketFormInModal({
   const [modalInternalState, setModalInternalState] = useState<ModalInternalState>('form');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
+  // Hook para obtener el estado de envío del formulario
+  const { pending } = useFormStatus();
+
   // Efecto para gestionar las transiciones de estado interno del modal
-  // Se activa al enviar el formulario (inicia la carga), al recibir éxito o error de la acción del servidor
   React.useEffect(() => {
-    // Si la acción del formulario está en proceso (loading), cambiar a estado 'loading' del modal.
-    // Usamos el 'pending' del hook useFormStatus para saber si el formulario está en envío,
-    // pero como no podemos llamarlo aquí, asumimos que cualquier acción que no sea 'success' o 'error'
-    // es un estado intermedio de carga, o que el 'pending' se maneja por el botón.
-    // Para simplificar la integración con useFormState, nos enfocamos en el resultado de la acción.
-    if (formState.success) {
+    if (pending) {
+      setModalInternalState('loading'); // Si el formulario está en proceso de envío, mostrar loader
+    } else if (formState.success) {
       setSuccessMessage(formState.message || 'Ticket creado con éxito.');
-      setModalInternalState('success');
+      setModalInternalState('success'); // Si la acción fue exitosa, mostrar éxito
     } else if (formState.error) {
       setSuccessMessage(''); // Limpiar mensaje de éxito previo
-      setModalInternalState('form'); // Volver al estado del formulario en caso de error
+      setModalInternalState('form'); // En caso de error, volver al formulario
     } else {
-      // Si no es éxito ni error, y se acaba de disparar una acción (no es el estado inicial),
-      // asumimos que está cargando.
-      // Esta lógica es un poco más robusta para manejar el 'loading' interno del modal
-      // sin depender directamente de `formState.pending` que no existe.
-      if (formState.message === undefined && formState.error === undefined && formState.success === undefined) {
-         setModalInternalState('form'); // Al inicializar o resetear, volvemos a 'form'
-      } else {
-         // Si hay algún cambio en formState (que no sea éxito/error inmediato)
-         // y no es el estado inicial, podría ser un estado de carga.
-         // Sin embargo, para la animación de "loading" mientras el formulario se envía,
-         // usaremos un estado directamente ligado al envío.
-         // Para este `useEffect`, solo nos importa la transición a 'success' o 'form' (en error).
-      }
+        // Al inicializar o cuando el formulario no está pendiente y no hay éxito/error,
+        // asegurar que el estado interno sea 'form'. Esto es crucial para el reset.
+        setModalInternalState('form');
     }
-  }, [formState]);
-
-  // Efecto para manejar la transición a 'loading' cuando la acción se dispara.
-  // Esto se activa al hacer submit, antes de que formState.success/error se definan.
-  // Es una aproximación al `formState.pending` que no podemos acceder directamente aquí.
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    setModalInternalState('loading'); // Cambiar a estado de carga inmediatamente al enviar
-    formAction(new FormData(event.currentTarget)); // Llamar a la acción con el FormData
-  };
+  }, [pending, formState]); // Depende de `pending` y `formState`
 
 
   // Efecto para activar el callback final y resetear después del estado de éxito
@@ -127,9 +108,8 @@ export function TicketFormInModal({
       const delayBeforeClosing = 2000; // Duración para mostrar mensaje de éxito + buffer
       const timer = setTimeout(() => {
         onFormSubmitSuccess(formState.ticket); // Disparar callback padre con nuevo ticket
-        // Resetear formulario y estado interno para próxima apertura potencial
-        formRef.current?.reset();
-        setModalInternalState('form'); // Resetear a estado 'form'
+        formRef.current?.reset(); // Resetear formulario
+        setModalInternalState('form'); // Resetear a estado 'form' para la próxima apertura
         setSuccessMessage('');
       }, delayBeforeClosing);
 
@@ -150,16 +130,14 @@ export function TicketFormInModal({
   };
 
   // Determinar ancho/alto dinámico para transiciones del modal
-  // El ancho 'w-full' para formulario/éxito (max-w-2xl lo controla el padre)
-  // 'w-40' y 'h-40' para el estado de carga
-  const modalWidth = modalInternalState === 'loading' ? 'w-40' : 'w-full'; 
-  const modalHeight = modalInternalState === 'loading' ? 'h-40' : 'max-h-[90vh]'; 
+  const modalWidth = modalInternalState === 'loading' ? 'w-40' : (modalInternalState === 'success' ? 'w-full max-w-sm' : 'w-full'); 
+  const modalHeight = modalInternalState === 'loading' ? 'h-40' : (modalInternalState === 'success' ? 'h-fit' : 'max-h-[90vh]'); 
 
   // Clases CSS para transiciones suaves de tamaño y justificación
   const cardClasses = `
     transition-all duration-300 ease-in-out 
     ${modalWidth} ${modalHeight}
-    ${modalInternalState === 'loading' ? 'flex items-center justify-center p-4' : 'flex flex-col'}
+    ${modalInternalState === 'loading' || modalInternalState === 'success' ? 'flex items-center justify-center p-4' : 'flex flex-col'}
   `;
 
   return (
@@ -172,8 +150,8 @@ export function TicketFormInModal({
                     <CardDescription>Ingresa la información detallada del problema.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow overflow-y-auto p-4 sm:p-6">
-                    {/* El formulario ahora usa onSubmit y llama a handleFormSubmit */}
-                    <form onSubmit={handleFormSubmit} className="space-y-6">
+                    {/* El formulario ahora usa directamente la acción del servidor */}
+                    <form action={formAction} className="space-y-6"> {/* <--- CORRECCIÓN AQUÍ: `action={formAction}` */}
                         <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
                         {formState?.error && (
@@ -289,7 +267,7 @@ export function TicketFormInModal({
                         </div>
                         
                         <CardFooter className="px-0 pt-6 flex justify-end gap-3 flex-shrink-0">
-                            <Button variant="outline" type="button" onClick={onCancel} disabled={modalInternalState === 'loading'}>Cancelar</Button>
+                            <Button variant="outline" type="button" onClick={onCancel} disabled={pending}>Cancelar</Button> {/* <--- CORRECCIÓN AQUÍ: `disabled={pending}` */}
                             {/* FormSubmitButton ya maneja su propio estado 'pending' */}
                             <FormSubmitButton>Guardar Ticket</FormSubmitButton>
                         </CardFooter>
