@@ -75,6 +75,43 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
+  // ***********************************************
+  // Funciones y Callbacks
+  // Se mueven las declaraciones de funciones y callbacks al inicio del componente
+  // para que sean accesibles antes de su uso en los `useEffect`.
+  // ***********************************************
+
+  const handleCloseCreateModal = React.useCallback(() => { 
+    setIsCreateModalOpen(false);
+  }, []);
+  
+  const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
+    setTickets(prevTickets =>
+      prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
+    );
+    if (selectedTicket?.id === updatedTicket.id) {
+      setSelectedTicket(updatedTicket);
+    }
+  }, [selectedTicket, setTickets]);
+
+  const handleTicketFormCompletion = React.useCallback((newTicket?: Ticket) => {
+    if (newTicket) {
+      setNewlyCreatedTicketId(newTicket.id); // Setea el ID para que la tarjeta se resalte
+      refreshTickets(); // Dispara una recarga completa de la lista de tickets del servidor
+      // El cierre del modal y el borrado del highlight se gestionan en el useEffect principal
+    } else {
+      // Si la acción del formulario no retornó un ticket (ej. hubo un error interno no capturado),
+      // solo recargamos y cerramos el modal.
+      refreshTickets(); 
+      handleCloseCreateModal(); // Cierra el modal si no hay ticket nuevo para resaltar
+    }
+  }, [refreshTickets, handleCloseCreateModal]);
+
+
+  // ***********************************************
+  // Efectos de React (useEffect)
+  // ***********************************************
+
   // Efecto para aplicar debounce al searchText
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -186,6 +223,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     }
   }, [isCreateModalOpen, tickets, isLoading, fetchTicketsError, showFilterSkeleton, newlyCreatedTicketId]);
 
+  // ***********************************************
+  // Manejadores de Eventos
+  // ***********************************************
+
   const handleSelectTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     if (!isDesktop) {
@@ -196,15 +237,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const handleCloseSheet = () => {
     setIsSheetOpen(false);
   };
-
-  const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
-    setTickets(prevTickets =>
-      prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
-    );
-    if (selectedTicket?.id === updatedTicket.id) {
-      setSelectedTicket(updatedTicket);
-    }
-  }, [selectedTicket, setTickets]);
 
   const handleTriggerFilter = () => {
     setDebouncedSearchText(searchText); 
@@ -223,24 +255,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setIsCreateModalOpen(true);
   };
 
-  const handleCloseCreateModal = React.useCallback(() => { 
-    setIsCreateModalOpen(false);
-  }, []);
-  
-  // MODIFICADO: Nuevo callback que se activa cuando TicketFormInModal ha COMPLETADO su animación
-  const handleTicketFormCompletion = React.useCallback((newTicket?: Ticket) => {
-    if (newTicket) {
-      setNewlyCreatedTicketId(newTicket.id); // Setea el ID para que la tarjeta se resalte
-      refreshTickets(); // Dispara una recarga completa de la lista de tickets del servidor
-      // El cierre del modal y el borrado del highlight se gestionan en el useEffect principal
-    } else {
-      // Si la acción del formulario no retornó un ticket (ej. hubo un error interno no capturado),
-      // solo recargamos y cerramos el modal.
-      refreshTickets(); 
-      handleCloseCreateModal(); // Cierra el modal si no hay ticket nuevo para resaltar
-    }
-  }, [refreshTickets, handleCloseCreateModal]);
 
+  // ***********************************************
+  // Memoizaciones
+  // ***********************************************
 
   const validTickets = React.useMemo(() => {
     if (!tickets) return [];
@@ -251,6 +269,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     });
   }, [tickets]);
 
+
+  // ***********************************************
+  // Renderizado Condicional
+  // ***********************************************
 
   if (isLoading && tickets.length === 0 && !fetchTicketsError && !showFilterSkeleton && newlyCreatedTicketId === null) { 
     return (
@@ -383,7 +405,7 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           <SelectedTicketPanel
             selectedTicket={selectedTicket} 
             onTicketUpdated={handleTicketUpdated}
-            headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
+            headerAndPagePaddingOffset={HEADER_AND_PAGE_OFFSET}
           />
         </div>
       )}
@@ -433,7 +455,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
         isOpen={isCreateModalOpen}
         onClose={handleCloseCreateModal} 
         nextNroCaso={nextTicketNumber}
-        // MODIFICADO: Pasa el nuevo callback onCompletion a TicketModal
         onCompletion={handleTicketFormCompletion} 
         empresasClientes={empresasClientes} 
         ubicacionesDisponibles={ubicacionesDisponibles} 
