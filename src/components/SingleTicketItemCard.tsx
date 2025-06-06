@@ -62,12 +62,14 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     default: prioridadVariant = "outline";
   }
 
-  const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (estado?.toLowerCase()) {
-      case 'abierto': return "default";
-      case 'cerrado': return "destructive";
-      case 'en progreso': return "secondary";
-      case 'pendiente': return "outline";
+  // CORRECCIÓN: getEstadoBadgeVariant ahora usa los valores del enum directamente
+  // para mapear el color de la insignia (Badge).
+  const getEstadoBadgeVariant = (estado: EstadoTicket): "default" | "secondary" | "destructive" | "outline" => {
+    switch (estado) { // Aquí 'estado' ya es un valor del enum
+      case EstadoTicket.ABIERTO: return "default";
+      case EstadoTicket.CERRADO: return "destructive";
+      case EstadoTicket.EN_PROGRESO: return "secondary";
+      case EstadoTicket.PENDIENTE: return "outline";
       default: return "outline";
     }
   };
@@ -163,7 +165,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  variant={getEstadoBadgeVariant(ticket.estado)}
+                  variant={getEstadoBadgeVariant(ticket.estado)} // Aquí se usa el valor del enum directamente
                   className={cn("whitespace-nowrap cursor-pointer flex items-center w-full justify-center sm:w-auto", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
                   size="sm"
                   disabled={isUpdatingStatus}
@@ -175,7 +177,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               <PopoverContent className="w-auto p-2">
                 <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
                 <div className="flex flex-col gap-1">
-                  {/* CORRECCIÓN FINAL: Usar los valores del enum EstadoTicket con sus nombres correctos (todo mayúsculas, guion bajo) */}
+                  {/* Estos botones ya estaban bien, usando los miembros del enum directamente */}
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.ABIERTO)}>Abierto</Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.EN_PROGRESO)}>En Progreso</Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.CERRADO)}>Cerrado</Button>
