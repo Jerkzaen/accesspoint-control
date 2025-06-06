@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next"; 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Asegúrate que la ruta sea correcta
 import { PrioridadTicket, EstadoTicket, RoleUsuario } from "@prisma/client"; 
+import { Ticket } from '@/types/ticket'; // Importar la interfaz Ticket para el retorno
 
 // Interfaz para el tipo de usuario esperado en la sesión (con id y rol)
 interface SessionUser {
@@ -39,6 +40,7 @@ interface ActionState {
   success?: boolean;
   message?: string;
   ticketId?: string;
+  ticket?: Ticket; // Añadir el objeto Ticket completo aquí
 }
 
 export async function loadLastTicketNro(): Promise<number> {
@@ -144,12 +146,46 @@ export async function createNewTicketAction(
       }
       return createdTicket;
     });
+    // CORRECCIÓN: Re-fetch del ticket creado con todas sus relaciones para devolverlo completo
+    const fullCreatedTicket = await prisma.ticket.findUnique({
+      where: { id: newTicket.id },
+      include: {
+        acciones: { // Asegúrate de incluir las acciones
+          orderBy: { fechaAccion: 'asc' },
+          include: {
+            realizadaPor: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            }
+          }
+        },
+        empresaCliente: { select: { id: true, nombre: true } },
+        ubicacion: { select: { id: true, nombreReferencial: true, direccionCompleta: true } },
+        tecnicoAsignado: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    if (!fullCreatedTicket) {
+      // Debería ser raro que no se encuentre, pero es una buena práctica
+      console.warn(`Ticket ${newTicket.id} no encontrado después de la creación/transacción. Revalidación podría no ser perfecta.`);
+      revalidatePath("/tickets/dashboard");
+      return { 
+        success: true, 
+        message: `Ticket #${newTicket.numeroCaso} creado exitosamente, pero con datos incompletos.`, 
+        ticketId: newTicket.id 
+      };
+    }
 
     revalidatePath("/tickets/dashboard"); // O la ruta que quieras revalidar
+    // Devolver el ticket completo para que el frontend lo use
     return { 
       success: true, 
       message: `Ticket #${newTicket.numeroCaso} creado exitosamente. Técnico asignado: ${currentUser.name || currentUser.email}.`, 
-      ticketId: newTicket.id 
+      ticketId: newTicket.id,
+      ticket: fullCreatedTicket // Pasa el objeto Ticket completo
     };
   } catch (error: any) {
     console.error("Error al crear ticket en Prisma:", error);
