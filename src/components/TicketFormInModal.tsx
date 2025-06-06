@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNewTicketAction } from "@/app/actions/ticketActions"; 
+import { createNewTicketAction } =%gt; "@/app/actions/ticketActions"; 
 import { AlertCircle, Loader2, CheckCircle } from "lucide-react"; 
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton"; 
 import { Ticket } from '@/types/ticket'; 
@@ -65,11 +65,12 @@ const initialState: ActionState = {
   ticket: undefined,
 };
 
-type ModalInternalState = 'form' | 'loading' | 'success';
+type ModalInternalState = 'form' | 'loading' | 'success' | 'error'; // Added 'error' state for explicit visual handling
 
 // Duraciones de las fases de animación en milisegundos (puedes ajustar estos valores)
 const LOADING_PHASE_DURATION_MS = 3000; // Duración del spinner
 const SUCCESS_MESSAGE_DISPLAY_DURATION_MS = 2000; // Duración que el mensaje de éxito se mantiene visible
+// La duración total es la suma de las fases.
 const TOTAL_ANIMATION_DURATION_MS = LOADING_PHASE_DURATION_MS + SUCCESS_MESSAGE_DISPLAY_DURATION_MS; 
 
 export function TicketFormInModal({ 
@@ -83,37 +84,26 @@ export function TicketFormInModal({
   const formRef = useRef<HTMLFormElement>(null);
   const [formState, formAction] = useFormState(createNewTicketAction, initialState);
   const [modalInternalState, setModalInternalState] = useState<ModalInternalState>('form');
-  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [displayMessage, setDisplayMessage] = useState<string>(''); // Usar displayMessage para mensajes de éxito/error
 
   const submissionStartTimeRef = useRef<number | null>(null);
   const isSubmitting = useRef(false); 
+  const serverActionResponseRef = useRef<ActionState | null>(null); // Nuevo: Almacena la respuesta del servidor
 
-  // Efecto principal para gestionar los mensajes y el estado de envío basado en formState
+  // Efecto: Captura la respuesta del servidor y la almacena
   React.useEffect(() => {
-    // Solo reacciona si formState está definido (no undefined)
-    if (formState) { 
-      if (formState.success) {
-        setSuccessMessage(formState.message || 'Ticket creado con éxito.');
-        isSubmitting.current = false; 
-        setModalInternalState('success'); // Transiciona a estado de éxito para mostrar mensaje y animación
-        onCompletion(formState.ticket); // <--- CLAVE: Llama a onCompletion inmediatamente al éxito
-        console.log('TicketFormInModal: Server action SUCCESS. Signaling parent and starting success phase visual.');
-      } 
-      else if (formState.error) {
-        setSuccessMessage(formState.error); 
-        isSubmitting.current = false; 
-        setModalInternalState('form'); // Si hay un error, volvemos directamente al formulario sin animaciones de éxito.
-        submissionStartTimeRef.current = null; 
-        console.log('TicketFormInModal: Server action ERROR. Back to form.');
-      } 
-      else if (!isSubmitting.current) { 
-        setModalInternalState('form'); 
-        setSuccessMessage('');
-        submissionStartTimeRef.current = null;
-        console.log('TicketFormInModal: State -> Form (initial/reset or after action finished)');
+    if (formState && (formState.success || formState.error)) {
+      serverActionResponseRef.current = formState; // Almacena la respuesta final
+      isSubmitting.current = false; // La sumisión ya no está en curso
+      console.log('TicketFormInModal: Server action completed. Response stored:', formState);
+    } else {
+      // Si formState no es final (e.g., inicial, o mientras está pendiente)
+      // Asegurar que serverActionResponseRef.current esté limpio si no hay acción en curso
+      if (!isSubmitting.current && !formState) { // Considera el caso inicial o después de un reset completo
+        serverActionResponseRef.current = null;
       }
     }
-  }, [formState, onCompletion]); 
+  }, [formState]); 
 
   // Función para manejar el envío del formulario (captura el inicio del envío)
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -121,6 +111,7 @@ export function TicketFormInModal({
     if (isSubmitting.current) return; 
 
     isSubmitting.current = true; 
+    serverActionResponseRef.current = null; // Limpiar respuesta anterior
     submissionStartTimeRef.current = Date.now(); 
     setModalInternalState('loading'); 
     
@@ -128,7 +119,7 @@ export function TicketFormInModal({
     console.log('TicketFormInModal: Form Submitted. State -> Loading.');
   };
 
-  // Efecto para la duración de la fase de 'loading' (spinner) y la transición a 'success' visual
+  // Efecto para la duración de la fase de 'loading' (spinner) y la transición a 'success' o 'error' visual
   React.useEffect(() => {
     let loadingPhaseTimer: NodeJS.Timeout | undefined;
     if (modalInternalState === 'loading' && submissionStartTimeRef.current !== null) {
@@ -136,57 +127,86 @@ export function TicketFormInModal({
 
       if (elapsedTime < LOADING_PHASE_DURATION_MS) {
         loadingPhaseTimer = setTimeout(() => {
-          // Ahora verificamos `formState` aquí para la transición
-          if (formState?.success) { // <--- Safe access
-            setModalInternalState('success'); 
-            console.log('TicketFormInModal: Loading phase timer finished. Transitioning to SUCCESS visual.');
-          } else if (formState?.error) { // <--- Safe access
-            setModalInternalState('form');
-            console.log('TicketFormInModal: Loading phase timer finished, server error detected. Back to form.');
-          } else if (!isSubmitting.current) {
-            setModalInternalState('form');
-            console.error('TicketFormInModal: Loading phase timer finished, neither success/error nor pending. Back to form.');
+          // Después de LOADING_PHASE_DURATION_MS, verifica la respuesta del servidor
+          if (serverActionResponseRef.current) {
+            if (serverActionResponseRef.current.success) {
+              setModalInternalState('success');
+              setDisplayMessage(serverActionResponseRef.current.message || 'Ticket creado con éxito.');
+              console.log('TicketFormInModal: Loading phase timer finished. Transitioning to SUCCESS visual.');
+            } else if (serverActionResponseRef.current.error) {
+              setModalInternalState('error'); // Transiciona a estado de error
+              setDisplayMessage(serverActionResponseRef.current.error || 'Error desconocido.');
+              console.log('TicketFormInModal: Loading phase timer finished, server error detected. Transitioning to ERROR visual.');
+            }
+          } else {
+            // Si el tiempo de carga mínimo pasó pero el servidor no ha respondido,
+            // el modalInternalState permanece 'loading' y el spinner sigue girando.
+            console.log('TicketFormInModal: Loading phase timer finished, server response still pending. Remaining in LOADING state.');
           }
         }, LOADING_PHASE_DURATION_MS - elapsedTime);
       } else {
-        if (formState?.success) { // <--- Safe access
-          setModalInternalState('success');
-          console.log('TicketFormInModal: Already past loading phase time, transitioning to SUCCESS visual immediately.');
-        } 
+        // Si al entrar al useEffect ya pasaron los LOADING_PHASE_DURATION_MS:
+        if (serverActionResponseRef.current) {
+          if (serverActionResponseRef.current.success) {
+            setModalInternalState('success');
+            setDisplayMessage(serverActionResponseRef.current.message || 'Ticket creado con éxito.');
+            console.log('TicketFormInModal: Already past loading time, server response SUCCESS. Transitioning to SUCCESS visual immediately.');
+          } else if (serverActionResponseRef.current.error) {
+            setModalInternalState('error');
+            setDisplayMessage(serverActionResponseRef.current.error || 'Error desconocido.');
+            console.log('TicketFormInModal: Already past loading time, server response ERROR. Transitioning to ERROR visual immediately.');
+          }
+        }
+        // Si no hay respuesta del servidor, el modalInternalState se queda en 'loading'.
       }
     }
     return () => {
       if (loadingPhaseTimer) clearTimeout(loadingPhaseTimer);
     };
-  }, [modalInternalState, formState, isSubmitting.current]); // formState added to dependencies
+  }, [modalInternalState, formState]); // Dependencia de formState para reaccionar a cambios en la respuesta del servidor
 
-
-  // Efecto para la duración de la fase de 'success' visual (independiente del padre)
+  // Efecto para la duración de la fase de 'success' o 'error' visual
+  // y para la señal final al padre (`onCompletion` si fue éxito).
   React.useEffect(() => {
-    let successDisplayTimer: NodeJS.Timeout | undefined;
-    if (modalInternalState === 'success') {
-      successDisplayTimer = setTimeout(() => {
-        formRef.current?.reset(); // Limpiar el formulario
-        setModalInternalState('form'); // Volver al estado 'form' para la próxima apertura
-        setSuccessMessage('');
+    let finalPhaseTimer: NodeJS.Timeout | undefined;
+    if ((modalInternalState === 'success' || modalInternalState === 'error') && submissionStartTimeRef.current !== null) {
+      const elapsedTime = Date.now() - submissionStartTimeRef.current;
+      const totalAnimationTimeForVisual = LOADING_PHASE_DURATION_MS + SUCCESS_MESSAGE_DISPLAY_DURATION_MS;
+      const remainingTimeForTotal = totalAnimationTimeForVisual - elapsedTime;
+
+      finalPhaseTimer = setTimeout(() => {
+        // Si fue un éxito, llamamos a onCompletion
+        if (modalInternalState === 'success' && serverActionResponseRef.current?.success) {
+          onCompletion(serverActionResponseRef.current.ticket); // Emite el ticket creado
+          console.log('TicketFormInModal: Animation completed. Calling onCompletion for success.');
+        } else {
+          // Si fue un error o una finalización sin éxito, solo reseteamos sin llamar onCompletion
+          console.log('TicketFormInModal: Animation completed for error/non-success. No onCompletion call.');
+        }
+        
+        // Resetear el estado interno del modal y el formulario
+        formRef.current?.reset(); 
+        setModalInternalState('form'); 
+        setDisplayMessage('');
         submissionStartTimeRef.current = null;
-        isSubmitting.current = false; // Resetear la bandera de envío
-        console.log('TicketFormInModal: SUCCESS message display finished (2s). Resetting internal state.');
-      }, SUCCESS_MESSAGE_DISPLAY_DURATION_MS);
+        isSubmitting.current = false; 
+        serverActionResponseRef.current = null; // Limpiar la respuesta almacenada
+        
+      }, Math.max(0, remainingTimeForTotal)); 
     }
     return () => {
-      if (successDisplayTimer) clearTimeout(successDisplayTimer);
+      if (finalPhaseTimer) clearTimeout(finalPhaseTimer);
     };
-  }, [modalInternalState]);
-
+  }, [modalInternalState, onCompletion, formState.ticket]); // Dependencia de formState.ticket para asegurar que el ticket sea el correcto
 
   // Efecto para restablecer el estado del modal cuando se abre o cierra (controlado por el padre)
   React.useEffect(() => {
     if (isModalOpen) {
       setModalInternalState('form');
-      setSuccessMessage('');
+      setDisplayMessage('');
       submissionStartTimeRef.current = null;
       isSubmitting.current = false; 
+      serverActionResponseRef.current = null; // Reinicia la referencia de respuesta
       console.log('TicketFormInModal: Modal opened by parent. Resetting state.');
     }
   }, [isModalOpen]);
@@ -205,15 +225,15 @@ export function TicketFormInModal({
   // Determinar ancho/alto dinámico para transiciones del modal
   const modalWidth = 
     modalInternalState === 'loading' ? 'w-40' : 
-    (modalInternalState === 'success' ? 'w-full max-w-sm' : 'w-full max-w-2xl'); 
+    (modalInternalState === 'success' || modalInternalState === 'error' ? 'w-full max-w-sm' : 'w-full max-w-2xl'); 
   const modalHeight = 
     modalInternalState === 'loading' ? 'h-40' : 
-    (modalInternalState === 'success' ? 'h-fit' : 'max-h-[90vh]'); 
+    (modalInternalState === 'success' || modalInternalState === 'error' ? 'h-fit' : 'max-h-[90vh]'); 
 
   const cardClasses = `
     transition-all duration-300 ease-in-out 
     ${modalWidth} ${modalHeight}
-    ${modalInternalState === 'loading' || modalInternalState === 'success' ? 'flex items-center justify-center p-4' : 'flex flex-col'}
+    ${modalInternalState === 'loading' || modalInternalState === 'success' || modalInternalState === 'error' ? 'flex items-center justify-center p-4' : 'flex flex-col'}
   `;
 
   return (
@@ -229,7 +249,7 @@ export function TicketFormInModal({
                     <form onSubmit={handleSubmit} className="space-y-6"> 
                         <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
-                        {formState?.error && (
+                        {formState?.error && ( // Muestra el error si formState tiene uno (del submit anterior)
                             <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800 flex items-center gap-2" role="alert">
                                 <AlertCircle className="h-5 w-5" />
                                 <span className="font-medium">Error:</span> {formState.error}
@@ -363,7 +383,17 @@ export function TicketFormInModal({
             <div className="flex flex-col items-center justify-center text-center p-6 min-h-full">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-6 animate-bounce" />
                 <h3 className="text-xl font-semibold mb-2">¡Ticket Creado con Éxito!</h3>
-                <p className="text-muted-foreground text-sm max-w-sm">{successMessage}</p>
+                <p className="text-muted-foreground text-sm max-w-sm">{displayMessage}</p> {/* Usa displayMessage aquí */}
+            </div>
+        )}
+
+        {/* Nuevo: Contenido para el estado de error (si quieres una vista diferente a volver al formulario) */}
+        {modalInternalState === 'error' && (
+            <div className="flex flex-col items-center justify-center text-center p-6 min-h-full">
+                <AlertCircle className="h-16 w-16 text-red-500 mb-6" />
+                <h3 className="text-xl font-semibold mb-2">Error al Crear Ticket</h3>
+                <p className="text-muted-foreground text-sm max-w-sm">{displayMessage}</p> {/* Usa displayMessage aquí */}
+                <Button onClick={() => setModalInternalState('form')} className="mt-4">Reintentar</Button>
             </div>
         )}
     </Card>
