@@ -1,5 +1,5 @@
 // src/app/actions/ticketActions.ts
-"use server";
+'use server';
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -21,7 +21,7 @@ interface SessionUser {
 // Actualizada para coincidir con los 'name' attributes del TicketFormInModal.tsx
 interface TicketFormInputFields {
   nroCaso: number;
-  fechaCreacion: string; 
+  fechaCreacion: string; // Ahora puede incluir la hora: YYYY-MM-DDTHH:MM
   empresaClienteId?: string; // Ahora es el ID de EmpresaCliente, puede ser opcional
   tipoIncidente: string;    
   prioridad: string;        // El valor será una de las claves del Enum PrioridadTicket
@@ -42,6 +42,14 @@ interface ActionState {
   ticketId?: string;
   ticket?: Ticket; // Añadir el objeto Ticket completo aquí
 }
+
+const initialState: ActionState = {
+  error: undefined,
+  success: undefined,
+  message: undefined,
+  ticketId: undefined,
+  ticket: undefined,
+};
 
 export async function loadLastTicketNro(): Promise<number> {
   try {
@@ -76,11 +84,12 @@ export async function createNewTicketAction(
 
   const formInput: TicketFormInputFields = {
     nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
-    fechaCreacion: formdata.get("fechaCreacion")?.toString() || new Date().toISOString().split('T')[0],
+    // CORRECCIÓN: Capturar fechaCreacion tal cual del formulario (YYYY-MM-DDTHH:MM)
+    fechaCreacion: formdata.get("fechaCreacion")?.toString() || new Date().toISOString().substring(0, 16), // substring para YYYY-MM-DDTHH:MM
     empresaClienteId: formdata.get("empresaClienteId")?.toString() || undefined,
     tipoIncidente: formdata.get("tipoIncidente")?.toString() || "",
     prioridad: formdata.get("prioridad")?.toString() || "MEDIA", 
-    ubicacionId: formdata.get("ubicacionId")?.toString() || undefined, // Leer ubicacionId
+    ubicacionId: formdata.get("ubicacionId")?.toString() || undefined, 
     solicitanteNombre: formdata.get("solicitanteNombre")?.toString() || "",
     solicitanteTelefono: formdata.get("solicitanteTelefono")?.toString() || undefined,
     solicitanteCorreo: formdata.get("solicitanteCorreo")?.toString() || undefined,
@@ -91,15 +100,12 @@ export async function createNewTicketAction(
   };
 
   // Validación de campos obligatorios
-  // Ajusta esto según qué campos son estrictamente mandatorios en tu lógica de negocio
   let missingFields = [];
   if (!formInput.nroCaso) missingFields.push("N° de Caso");
   if (!formInput.tipoIncidente) missingFields.push("Tipo de Incidente");
   if (!formInput.titulo) missingFields.push("Título");
   if (!formInput.solicitanteNombre) missingFields.push("Nombre Solicitante");
   if (!formInput.fechaCreacion) missingFields.push("Fecha Reporte");
-  // if (!formInput.empresaClienteId) missingFields.push("Empresa Cliente"); // Descomenta si es mandatorio
-  // if (!formInput.ubicacionId) missingFields.push("Ubicación"); // Descomenta si es mandatorio
   
   if (missingFields.length > 0) {
       return { error: `Faltan campos obligatorios: ${missingFields.join(', ')}.`, success: false };
@@ -109,8 +115,9 @@ export async function createNewTicketAction(
     return { error: `Prioridad inválida: ${formInput.prioridad}. Valores permitidos: BAJA, MEDIA, ALTA, URGENTE.`, success: false };
   }
 
-  const fechaCreacionDate = new Date(formInput.fechaCreacion + "T00:00:00Z"); 
-  const fechaSolucionEstimadaDate = formInput.fechaSolucionEstimada ? new Date(formInput.fechaSolucionEstimada + "T00:00:00Z") : null;
+  // CORRECCIÓN: Crear la fecha de creación directamente desde el string completo del formulario
+  const fechaCreacionDate = new Date(formInput.fechaCreacion); 
+  const fechaSolucionEstimadaDate = formInput.fechaSolucionEstimada ? new Date(formInput.fechaSolucionEstimada) : null;
 
   const ticketDataToSave = {
     numeroCaso: formInput.nroCaso,
@@ -122,8 +129,8 @@ export async function createNewTicketAction(
     solicitanteNombre: formInput.solicitanteNombre,
     solicitanteTelefono: formInput.solicitanteTelefono || null,
     solicitanteCorreo: formInput.solicitanteCorreo || null,
-    empresaClienteId: formInput.empresaClienteId || null, // Guardar null si no se proporciona
-    ubicacionId: formInput.ubicacionId || null,         // Guardar null si no se proporciona
+    empresaClienteId: formInput.empresaClienteId || null, 
+    ubicacionId: formInput.ubicacionId || null,         
     tecnicoAsignadoId: tecnicoLogueadoId, 
     fechaCreacion: fechaCreacionDate,
     fechaSolucionEstimada: fechaSolucionEstimadaDate,
@@ -146,11 +153,11 @@ export async function createNewTicketAction(
       }
       return createdTicket;
     });
-    // CORRECCIÓN: Re-fetch del ticket creado con todas sus relaciones para devolverlo completo
+
     const fullCreatedTicket = await prisma.ticket.findUnique({
       where: { id: newTicket.id },
       include: {
-        acciones: { // Asegúrate de incluir las acciones
+        acciones: { 
           orderBy: { fechaAccion: 'asc' },
           include: {
             realizadaPor: {
@@ -169,7 +176,6 @@ export async function createNewTicketAction(
     });
 
     if (!fullCreatedTicket) {
-      // Debería ser raro que no se encuentre, pero es una buena práctica
       console.warn(`Ticket ${newTicket.id} no encontrado después de la creación/transacción. Revalidación podría no ser perfecta.`);
       revalidatePath("/tickets/dashboard");
       return { 
@@ -179,20 +185,19 @@ export async function createNewTicketAction(
       };
     }
 
-    revalidatePath("/tickets/dashboard"); // O la ruta que quieras revalidar
-    // Devolver el ticket completo para que el frontend lo use
+    revalidatePath("/tickets/dashboard"); 
     return { 
       success: true, 
       message: `Ticket #${newTicket.numeroCaso} creado exitosamente. Técnico asignado: ${currentUser.name || currentUser.email}.`, 
       ticketId: newTicket.id,
-      ticket: fullCreatedTicket // Pasa el objeto Ticket completo
+      ticket: fullCreatedTicket 
     };
   } catch (error: any) {
     console.error("Error al crear ticket en Prisma:", error);
     let errorMessage = "Error al crear el ticket.";
     if (error.code === 'P2002' && error.meta?.target?.includes('numeroCaso')) {
         errorMessage = "El número de caso ya existe.";
-    } else if (error.code === 'P2003') { // Foreign key constraint failed
+    } else if (error.code === 'P2003') { 
         if (error.meta?.field_name?.includes('empresaClienteId')) {
             errorMessage = "La empresa cliente seleccionada no es válida.";
         } else if (error.meta?.field_name?.includes('ubicacionId')) {
