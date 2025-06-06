@@ -19,9 +19,12 @@ export interface UsuarioBasico { // Para el técnico y el usuario que realiza la
 
 export interface ActionEntry {
   id: string;
-  fechaAccion: string; // Debería ser un ISO string o un string formateado consistentemente
+  // CORRECCIÓN: fechaAccion es un objeto Date cuando se obtiene de Prisma
+  fechaAccion: Date; 
   descripcion: string;
-  realizadaPor?: UsuarioBasico | null; // El usuario que realizó la acción
+  // CORRECCIÓN: Aseguramos que 'realizadaPor' sea exactamente UsuarioBasico o null/undefined
+  // La inclusión en Prisma ya se encarga de seleccionar los campos correctos (id, name, email)
+  realizadaPor?: UsuarioBasico | null; 
   usuarioId?: string; // El ID del usuario, por si acaso
 }
 
@@ -50,7 +53,7 @@ export interface Ticket {
   // Ahora acciones es un array de ActionEntry, no un string JSON
   acciones?: ActionEntry[] | null; 
 
-  fechaCreacion: string; 
+  fechaCreacion: string; // Mantenemos string aquí, ya que a menudo se usa formateado en UI
   fechaSolucionEstimada?: string | null;
   fechaSolucionReal?: string | null; 
   updatedAt: string; 
