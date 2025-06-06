@@ -1,14 +1,15 @@
 // src/hooks/useTicketEditor.ts
 import { useState, useEffect, useCallback } from 'react';
 import { Ticket } from '@/types/ticket'; // Esta interfaz ya debería estar actualizada con los nuevos nombres
+import { EstadoTicket, PrioridadTicket } from '@prisma/client'; // Importar enums si se usan para validación interna aquí
 
 // Interfaz para los campos que son editables en el ticket principal
 // ACTUALIZADA con los nuevos nombres de campo
 export interface EditableTicketFields {
   tecnicoAsignado: string; // Espera el ID del técnico o un valor representativo
-  prioridad: string;
+  prioridad: PrioridadTicket; // Aseguramos que sea del tipo enum PrioridadTicket
   solicitante: string;   // Espera el nombre del solicitante
-  estado: string;
+  estado: EstadoTicket;    // Aseguramos que sea del tipo enum EstadoTicket
 }
 
 interface UseTicketEditorProps {
@@ -25,12 +26,10 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
   useEffect(() => {
     if (selectedTicket && isEditingTicket) {
       setEditableTicketData({
-        // CORRECCIÓN: Acceder a la propiedad de ID del técnico asignado o un string de fallback
-        tecnicoAsignado: selectedTicket.tecnicoAsignado?.id || 'No Asignado', // Pasa el ID si existe, o 'No Asignado'
-        prioridad: selectedTicket.prioridad,
-        // CORRECCIÓN: Usar solicitanteNombre
+        tecnicoAsignado: selectedTicket.tecnicoAsignado?.id || 'No Asignado', 
+        prioridad: selectedTicket.prioridad, // Propiedad de enum directamente
         solicitante: selectedTicket.solicitanteNombre,
-        estado: selectedTicket.estado,
+        estado: selectedTicket.estado, // Propiedad de enum directamente
       });
     } else if (!selectedTicket) {
       setIsEditingTicket(false);
@@ -42,15 +41,13 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
   const startEditingTicket = useCallback(() => {
     if (selectedTicket) {
       setEditableTicketData({
-        // CORRECCIÓN: Acceder a la propiedad de ID del técnico asignado o un string de fallback
-        tecnicoAsignado: selectedTicket.tecnicoAsignado?.id || 'No Asignado', // Pasa el ID si existe, o 'No Asignado'
-        prioridad: selectedTicket.prioridad,
-        // CORRECCIÓN: Usar solicitanteNombre
+        tecnicoAsignado: selectedTicket.tecnicoAsignado?.id || 'No Asignado', 
+        prioridad: selectedTicket.prioridad, 
         solicitante: selectedTicket.solicitanteNombre,
         estado: selectedTicket.estado,
       });
       setIsEditingTicket(true);
-      setError(null); // Limpiar errores previos
+      setError(null); 
     }
   }, [selectedTicket]);
 
@@ -59,9 +56,16 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
     setError(null);
   }, []);
 
-  const handleTicketInputChange = useCallback((field: keyof EditableTicketFields, value: string) => {
+  const handleTicketInputChange = useCallback((field: keyof EditableTicketFields, value: any) => { // 'value' puede ser string o un miembro del enum
     setEditableTicketData(prev => {
-      if (!prev) return null; // No debería pasar si isEditingTicket es true y hay un selectedTicket
+      if (!prev) return null;
+      // Para 'prioridad' y 'estado', aseguramos que el valor asignado sea del tipo enum si el campo lo requiere
+      if (field === 'prioridad' && Object.values(PrioridadTicket).includes(value)) {
+        return { ...prev, [field]: value as PrioridadTicket };
+      }
+      if (field === 'estado' && Object.values(EstadoTicket).includes(value)) {
+        return { ...prev, [field]: value as EstadoTicket };
+      }
       return { ...prev, [field]: value };
     });
   }, []);
@@ -76,13 +80,10 @@ export function useTicketEditor({ selectedTicket, onTicketUpdated }: UseTicketEd
     setError(null);
 
     try {
+      // Los valores de editableTicketData.prioridad y .estado ya son enums o string para tecnico/solicitante
       const response = await fetch(`/api/tickets/${selectedTicket.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        // Asegúrate de que el backend pueda recibir el ID del técnico o el nombre del solicitante
-        // como un string si es lo que editableTicketData.tecnicoAsignado contiene.
-        // Si el backend espera un objeto para tecnicoAsignado, esta lógica debe ser revisada.
-        // Basado en el `route.js` que enviaste antes, el PUT de `/api/tickets/[id]` espera un string.
         body: JSON.stringify(editableTicketData), 
       });
 
