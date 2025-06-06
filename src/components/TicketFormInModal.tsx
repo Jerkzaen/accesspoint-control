@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { useState, useRef, useEffect } from "react"; // useEffect para reaccionar al estado del formulario
-import { useFormState, useFormStatus } from "react-dom"; // Importar useFormState
+import { useRef, useEffect } from "react"; 
+import { useFormState } from "react-dom"; 
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,19 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNewTicketAction } from "@/app/actions/ticketActions"; // Asegúrate que la ruta es correcta
-import { AlertCircle, Loader2 } from "lucide-react"; // Para mostrar errores y estado de carga
-
-// Componente interno para el botón de submit, para usar useFormStatus
-function SubmitButton({ children }: { children: React.ReactNode }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {children}
-    </Button>
-  );
-}
+import { createNewTicketAction } from "@/app/actions/ticketActions"; 
+import { AlertCircle, Loader2 } from "lucide-react"; 
+// Asegúrate de tener este componente FormSubmitButton o reemplázalo con un Button normal
+// y maneja el estado 'pending' de useFormStatus si es necesario.
+import { FormSubmitButton } from "@/components/ui/FormSubmitButton"; 
 
 interface TicketFormInModalProps {
   nextNroCaso: number;
@@ -43,7 +35,6 @@ interface TicketFormInModalProps {
   onCancel: () => void;
 }
 
-// Definir el tipo de estado para useFormState, debe coincidir con lo que devuelve la Server Action
 interface ActionState {
   error?: string;
   success?: boolean;
@@ -64,16 +55,12 @@ export function TicketFormInModal({
   onCancel 
 }: TicketFormInModalProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  // Usar useFormState con la Server Action y el estado inicial
   const [formState, formAction] = useFormState(createNewTicketAction, initialState);
 
   useEffect(() => {
     if (formState?.success) {
-      onFormSubmitSuccess(); // Llama al callback de éxito (que probablemente cierra el modal)
-      // Si el modal no se cierra automáticamente, podrías resetear aquí:
-      // formRef.current?.reset(); 
+      onFormSubmitSuccess(); 
     }
-    // El mensaje de error se mostrará directamente desde formState en el JSX
   }, [formState, onFormSubmitSuccess]);
 
   return (
@@ -83,9 +70,7 @@ export function TicketFormInModal({
         <CardDescription>Ingresa la información detallada del problema.</CardDescription>
       </CardHeader>
       <CardContent className="max-h-[70vh] overflow-y-auto p-4 sm:p-6">
-        {/* El 'action' del formulario ahora es el 'formAction' de useFormState */}
         <form ref={formRef} action={formAction} className="space-y-6">
-          {/* Input oculto para nroCaso. El name es importante para FormData */}
           <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
           {formState?.error && (
@@ -94,37 +79,34 @@ export function TicketFormInModal({
               <span className="font-medium">Error:</span> {formState.error}
             </div>
           )}
-          {/* Podrías mostrar un mensaje de éxito aquí también si el modal no se cierra inmediatamente */}
-          {/* {formState?.success && formState.message && (
-            <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
-              {formState.message}
-            </div>
-          )} */}
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="nroCasoModalDisplay">N° de Caso</Label>
               <Input id="nroCasoModalDisplay" value={nextNroCaso} readOnly className="bg-muted dark:bg-gray-700"/>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="createdAtModal">Fecha Reporte</Label>
-              <Input type="date" name="createdAt" id="createdAtModal" defaultValue={new Date().toISOString().split('T')[0]} required />
+              <Label htmlFor="fechaCreacionModal">Fecha Reporte</Label> {/* Cambiado name a fechaCreacion */}
+              <Input type="date" name="fechaCreacion" id="fechaCreacionModal" defaultValue={new Date().toISOString().split('T')[0]} required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="empresaModal">Empresa</Label>
-              <Select name="empresa" required defaultValue="Achs">
-                <SelectTrigger id="empresaModal"><SelectValue placeholder="Seleccione Empresa" /></SelectTrigger>
+              <Label htmlFor="empresaClienteModal">Empresa Cliente</Label>
+              {/* Asumiendo que pasarás el ID de la empresa cliente */}
+              <Select name="empresaClienteId" required> 
+                <SelectTrigger id="empresaClienteModal"><SelectValue placeholder="Seleccione Empresa Cliente" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Achs">ACHS</SelectItem>
-                  <SelectItem value="Esachs">ESACHS</SelectItem>
-                  <SelectItem value="CMT">CMT</SelectItem>
+                  {/* Estos valores deberían ser los IDs de tus EmpresaCliente */}
+                  {/* Idealmente, cargar dinámicamente desde la BD */}
+                  <SelectItem value="id_achs_ejemplo">ACHS</SelectItem> 
+                  <SelectItem value="id_esachs_ejemplo">ESACHS</SelectItem>
+                  <SelectItem value="id_cmt_ejemplo">CMT</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="tipoModal">Tipo de Incidente</Label>
-              <Select name="tipo" required defaultValue="Software">
-                <SelectTrigger id="tipoModal"><SelectValue placeholder="Seleccione Tipo" /></SelectTrigger>
+              <Label htmlFor="tipoIncidenteModal">Tipo de Incidente</Label> {/* Cambiado name a tipoIncidente */}
+              <Select name="tipoIncidente" required defaultValue="Software"> 
+                <SelectTrigger id="tipoIncidenteModal"><SelectValue placeholder="Seleccione Tipo" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Software">Software</SelectItem>
                   <SelectItem value="Hardware">Hardware</SelectItem>
@@ -136,58 +118,66 @@ export function TicketFormInModal({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="prioridadModal">Prioridad</Label>
-              <Select name="prioridad" defaultValue="media" required>
+              <Select name="prioridad" defaultValue="MEDIA" required> {/* Asegúrate que los values coincidan con tu Enum PrioridadTicket */}
                 <SelectTrigger id="prioridadModal"><SelectValue placeholder="Prioridad" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="baja">BAJA</SelectItem>
-                  <SelectItem value="media">MEDIA</SelectItem>
-                  <SelectItem value="alta">ALTA</SelectItem>
-                  <SelectItem value="urgente">URGENTE</SelectItem>
+                  <SelectItem value="BAJA">BAJA</SelectItem>
+                  <SelectItem value="MEDIA">MEDIA</SelectItem>
+                  <SelectItem value="ALTA">ALTA</SelectItem>
+                  <SelectItem value="URGENTE">URGENTE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tecnicoModal">Técnico Asignado</Label>
-              <Select name="tecnico" required defaultValue="No Asignado">
-                <SelectTrigger id="tecnicoModal"><SelectValue placeholder="Seleccione Técnico" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Miguel Chervellino">M.Chervellino</SelectItem>
-                  <SelectItem value="Christian Torrenss">C. Torrens</SelectItem>
-                  <SelectItem value="jerson Armijo">J. Armijo</SelectItem>
-                  <SelectItem value="No Asignado">No Asignado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
+            
+            {/* Selector de Técnico Asignado ELIMINADO */}
+            {/* El técnico se asignará automáticamente desde la sesión del usuario logueado en la Server Action */}
+
+            <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="ubicacionModal">Ubicación (Ej: Oficina, Piso, Ciudad)</Label>
+              {/* Asumiendo que se refiere a un UbicacionId o a un texto libre. Si es ID, el name debería ser ubicacionId */}
               <Input name="ubicacion" id="ubicacionModal" placeholder="Detalle de la ubicación" required />
             </div>
+            
+            {/* Información del Solicitante */}
+            <div className="md:col-span-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 mt-3 border-t pt-3">Información del Solicitante:</div>
+            
             <div className="space-y-1.5">
-              <Label htmlFor="contactoModal">Contacto Solicitante (Nombre/Email)</Label>
-              <Input name="contacto" id="contactoModal" placeholder="Persona que reporta" required />
+              <Label htmlFor="solicitanteNombreModal">Nombre Solicitante</Label>
+              <Input name="solicitanteNombre" id="solicitanteNombreModal" placeholder="Nombre completo de quien reporta" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="solicitanteTelefonoModal">Teléfono Solicitante (Opcional)</Label>
+              <Input type="tel" name="solicitanteTelefono" id="solicitanteTelefonoModal" placeholder="Ej: +56912345678" />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="tituloDelTicketModal">Título del Ticket (Resumen Breve)</Label>
-              <Input name="tituloDelTicket" id="tituloDelTicketModal" placeholder="Ej: Impresora no enciende en Contabilidad" required />
+              <Label htmlFor="solicitanteCorreoModal">Correo Solicitante (Opcional)</Label>
+              <Input type="email" name="solicitanteCorreo" id="solicitanteCorreoModal" placeholder="Ej: contacto@empresa.com" />
+            </div>
+            {/* Podrías añadir aquí un Select para 'solicitanteClienteId' si quieres vincular a un Cliente existente */}
+            
+            <div className="md:col-span-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 mt-3 border-t pt-3">Detalles del Ticket:</div>
+
+            <div className="md:col-span-2 space-y-1.5">
+              <Label htmlFor="tituloModal">Título del Ticket (Resumen Breve)</Label> {/* Cambiado name a titulo */}
+              <Input name="titulo" id="tituloModal" placeholder="Ej: Impresora no enciende en Contabilidad" required />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="detalleAdicionalModal">Descripción Detallada del Problema</Label>
-              <Textarea name="detalleAdicional" id="detalleAdicionalModal" placeholder="Proporciona todos los detalles relevantes..." rows={4}/>
+              <Label htmlFor="descripcionDetalladaModal">Descripción Detallada del Problema</Label> {/* Cambiado name a descripcionDetallada */}
+              <Textarea name="descripcionDetallada" id="descripcionDetalladaModal" placeholder="Proporciona todos los detalles relevantes..." rows={4}/>
             </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="accionInicialModal">Acción Inicial Realizada (Si aplica)</Label>
               <Textarea name="accionInicial" id="accionInicialModal" placeholder="Si ya realizaste alguna acción..." rows={3}/>
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="fechaSolucionModal">Fecha Estimada/Solución (Opcional)</Label>
-              <Input type="date" name="fechaSolucion" id="fechaSolucionModal" />
+              <Label htmlFor="fechaSolucionEstimadaModal">Fecha Estimada Solución (Opcional)</Label> 
+              <Input type="date" name="fechaSolucionEstimada" id="fechaSolucionEstimadaModal" />
             </div>
           </div>
           
           <CardFooter className="px-0 pt-6 flex justify-end gap-3">
-            {/* El botón de cancelar no debe ser de tipo submit y puede usar el estado `pending` de useFormStatus si es necesario deshabilitarlo */}
             <Button variant="outline" type="button" onClick={onCancel} >Cancelar</Button>
-            <SubmitButton>Guardar Ticket</SubmitButton>
+            <FormSubmitButton>Guardar Ticket</FormSubmitButton>
           </CardFooter>
         </form>
       </CardContent>
