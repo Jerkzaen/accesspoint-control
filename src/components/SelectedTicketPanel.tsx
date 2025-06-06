@@ -71,22 +71,26 @@ export default function SelectedTicketPanel({
 
   const combinedError = ticketEditorError || actionsManagerError;
 
-  const fechaActualizacionFormatted = selectedTicket?.updatedAt // Cambiado de fechaActualizacion a updatedAt
-    ? new Date(selectedTicket.updatedAt).toLocaleString('es-CL', {
-        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-      })
+  // CORRECCIÓN: Formatear fechas y horas a 24 horas y sin AM/PM
+  const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Forzar formato de 24 horas
+  };
+
+  const fechaActualizacionFormatted = selectedTicket?.updatedAt
+    ? selectedTicket.updatedAt.toLocaleString('es-CL', commonDateTimeFormatOptions)
     : 'N/A';
 
   const fechaCreacionFormatted = selectedTicket?.fechaCreacion
-    ? new Date(selectedTicket.fechaCreacion).toLocaleString('es-CL', {
-        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-      })
+    ? selectedTicket.fechaCreacion.toLocaleString('es-CL', commonDateTimeFormatOptions)
     : 'N/A';
 
-  const fechaSolucionFormatted = selectedTicket?.fechaSolucionReal // Cambiado de fechaSolucion a fechaSolucionReal
-    ? new Date(selectedTicket.fechaSolucionReal).toLocaleString('es-CL', {
-        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-      })
+  const fechaSolucionFormatted = selectedTicket?.fechaSolucionReal
+    ? selectedTicket.fechaSolucionReal.toLocaleString('es-CL', commonDateTimeFormatOptions)
     : null;
 
   const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -245,8 +249,9 @@ export default function SelectedTicketPanel({
                       disabled={isProcessingAction}
                     />
                   ) : (
+                    // CORRECCIÓN: Formatear fecha y hora a 24 horas y sin AM/PM en la bitácora
                     <span className="font-medium flex-grow break-all pt-1">
-                      {new Date(act.fechaAccion).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}:{' '}
+                      {act.fechaAccion.toLocaleString('es-CL', commonDateTimeFormatOptions)}:{' '}
                       {act.descripcion}
                       {act.realizadaPor && (
                         <span className="text-muted-foreground ml-1">
