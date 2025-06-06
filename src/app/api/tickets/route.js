@@ -1,4 +1,4 @@
-// src/app/api/tickets/route.js (ACTUALIZADO - CORRECCIÓN DE ERROR 'mode')
+// src/app/api/tickets/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -67,31 +67,28 @@ export async function GET(request) {
             email: true,
           },
         },
-        // También puedes incluir las acciones si las necesitas en la lista principal,
-        // aunque el SelectedTicketPanel ya las carga en detalle.
-        // acciones: {
-        //   select: {
-        //     id: true,
-        //     descripcion: true,
-        //     fechaAccion: true,
-        //     realizadaPor: {
-        //       select: {
-        //         id: true,
-        //         name: true,
-        //         email: true,
-        //       },
-        //     },
-        //   },
-        //   orderBy: { fechaAccion: 'asc' },
-        // },
+        // CORRECCIÓN: Incluir las acciones aquí para que aparezcan al seleccionar el ticket de la lista
+        acciones: {
+          orderBy: { fechaAccion: 'asc' }, // Ordenar acciones por fecha
+          include: {
+            realizadaPor: { // Incluir el usuario que realizó la acción
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
       // FIN DE LA CORRECCIÓN
     });
     return NextResponse.json(tickets);
   } catch (error) {
     console.error("Error en GET /api/tickets:", error);
+    // Verificar si 'error' es una instancia de Error antes de acceder a 'message'
     return NextResponse.json(
-      { message: "Error al obtener tickets", error: error.message },
+      { message: "Error al obtener tickets", error: error instanceof Error ? error.message : "Error desconocido" },
       { status: 500 }
     );
   }
