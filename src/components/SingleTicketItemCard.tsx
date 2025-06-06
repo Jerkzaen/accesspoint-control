@@ -44,18 +44,19 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     );
   }
 
-  // CORRECCIÓN: Formatear fecha y hora a 24 horas y sin AM/PM
-  const fechaCreacionDate = ticket.fechaCreacion.toLocaleString('es-CL', {
+  // CORRECCIÓN: Asegurarse de que ticket.fechaCreacion sea una instancia de Date antes de formatear
+  // Usar hourCycle: 'h23' para el formato de 24 horas y sin AM/PM
+  const fechaCreacionDateObj = new Date(ticket.fechaCreacion);
+  const fechaCreacionDateFormatted = fechaCreacionDateObj.toLocaleString('es-CL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false // Forzar formato de 24 horas
+    hourCycle: 'h23' // Opción más robusta para formato de 24 horas
   });
 
   let prioridadVariant: "default" | "secondary" | "destructive" | "outline" = "default";
-  // Aquí ticket.prioridad ya es de tipo PrioridadTicket
   switch (ticket.prioridad) { 
     case 'BAJA': prioridadVariant = "secondary"; break;
     case 'MEDIA': prioridadVariant = "default"; break;
@@ -64,10 +65,8 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     default: prioridadVariant = "outline";
   }
 
-  // CORRECCIÓN: getEstadoBadgeVariant ahora usa los valores del enum directamente
-  // para mapear el color de la insignia (Badge).
   const getEstadoBadgeVariant = (estado: EstadoTicket): "default" | "secondary" | "destructive" | "outline" => {
-    switch (estado) { // Aquí 'estado' ya es un valor del enum
+    switch (estado) { 
       case EstadoTicket.ABIERTO: return "default";
       case EstadoTicket.CERRADO: return "destructive";
       case EstadoTicket.EN_PROGRESO: return "secondary";
@@ -83,14 +82,14 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
   const companyNameForLogo = ticket.empresaCliente?.nombre;
   const companyLogoUrl = getCompanyLogoUrl(companyNameForLogo);
 
-  const handleStatusChange = async (newStatus: EstadoTicket) => { // Aceptar EstadoTicket como tipo
+  const handleStatusChange = async (newStatus: EstadoTicket) => { 
     if (!ticket) return;
     setIsUpdatingStatus(true);
     try {
       const response = await fetch(`/api/tickets/${ticket.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: newStatus }), // Enviar el valor del enum directamente
+        body: JSON.stringify({ estado: newStatus }), 
       });
 
       if (!response.ok) {
@@ -107,7 +106,6 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
     }
   };
 
-  // Estas son las constantes de tu código, no se modifican sus valores.
   const commonBadgeHeight = "h-6";
   const commonBadgeTextSize = "text-xs";
   const commonBadgePaddingX = "px-2.5";
@@ -142,7 +140,6 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               >
                 <Image
                   src={companyLogoUrl}
-                  // Se aseguró que 'alt' reciba un string simple para evitar el error de tipado.
                   alt={companyNameForLogo ? `${companyNameForLogo} logo` : "Logo de la empresa"}
                   width={48}
                   height={24}
@@ -154,7 +151,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
                 variant="secondary"
                 className={cn("whitespace-nowrap", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
               >
-                {companyNameForLogo || 'N/A'} {/* Usar companyNameForLogo aquí */}
+                {companyNameForLogo || 'N/A'} 
               </Badge>
             )}
 
@@ -170,7 +167,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  variant={getEstadoBadgeVariant(ticket.estado)} // Aquí se usa el valor del enum directamente
+                  variant={getEstadoBadgeVariant(ticket.estado)} 
                   className={cn("whitespace-nowrap cursor-pointer flex items-center w-full justify-center sm:w-auto", commonBadgeTextSize, commonBadgeHeight, commonBadgePaddingX)}
                   size="sm"
                   disabled={isUpdatingStatus}
@@ -182,7 +179,6 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
               <PopoverContent className="w-auto p-2">
                 <p className="text-sm font-semibold mb-2">Cambiar Estado</p>
                 <div className="flex flex-col gap-1">
-                  {/* Estos botones ya estaban bien, usando los miembros del enum directamente */}
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.ABIERTO)}>Abierto</Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.EN_PROGRESO)}>En Progreso</Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => handleStatusChange(EstadoTicket.CERRADO)}>Cerrado</Button>
@@ -202,7 +198,7 @@ export default function SingleTicketItemCard({ ticket, onSelectTicket, onTicketU
           <div><strong>Ubicación:</strong> {ticket.ubicacion?.nombreReferencial || ticket.ubicacion?.direccionCompleta || 'N/A'}</div>
           <div><strong>Técnico:</strong> {ticket.tecnicoAsignado?.name || ticket.tecnicoAsignado?.email || 'No asignado'}</div>
           <div><strong>Contacto:</strong> {ticket.solicitanteNombre}</div>
-          <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDate}</div>
+          <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDateFormatted}</div> {/* Usar la fecha formateada */}
           <div>
             <strong>Prioridad:</strong>{' '}
             <Badge

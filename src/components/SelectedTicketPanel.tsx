@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit3, AlertTriangle, Loader2 } from 'lucide-react';
 import { Ticket, ActionEntry } from '@/types/ticket';
-// Importamos los enums necesarios para la interfaz EditableTicketFields
 import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -82,24 +81,24 @@ export default function SelectedTicketPanel({
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false // Forzar formato de 24 horas
+    hourCycle: 'h23' // Opción más robusta para formato de 24 horas
   };
 
+  // Usar commonDateTimeFormatOptions para todas las fechas del panel, asegurando new Date()
   const fechaActualizacionFormatted = selectedTicket?.updatedAt
-    ? selectedTicket.updatedAt.toLocaleString('es-CL', commonDateTimeFormatOptions)
+    ? new Date(selectedTicket.updatedAt).toLocaleString('es-CL', commonDateTimeFormatOptions)
     : 'N/A';
 
   const fechaCreacionFormatted = selectedTicket?.fechaCreacion
-    ? selectedTicket.fechaCreacion.toLocaleString('es-CL', commonDateTimeFormatOptions)
+    ? new Date(selectedTicket.fechaCreacion).toLocaleString('es-CL', commonDateTimeFormatOptions)
     : 'N/A';
 
   const fechaSolucionFormatted = selectedTicket?.fechaSolucionReal
-    ? selectedTicket.fechaSolucionReal.toLocaleString('es-CL', commonDateTimeFormatOptions)
+    ? new Date(selectedTicket.fechaSolucionReal).toLocaleString('es-CL', commonDateTimeFormatOptions)
     : null;
 
-  // CORRECCIÓN: getEstadoBadgeVariant ahora recibe el enum directamente
   const getEstadoBadgeVariant = (estado: EstadoTicket): "default" | "secondary" | "destructive" | "outline" => {
-    switch (estado) { // Aquí 'estado' ya es un valor del enum
+    switch (estado) { 
       case EstadoTicket.ABIERTO: return "default";
       case EstadoTicket.CERRADO: return "destructive";
       case EstadoTicket.EN_PROGRESO: return "secondary";
@@ -120,7 +119,7 @@ export default function SelectedTicketPanel({
         <div className="mb-3 pb-2 border-b flex-shrink-0">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso} - {selectedTicket.titulo}</CardTitle>
+              <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso}</CardTitle>
               <Badge 
                 variant={getEstadoBadgeVariant(selectedTicket.estado)}
                 className="mt-1 whitespace-nowrap text-xs px-2 py-0.5 h-auto rounded-full"
@@ -174,7 +173,6 @@ export default function SelectedTicketPanel({
                 >
                   <SelectTrigger id="prioridadEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {/* Asegurarse que los valores de los enums sean correctos */}
                     <SelectItem value={PrioridadTicket.BAJA}>BAJA</SelectItem>
                     <SelectItem value={PrioridadTicket.MEDIA}>MEDIA</SelectItem>
                     <SelectItem value={PrioridadTicket.ALTA}>ALTA</SelectItem>
@@ -201,7 +199,6 @@ export default function SelectedTicketPanel({
                 >
                   <SelectTrigger id="estadoEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {/* Asegurarse que los valores de los enums sean correctos */}
                     <SelectItem value={EstadoTicket.ABIERTO}>ABIERTO</SelectItem>
                     <SelectItem value={EstadoTicket.EN_PROGRESO}>EN PROGRESO</SelectItem>
                     <SelectItem value={EstadoTicket.PENDIENTE_TERCERO}>PENDIENTE (Tercero)</SelectItem>
@@ -261,7 +258,7 @@ export default function SelectedTicketPanel({
                   ) : (
                     // CORRECCIÓN: Formatear fecha y hora a 24 horas y sin AM/PM en la bitácora
                     <span className="font-medium flex-grow break-all pt-1">
-                      {act.fechaAccion.toLocaleString('es-CL', commonDateTimeFormatOptions)}:{' '}
+                      {new Date(act.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)}:{' '}
                       {act.descripcion}
                       {act.realizadaPor && (
                         <span className="text-muted-foreground ml-1">
@@ -288,9 +285,7 @@ export default function SelectedTicketPanel({
 
             {/* Se añadió pb-4 a esta sección para darle espacio inferior */}
             <div className="pt-2 border-t flex-shrink-0 pb-4">
-              <div className="mb-2">
-                <span className="text-sm font-semibold">Agregar nueva acción</span>
-              </div>
+              <span className="text-sm font-semibold">Agregar nueva acción</span>
               <Textarea
                 className="mt-1 w-full"
                 value={newActionDescription}
