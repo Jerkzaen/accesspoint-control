@@ -2,6 +2,9 @@
 
 import { EstadoTicket, PrioridadTicket } from '@prisma/client'; // Importar los enums de Prisma
 
+// TIPO MOVIDO AQUÍ para romper la dependencia circular
+export type CreationFlowStatus = 'idle' | 'form' | 'loading' | 'success' | 'error';
+
 export interface EmpresaClienteRelacion {
   id: string;
   nombre: string;
@@ -33,8 +36,8 @@ export interface Ticket {
   titulo: string;
   descripcionDetallada?: string | null;
   tipoIncidente: string;
-  prioridad: PrioridadTicket; // Asegurar que sea del tipo enum PrioridadTicket
-  estado: EstadoTicket;    // CORRECCIÓN: El estado debe ser del tipo enum EstadoTicket
+  prioridad: PrioridadTicket;
+  estado: EstadoTicket;
   
   solicitanteNombre: string; 
   solicitanteTelefono?: string | null;
