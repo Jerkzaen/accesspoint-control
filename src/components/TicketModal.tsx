@@ -50,6 +50,22 @@ export function TicketModal({
   stashedData
 }: TicketModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [isRendered, setIsRendered] = React.useState(false);
+
+  // Este efecto maneja el montaje y desmontaje del modal
+  // para permitir que la animación de salida se complete.
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+    } else {
+      // Espera a que termine la animación de salida antes de desmontar
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+      }, 300); // Debe coincidir con la duración de la animación de salida
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -78,15 +94,12 @@ export function TicketModal({
     };
   }, [isOpen, onClose, flowStatus]);
 
-  if (!isOpen) {
+  if (!isRendered) {
     return null;
   }
   
-  // Clases dinámicas para la animación de tamaño del modal.
   const modalContainerClasses = cn(
-    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col",
-    // CORRECCIÓN: Se elimina 'transition-all' para que el cambio de tamaño sea instantáneo
-    // y no genere una animación extraña. La transición de entrada/salida se maneja en el div contenedor.
+    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-200", // Transición suave para el tamaño
     {
       'w-full max-w-2xl max-h-[90vh]': flowStatus === 'form',
       'w-48 h-48': flowStatus === 'loading',
@@ -98,14 +111,25 @@ export function TicketModal({
     <div
       className={cn(
         "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4",
-        // Esta transición maneja el fundido de entrada y salida del modal completo.
-        "transition-opacity duration-300 ease-out",
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        "data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
       )}
+      data-state={isOpen ? 'open' : 'closed'}
     >
       <div
+        // CORRECCIÓN 1: La prop `key` fuerza a React a re-renderizar este div como uno nuevo
+        // cada vez que el `flowStatus` cambia. Esto reinicia la animación de entrada
+        // con el tamaño correcto, eliminando el "salto".
+        key={flowStatus}
         ref={modalRef}
-        className={modalContainerClasses}
+        className={cn(
+            modalContainerClasses,
+            // CORRECCIÓN 2: Se aumenta la duración para una animación más lenta y fluida.
+            // Se aplican tanto en la entrada como en la salida.
+            "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:duration-500",
+            "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:duration-300"
+        )}
+        data-state={isOpen ? 'open' : 'closed'}
         onClick={(e) => e.stopPropagation()}
       >
         {flowStatus === 'form' && (
