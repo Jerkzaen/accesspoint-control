@@ -75,21 +75,37 @@
   }
 
   /* Nueva animación para el efecto shimmer/overlay de carga */
+  /* === INICIO DE CAMBIOS === */
   @keyframes shimmer-effect {
     0% {
-      opacity: 0.8; /* Ligeramente opaco al inicio */
-    }
-    50% {
-      opacity: 0.5; /* Más atenuado en el medio */
+      background-position: -1000px 0;
     }
     100% {
-      opacity: 0.8; /* Vuelve a un ligero opaco */
+      background-position: 1000px 0;
     }
   }
 
-  /* Clase para aplicar el efecto shimmer */
+  /* La clase shimmer se aplicará a un overlay que contiene el color de fondo */
   .animate-shimmer {
-    animation: shimmer-effect 1.8s infinite ease-in-out; /* Animación continua y suave */
+    background: linear-gradient(to right, 
+                                transparent 0%, 
+                                var(--background-shimmer-light) 50%, 
+                                transparent 100%);
+    background-size: 2000px 100%; /* El ancho del degradado es el doble para que se mueva */
+    animation: shimmer-effect 1.8s infinite linear; /* Velocidad y repetición */
+    /* Aseguramos que el color de fondo para el shimmer sea visible en ambos temas */
+    --background-shimmer-light: hsl(var(--background) / 0.5); /* Semi-transparente del fondo claro */
+    --background-shimmer-dark: hsl(var(--background) / 0.8); /* Semi-transparente del fondo oscuro */
   }
+
+  /* Aplicar colores de shimmer específicos para el tema oscuro */
+  .dark .animate-shimmer {
+    background: linear-gradient(to right, 
+                                transparent 0%, 
+                                var(--background-shimmer-dark) 50%, 
+                                transparent 100%);
+    background-size: 2000px 100%;
+  }
+  /* === FIN DE CAMBIOS === */
 }
 /* === FIN: NUEVAS ANIMACIONES === */
