@@ -1,11 +1,12 @@
-// RUTA: src/components/TicketList.tsx
+// RUTA: src/components/tickets/TicketList.tsx
 'use client';
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ticket } from '@/types/ticket';
-import SingleTicketItemCard from './SingleTicketItemCard.tsx.bak';
+// --- ¡IMPORTANTE! ASEGÚRATE DE QUE ESTA LÍNEA ES ASÍ! ---
+import TicketListItem from './TicketListItem'; // <--- CORRECCIÓN DE LA RUTA DE IMPORTACIÓN
 
 interface TicketListProps {
     tickets: Ticket[];
@@ -33,8 +34,11 @@ const TicketListComponent: React.FC<TicketListProps> = ({
             {/* Contenedor que se atenúa durante la carga */}
             <div className={cn({ "opacity-40 transition-opacity duration-300": isLoading })}>
                 {tickets.length > 0 ? (
+                    // Se utiliza el operador spread para crear una copia del array antes de sortear,
+                    // para evitar mutar el array original y posibles problemas de re-renderizado
+                    // Se utiliza 'TicketListItem' directamente aquí, no 'SingleTicketItemCard'
                     [...tickets].sort((a,b) => new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime()).map(ticket => (
-                        <SingleTicketItemCard 
+                        <TicketListItem 
                             key={ticket.id} 
                             ticket={ticket} 
                             onSelectTicket={onSelectTicket} 
@@ -51,7 +55,7 @@ const TicketListComponent: React.FC<TicketListProps> = ({
 
             {/* Overlay de carga que solo cubre esta lista */}
             {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10 rounded-lg">
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10 rounded-lg animate-shimmer"> {/* Aplicamos shimmer aquí */}
                     <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
             )}
@@ -59,5 +63,5 @@ const TicketListComponent: React.FC<TicketListProps> = ({
     );
 };
 
-// Memoizamos el componente de la lista también
+// Memoizamos el componente de la lista para optimizar el rendimiento
 export const TicketList = React.memo(TicketListComponent);

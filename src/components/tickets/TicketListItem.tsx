@@ -1,7 +1,7 @@
 // RUTA: src/components/tickets/TicketListItem.tsx
 'use client';
 
-// Importaciones de componentes UI de shadcn/ui (asumidos existentes en tu proyecto)
+// Importaciones de componentes UI de shadcn/ui
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,72 +11,20 @@ import { Button } from "@/components/ui/button";
 import Image from 'next/image';
 import React, { useState } from 'react';
 
-// Importaciones de iconos (asumidos lucide-react)
+// Importaciones de iconos
 import { Loader2, Hash } from 'lucide-react';
 
-// --- INICIO: MOCKS TEMPORALES ---
-// ATENCIÓN: Estas interfaces y enums son MOCKS.
-// DEBES reemplazarlas con tus definiciones reales de `@/types/ticket` y `@prisma/client`.
+// --- INICIO DE LA CORRECCIÓN: IMPORTAR TIPOS REALES ---
+// Importar la interfaz Ticket y otras interfaces relacionadas desde tu archivo de tipos.
+// ¡ASEGÚRATE DE QUE LA RUTA A TU ARCHIVO DE TIPOS ES CORRECTA!
+import { Ticket, EmpresaClienteRelacion, UbicacionRelacion, UsuarioBasico } from '@/types/ticket';
 
-// Mock de la interfaz Ticket
-// Adapta esto para que coincida exactamente con tu tipo 'Ticket' de '@/types/ticket'
-interface Ticket {
-  id: string;
-  titulo: string; // Título del ticket
-  numeroCaso: number; // Número de caso del ticket
-  empresaCliente?: { nombre: string; }; // Información de la empresa cliente
-  fechaCreacion: string; // Fecha de creación del ticket (ISO string)
-  tipoIncidente?: string; // Tipo de incidente
-  ubicacion?: { nombreReferencial?: string; direccionCompleta?: string; }; // Ubicación del incidente
-  tecnicoAsignado?: { name?: string; email?: string; }; // Técnico asignado
-  solicitanteNombre?: string; // Nombre del solicitante
-  prioridad: PrioridadTicket; // Prioridad del ticket usando el enum
-  estado: EstadoTicket; // Estado del ticket usando el enum
-}
+// Importar los enums de Prisma directamente
+import { EstadoTicket, PrioridadTicket } from '@prisma/client';
+// --- FIN DE LA CORRECCIÓN: IMPORTAR TIPOS REALES ---
 
-// Mock de los enums de Prisma
-// DEBES reemplazar esto con tus enums reales de `@prisma/client`
-enum EstadoTicket {
-  ABIERTO = 'ABIERTO',
-  CERRADO = 'CERRADO',
-  EN_PROGRESO = 'EN_PROGRESO',
-  PENDIENTE_TERCERO = 'PENDIENTE_TERCERO',
-  PENDIENTE_CLIENTE = 'PENDIENTE_CLIENTE',
-  RESUELTO = 'RESUELTO',
-  CANCELADO = 'CANCELADO',
-}
-
-enum PrioridadTicket {
-  BAJA = 'BAJA',
-  MEDIA = 'MEDIA',
-  ALTA = 'ALTA',
-  URGENTE = 'URGENTE',
-}
-
-// Mock de funciones de utilidad de '@/lib/utils'
-// DEBES reemplazar esto con tus funciones reales de '@/lib/utils'
-function cn(...args: any[]): string {
-  return args.flat().filter(Boolean).join(' ');
-}
-
-function formatTicketNumber(num: number | undefined): string {
-  if (typeof num === 'number') {
-    return String(num).padStart(4, '0'); // Ejemplo: 1 -> "0001"
-  }
-  return 'N/A';
-}
-
-function getCompanyLogoUrl(companyName?: string): string | undefined {
-  // Simulación: devuelve un URL de imagen de placeholder si el nombre de la empresa coincide
-  if (companyName?.toLowerCase().includes('google')) {
-    return 'https://placehold.co/48x24/1a73e8/ffffff?text=Google';
-  }
-  if (companyName?.toLowerCase().includes('microsoft')) {
-    return 'https://placehold.co/48x24/2f2f2f/ffffff?text=MSFT';
-  }
-  return undefined; // No hay logo
-}
-// --- FIN: MOCKS TEMPORALES ---
+// Importaciones de funciones de utilidad (asegúrate de que lib/utils.ts las exporta)
+import { cn, formatTicketNumber, getCompanyLogoUrl } from '@/lib/utils';
 
 // La interfaz de props para el componente TicketListItem
 interface TicketListItemProps {
@@ -263,4 +211,3 @@ export default function TicketListItem({
     </Card>
   );
 }
-
