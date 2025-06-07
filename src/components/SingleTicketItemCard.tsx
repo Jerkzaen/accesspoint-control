@@ -6,7 +6,6 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
 } from '@/components/ui/card';
 import { Ticket } from '@/types/ticket';
@@ -20,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, Hash } from 'lucide-react'; 
 import React, { useState } from 'react'; 
-import { EstadoTicket } from '@prisma/client'; 
+import { EstadoTicket, PrioridadTicket } from '@prisma/client'; 
 
 interface SingleTicketItemCardProps {
   ticket: Ticket | undefined | null;
@@ -60,10 +59,10 @@ function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, i
   // Determinar la variante de color de la insignia de prioridad
   let prioridadVariant: "default" | "secondary" | "destructive" | "outline" = "default";
   switch (ticket.prioridad) { 
-    case 'BAJA': prioridadVariant = "secondary"; break;
-    case 'MEDIA': prioridadVariant = "default"; break;
-    case 'ALTA': prioridadVariant = "outline"; break;
-    case 'URGENTE': prioridadVariant = "destructive"; break;
+    case PrioridadTicket.BAJA: prioridadVariant = "secondary"; break;
+    case PrioridadTicket.MEDIA: prioridadVariant = "default"; break;
+    case PrioridadTicket.ALTA: prioridadVariant = "outline"; break;
+    case PrioridadTicket.URGENTE: prioridadVariant = "destructive"; break;
     default: prioridadVariant = "outline";
   }
 
@@ -123,9 +122,7 @@ function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, i
         {
           "shadow-lg bg-primary/15 dark:bg-primary/25": isSelected,
           "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
-          // Apply a distinct highlight color when isNew is true.
-          // The existing 'transition-colors' will handle the fade out when 'isNew' becomes false.
-          "bg-indigo-100 dark:bg-indigo-800 transition-colors duration-1000 ease-out": isNew,
+          "animate-pulse-bg": isNew, // <<< MODIFICACIÓN CLAVE: Aplicar la animación si isNew es true
         }
       )}
       onClick={() => ticket && onSelectTicket(ticket)}

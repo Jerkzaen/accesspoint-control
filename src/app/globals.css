@@ -58,3 +58,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* === INICIO: NUEVAS ANIMACIONES === */
+@layer utilities {
+  @keyframes pulse-bg {
+    0%, 100% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: hsl(var(--primary) / 0.15);
+    }
+  }
+  
+  .animate-pulse-bg {
+    animation: pulse-bg 1.5s ease-in-out 2; /* 2 iteraciones para 2 parpadeos visibles */
+  }
+}
+/* === FIN: NUEVAS ANIMACIONES === */
