@@ -18,14 +18,14 @@ interface SessionUser {
 }
 
 // Interfaz para los datos que vienen del FormData del formulario.
-// Actualizada para coincidir con los 'name' attributes del TicketFormInModal.tsx
+// Esta interfaz se mantiene para asegurar la correcta lectura del FormData.
 interface TicketFormInputFields {
   nroCaso: number;
-  fechaCreacion: string; // Ahora puede incluir la hora:YYYY-MM-DDTHH:MM
-  empresaClienteId?: string; // Ahora es el ID de EmpresaCliente, puede ser opcional
+  fechaCreacion: string; 
+  empresaClienteId?: string; 
   tipoIncidente: string;    
-  prioridad: string;        // El valor será una de las claves del Enum PrioridadTicket
-  ubicacionId?: string;      // Ahora esperamos el ID de la Ubicacion, puede ser opcional
+  prioridad: string;        
+  ubicacionId?: string;      
   solicitanteNombre: string; 
   solicitanteTelefono?: string; 
   solicitanteCorreo?: string;   
@@ -60,17 +60,20 @@ export async function loadLastTicketNro(): Promise<number> {
     return lastTicket?.numeroCaso || 0;
   } catch (error) {
     console.error("Error al cargar numeroCaso del último ticket:", error);
+    // En un entorno real, podrías querer manejar este error de forma más robusta,
+    // por ejemplo, lanzando una excepción o devolviendo un estado de error específico.
     return 0; 
   }
 }
 
 export async function createNewTicketAction(
-  previousState: ActionState,
+  previousState: ActionState, // El estado anterior del Server Action (no se usa directamente en este flujo)
   formdata: FormData
 ): Promise<ActionState> {
   const session = await getServerSession(authOptions);
   const currentUser = session?.user as SessionUser | undefined;
 
+  // Validación de autenticación del usuario
   if (!currentUser?.id) {
     return { error: "Usuario no autenticado. No se puede crear el ticket.", success: false };
   }
@@ -78,10 +81,12 @@ export async function createNewTicketAction(
   const tecnicoLogueadoId = currentUser.id;
   const tecnicoLogueadoRol = currentUser.rol;
 
+  // Validación de rol del usuario
   if (tecnicoLogueadoRol !== "TECNICO" && tecnicoLogueadoRol !== "ADMIN") {
       return { error: "Usuario no autorizado para crear tickets.", success: false };
   }
 
+  // Mapeo de FormData a un objeto para fácil acceso y validación (aunque Zod ya lo hizo)
   const formInput: TicketFormInputFields = {
     nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
     fechaCreacion: formdata.get("fechaCreacion")?.toString() || new Date().toISOString().substring(0, 16), 
@@ -98,32 +103,29 @@ export async function createNewTicketAction(
     fechaSolucionEstimada: formdata.get("fechaSolucionEstimada")?.toString() || null,
   };
 
-  // Validación de campos obligatorios
-  let missingFields = [];
-  if (!formInput.nroCaso) missingFields.push("N° de Caso");
-  if (!formInput.tipoIncidente) missingFields.push("Tipo de Incidente");
-  if (!formInput.titulo) missingFields.push("Título");
-  if (!formInput.solicitanteNombre) missingFields.push("Nombre Solicitante");
-  if (!formInput.fechaCreacion) missingFields.push("Fecha Reporte");
-  
-  if (missingFields.length > 0) {
-      return { error: `Faltan campos obligatorios: ${missingFields.join(', ')}.`, success: false };
+  // Conversión de fechas a objetos Date. La validación de formato ya fue hecha por Zod.
+  const fechaCreacionDate = new Date(formInput.fechaCreacion); 
+  const fechaSolucionEstimadaDate = formInput.fechaSolucionEstimada ? new Date(formInput.fechaSolucionEstimada) : null;
+
+  // Verificación de existencia de valores esenciales (aunque Zod ya ayuda, es una última capa)
+  if (!formInput.nroCaso || !formInput.tipoIncidente || !formInput.titulo || !formInput.solicitanteNombre || !formInput.fechaCreacion) {
+    return { error: "Faltan campos obligatorios. Por favor, complete todos los campos requeridos.", success: false };
   }
-  
+
+  // Asegurar que la prioridad es un valor válido del enum de Prisma
+  // Esto es una capa de seguridad en el backend, en caso de que la validación del frontend falle o se omita.
   if (!Object.values(PrioridadTicket).includes(formInput.prioridad as PrioridadTicket)) {
     return { error: `Prioridad inválida: ${formInput.prioridad}. Valores permitidos: BAJA, MEDIA, ALTA, URGENTE.`, success: false };
   }
 
-  const fechaCreacionDate = new Date(formInput.fechaCreacion); 
-  const fechaSolucionEstimadaDate = formInput.fechaSolucionEstimada ? new Date(formInput.fechaSolucionEstimada) : null;
-
+  // Datos del ticket a guardar en la base de datos
   const ticketDataToSave = {
     numeroCaso: formInput.nroCaso,
     titulo: formInput.titulo,
     descripcionDetallada: formInput.descripcionDetallada?.trim() || null,
     tipoIncidente: formInput.tipoIncidente,
     prioridad: formInput.prioridad as PrioridadTicket, 
-    estado: EstadoTicket.ABIERTO, 
+    estado: EstadoTicket.ABIERTO, // El estado inicial de un ticket nuevo es 'ABIERTO'
     solicitanteNombre: formInput.solicitanteNombre,
     solicitanteTelefono: formInput.solicitanteTelefono || null,
     solicitanteCorreo: formInput.solicitanteCorreo || null,
@@ -135,11 +137,14 @@ export async function createNewTicketAction(
   };
 
   try {
+    // Usamos una transacción para asegurar que tanto el ticket como la acción inicial
+    // se creen o fallen juntos.
     const newTicket = await prisma.$transaction(async (tx) => {
       const createdTicket = await tx.ticket.create({
         data: ticketDataToSave,
       });
 
+      // Si hay una acción inicial proporcionada, la creamos
       if (formInput.accionInicial?.trim()) {
         await tx.accionTicket.create({
           data: {
@@ -152,13 +157,14 @@ export async function createNewTicketAction(
       return createdTicket;
     });
 
+    // Recuperamos el ticket completo con todas sus relaciones para devolverlo
     const fullCreatedTicket = await prisma.ticket.findUnique({
       where: { id: newTicket.id },
       include: {
         acciones: { 
-          orderBy: { fechaAccion: 'asc' },
+          orderBy: { fechaAccion: 'asc' }, // Ordenar acciones por fecha de creación
           include: {
-            realizadaPor: {
+            realizadaPor: { // Incluir la información del usuario que realizó la acción
               select: {
                 id: true,
                 name: true,
@@ -173,9 +179,10 @@ export async function createNewTicketAction(
       },
     });
 
+    // Si por alguna razón el ticket completo no se encuentra (caso raro post-creación)
     if (!fullCreatedTicket) {
       console.warn(`Ticket ${newTicket.id} no encontrado después de la creación/transacción. Revalidación podría no ser perfecta.`);
-      revalidatePath("/tickets/dashboard");
+      revalidatePath("/tickets/dashboard"); // Revalidar la caché para asegurar que la lista se actualice
       return { 
         success: true, 
         message: `Ticket #${newTicket.numeroCaso} creado exitosamente, pero con datos incompletos.`, 
@@ -183,23 +190,26 @@ export async function createNewTicketAction(
       };
     }
 
-    revalidatePath("/tickets/dashboard"); 
+    revalidatePath("/tickets/dashboard"); // Revalidar la caché de la ruta del dashboard
     return { 
       success: true, 
       message: `Ticket #${newTicket.numeroCaso} creado exitosamente. Técnico asignado: ${currentUser.name || currentUser.email}.`, 
       ticketId: newTicket.id,
-      ticket: fullCreatedTicket 
+      ticket: fullCreatedTicket // Devolvemos el objeto Ticket completo
     };
   } catch (error: any) {
     console.error("Error al crear ticket en Prisma:", error);
     let errorMessage = "Error al crear el ticket.";
+    // Manejo específico de errores de Prisma
     if (error.code === 'P2002' && error.meta?.target?.includes('numeroCaso')) {
-        errorMessage = "El número de caso ya existe.";
+        errorMessage = "El número de caso ya existe. Por favor, intente con otro.";
     } else if (error.code === 'P2003') { 
         if (error.meta?.field_name?.includes('empresaClienteId')) {
             errorMessage = "La empresa cliente seleccionada no es válida.";
         } else if (error.meta?.field_name?.includes('ubicacionId')) {
             errorMessage = "La ubicación seleccionada no es válida.";
+        } else if (error.meta?.field_name?.includes('tecnicoAsignadoId')) {
+          errorMessage = "El técnico asignado no es válido.";
         }
     } else if (error.message) {
         errorMessage = error.message;

@@ -20,16 +20,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
-import { TicketModal } from './TicketModal';
+import { TicketModal } from './TicketModal'; // Importación corregida si era el problema
 import { createNewTicketAction, loadLastTicketNro } from '@/app/actions/ticketActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
+import { cn } from '@/lib/utils'; // Asegúrate de que cn esté importado para las clases condicionales
 
 // --- INTERFACES Y CONSTANTES ---
 interface EmpresaClienteOption { id: string; nombre: string; }
 interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
 
-// Interfaz que faltaba y causaba el error. Define las props que espera el componente.
 interface TicketCardProps {
   empresasClientes: EmpresaClienteOption[];
   ubicacionesDisponibles: UbicacionOption[];
@@ -39,8 +39,7 @@ export type CreationFlowStatus = 'idle' | 'form' | 'loading' | 'success' | 'erro
 interface ActionState { error?: string; success?: boolean; ticket?: Ticket; }
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
-const MIN_SKELETON_DISPLAY_TIME = 500;
-const MIN_CREATION_LOADER_TIME = 2000; // Mínimo 2 segundos de loader
+const MIN_CREATION_LOADER_TIME = 2000;
 const NEW_TICKET_HIGHLIGHT_DURATION = 3000;
 const MODAL_SUCCESS_DISPLAY_DURATION = 2000;
 const initialActionState: ActionState = { error: undefined, success: undefined, ticket: undefined };
@@ -62,7 +61,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [nextTicketNumber, setNextTicketNumber] = React.useState(0);
   const [newlyCreatedTicketId, setNewlyCreatedTicketId] = React.useState<string | null>(null);
 
-  // --- Estados del Flujo de Creación (El cerebro del orquestador) ---
   const [creationFlow, setCreationFlow] = React.useState<CreationFlowStatus>('idle');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submissionError, setSubmissionError] = React.useState<string | null>(null);
@@ -72,8 +70,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [estadoFilter, setEstadoFilter] = React.useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all');
   const [prioridadFilter, setPrioridadFilter] = React.useState<PrioridadTicket | 'all'>(currentFilters.prioridad as PrioridadTicket || 'all');
   const [debouncedSearchText, setDebouncedSearchText] = React.useState(searchText);
-  const [showFilterSkeleton, setShowFilterSkeleton] = React.useState(false);
-  const filterStartTimeRef = React.useRef<number | null>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   
   // --- MANEJADORES Y CALLBACKS ---
@@ -102,32 +98,26 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     setIsSubmitting(false);
   }, []);
   
-  // Lógica central para manejar el envío y el temporizador.
   const handleSubmitTicketForm = async (formData: FormData) => {
     setIsSubmitting(true);
     setSubmissionError(null);
     setCreationFlow('loading');
 
-    // Se crean dos promesas: una para la acción de red y otra para el temporizador.
     const actionPromise = createNewTicketAction(initialActionState, formData);
     const timerPromise = new Promise(resolve => setTimeout(resolve, MIN_CREATION_LOADER_TIME));
     
-    // `Promise.all` espera a que ambas terminen. Esto garantiza que el loader dure al menos 2 segundos.
     const [actionResult] = await Promise.all([actionPromise, timerPromise]);
 
     setIsSubmitting(false);
 
-    // Se evalúa el resultado de la acción de red.
     if (actionResult.success && actionResult.ticket) {
       setCreationFlow('success');
       refreshTickets();
       setSelectedTicket(actionResult.ticket);
       setNewlyCreatedTicketId(actionResult.ticket.id);
       
-      // Cierra el modal de éxito después de un tiempo para que el usuario lo vea.
       setTimeout(() => handleCloseCreateModal(), MODAL_SUCCESS_DISPLAY_DURATION);
     } else {
-      // Si hay error, guarda los datos del formulario y muestra la pantalla de error.
       setStashedTicketData(formData);
       setSubmissionError(actionResult.error || 'Ocurrió un error desconocido.');
       setCreationFlow('error');
@@ -165,24 +155,9 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     };
     if (JSON.stringify(newFilters) !== JSON.stringify(currentFilters)) {
       setSelectedTicket(null);
-      filterStartTimeRef.current = Date.now();
-      setShowFilterSkeleton(true);
       applyFilters(newFilters);
     }
   }, [debouncedSearchText, estadoFilter, prioridadFilter, applyFilters, currentFilters]);
-
-  React.useEffect(() => {
-    if (!isLoading && showFilterSkeleton) {
-      const elapsed = Date.now() - (filterStartTimeRef.current || 0);
-      const remainingTime = MIN_SKELETON_DISPLAY_TIME - elapsed;
-      if (remainingTime > 0) {
-        const timer = setTimeout(() => setShowFilterSkeleton(false), remainingTime);
-        return () => clearTimeout(timer);
-      } else {
-        setShowFilterSkeleton(false);
-      }
-    }
-  }, [isLoading, showFilterSkeleton]);
   
   React.useEffect(() => {
     if (newlyCreatedTicketId) {
@@ -222,12 +197,23 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="searchText">Buscar por texto</Label>
-              <Input id="searchText" type="text" placeholder="Título, Empresa..." value={searchText} onChange={(e) => setSearchText(e.target.value)} className="h-9"/>
+              {/* Resaltar input de búsqueda si tiene texto */}
+              <Input
+                id="searchText"
+                type="text"
+                placeholder="Título, Empresa..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className={cn("h-9", { "border-primary ring-2 ring-primary/50": searchText.trim() !== "" })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="estadoFilter">Estado</Label>
               <Select value={estadoFilter} onValueChange={(value: EstadoTicket | 'all') => setEstadoFilter(value)}>
-                <SelectTrigger id="estadoFilter" className="h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
+                {/* Resaltar SelectTrigger si el filtro de estado no es 'all' */}
+                <SelectTrigger id="estadoFilter" className={cn("h-9", { "border-primary ring-2 ring-primary/50": estadoFilter !== "all" })}>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   {Object.values(EstadoTicket).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -237,7 +223,10 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             <div className="space-y-1.5">
               <Label htmlFor="prioridadFilter">Prioridad</Label>
               <Select value={prioridadFilter} onValueChange={(value: PrioridadTicket | 'all') => setPrioridadFilter(value)}>
-                <SelectTrigger id="prioridadFilter" className="h-9"><SelectValue placeholder="Todas" /></SelectTrigger>
+                {/* Resaltar SelectTrigger si el filtro de prioridad no es 'all' */}
+                <SelectTrigger id="prioridadFilter" className={cn("h-9", { "border-primary ring-2 ring-primary/50": prioridadFilter !== "all" })}>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las prioridades</SelectItem>
                   {Object.values(PrioridadTicket).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
@@ -250,27 +239,35 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           </div>
         </div>
 
-        {/* Lista de Tickets */}
-        <div className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2" style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}>
-          {showFilterSkeleton ? (
-            Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-32 w-full rounded-lg" />)
-          ) : (
-            tickets.length > 0 ? (
-              tickets.sort((a,b) => new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime()).map((ticket) => (
-                <SingleTicketItemCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  onSelectTicket={handleSelectTicket}
-                  onTicketUpdatedInList={handleTicketUpdated}
-                  isSelected={selectedTicket?.id === ticket.id && isDesktop}
-                  isNew={newlyCreatedTicketId === ticket.id}
-                />
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-                <p>No se encontraron tickets con los filtros actuales.</p>
-              </div>
-            )
+        {/* Lista de Tickets con overlay de carga */}
+        <div className="flex-grow overflow-y-auto space-y-2 pb-4 md:pr-2 relative" style={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 160px)` }}>
+          {/* Muestra la lista de tickets, atenuada si está cargando */}
+          <div className={cn({ "opacity-50 pointer-events-none transition-opacity duration-300": isLoading })}>
+            {tickets.length > 0 ? (
+                tickets.sort((a,b) => new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime()).map((ticket) => (
+                  <SingleTicketItemCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    onSelectTicket={handleSelectTicket}
+                    onTicketUpdatedInList={handleTicketUpdated}
+                    isSelected={selectedTicket?.id === ticket.id && isDesktop}
+                    isNew={newlyCreatedTicketId === ticket.id}
+                    // Ya no es necesario pasar isFilteringActive aquí, el overlay general lo maneja
+                  />
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                  <p>No se encontraron tickets con los filtros actuales.</p>
+                </div>
+              )
+            }
+          </div>
+          {/* Overlay de carga para filtros */}
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10 rounded-lg">
+              <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+              <p className="text-muted-foreground">Aplicando filtros...</p>
+            </div>
           )}
         </div>
       </div>
@@ -278,7 +275,8 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
       {/* Panel de Detalles (Desktop) */}
       {isDesktop && (
         <div className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]" style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}>
-          <SelectedTicketPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET} isLoadingGlobal={showFilterSkeleton}/>
+          {/* isLoadingGlobal ahora se basa directamente en `isLoading` del hook `useTickets` */}
+          <SelectedTicketPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET} isLoadingGlobal={isLoading}/>
         </div>
       )}
 

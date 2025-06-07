@@ -27,10 +27,11 @@ interface SingleTicketItemCardProps {
   onTicketUpdatedInList: (updatedTicket: Ticket) => void;
   isSelected: boolean;
   isNew?: boolean; // Prop para la animación de nuevo ticket
+  isFilteringActive?: boolean; // NUEVA PROP: Para indicar si los filtros están activos globalmente
 }
 
 // Definimos el componente funcional principal
-function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected, isNew = false }: SingleTicketItemCardProps) {
+function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, isSelected, isNew = false, isFilteringActive = false }: SingleTicketItemCardProps) {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Manejo de tickets no válidos o incompletos
@@ -122,7 +123,10 @@ function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, i
         {
           "shadow-lg bg-primary/15 dark:bg-primary/25": isSelected,
           "shadow-md dark:border-slate-700 hover:bg-primary/10 dark:hover:bg-primary/15": !isSelected,
-          "animate-pulse-bg": isNew, // <<< MODIFICACIÓN CLAVE: Aplicar la animación si isNew es true
+          "animate-pulse-bg": isNew, // Aplicar la animación si isNew es true
+          // NUEVA CLASE: Aplica un overlay sutil cuando la carga de filtros está activa
+          // Se usa `isFilteringActive` para atenuar la tarjeta si la carga está activa en el padre.
+          "opacity-50 pointer-events-none transition-opacity duration-300": isFilteringActive,
         }
       )}
       onClick={() => ticket && onSelectTicket(ticket)}
@@ -220,4 +224,3 @@ function SingleTicketItemCard({ ticket, onSelectTicket, onTicketUpdatedInList, i
 }
 
 export default SingleTicketItemCard;
-

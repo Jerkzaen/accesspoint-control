@@ -73,5 +73,23 @@
   .animate-pulse-bg {
     animation: pulse-bg 1.5s ease-in-out 2; /* 2 iteraciones para 2 parpadeos visibles */
   }
+
+  /* Nueva animación para el efecto shimmer/overlay de carga */
+  @keyframes shimmer-effect {
+    0% {
+      opacity: 0.8; /* Ligeramente opaco al inicio */
+    }
+    50% {
+      opacity: 0.5; /* Más atenuado en el medio */
+    }
+    100% {
+      opacity: 0.8; /* Vuelve a un ligero opaco */
+    }
+  }
+
+  /* Clase para aplicar el efecto shimmer */
+  .animate-shimmer {
+    animation: shimmer-effect 1.8s infinite ease-in-out; /* Animación continua y suave */
+  }
 }
 /* === FIN: NUEVAS ANIMACIONES === */

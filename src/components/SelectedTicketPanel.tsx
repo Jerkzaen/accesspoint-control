@@ -18,13 +18,14 @@ import { Badge } from '@/components/ui/badge';
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 // Importar el componente Skeleton
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 
 interface SelectedTicketPanelProps {
   selectedTicket: Ticket | null;
   onTicketUpdated: (updatedTicket: Ticket) => void;
   headerAndPagePaddingOffset?: string;
-  isLoadingGlobal?: boolean; // Propiedad adicional para indicar si la carga global está activa
+  isLoadingGlobal?: boolean; // Propiedad adicional para indicar si la carga global está activa (de la lista)
 }
 
 export default function SelectedTicketPanel({
@@ -57,37 +58,58 @@ export default function SelectedTicketPanel({
     error: actionsManagerError,
     startEditingAction,
     cancelEditingAction,
-    addAction,
     saveEditedAction,
+    addAction, // Asegúrate de que addAction esté en la desestructuración
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
-  // CORRECCIÓN: Mostrar skeleton si no hay ticket seleccionado O si la carga global está activa
-  if (!selectedTicket || isLoadingGlobal) { // Si no hay ticket seleccionado O si la lista principal está cargando
+  // Lógica para mostrar esqueleto o mensaje "Selecciona un ticket"
+  // PRIORIDAD 1: Mostrar esqueleto SOLO si NO hay ticket seleccionado Y la carga global está activa (ej. carga inicial de la página o filtros que devuelven 0 resultados y no hay selección)
+  if (!selectedTicket && isLoadingGlobal) { 
     return (
       <Card
         className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center"
         style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})`, maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }}
       >
-        {/* Usar un Skeleton para el estado sin ticket seleccionado o cargando */}
         <div className="w-full h-full flex flex-col gap-4">
-          <Skeleton className="h-6 w-3/4" /> {/* Título simulado */}
-          <Skeleton className="h-4 w-1/2" />  {/* Subtítulo simulado */}
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
           <div className="grid grid-cols-2 gap-2 mt-4">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
           </div>
-          <Skeleton className="h-20 w-full mt-4" /> {/* Descripción simulada */}
-          <Skeleton className="h-6 w-1/3 mt-4" /> {/* Sección bitácora */}
+          <Skeleton className="h-20 w-full mt-4" />
+          <Skeleton className="h-6 w-1/3 mt-4" />
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" /> /* Acciones simuladas */
+            <Skeleton key={i} className="h-10 w-full" />
           ))}
-          <Skeleton className="h-20 w-full mt-auto" /> {/* Nueva acción */}
+          <Skeleton className="h-20 w-full mt-auto" />
         </div>
       </Card>
     );
   }
+
+  // PRIORIDAD 2: Mostrar mensaje "Selecciona un ticket" si NO hay ticket seleccionado Y la carga global NO está activa (la página ya cargó sin selección)
+  if (!selectedTicket && !isLoadingGlobal) {
+    return (
+      <Card
+        className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col items-center justify-center text-muted-foreground text-center"
+        style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})`, maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }}
+      >
+        <AlertTriangle className="h-12 w-12 mb-4" />
+        <p className="text-lg font-semibold mb-2">Selecciona un Ticket</p>
+        <p className="text-sm">Haz clic en un ticket de la lista para ver sus detalles aquí.</p>
+      </Card>
+    );
+  }
+
+  // A partir de aquí, sabemos que selectedTicket NO es null (hay un ticket seleccionado).
+  // Solo aplicamos la atenuación si isLoadingGlobal es true, indicando que la LISTA está cargando,
+  // pero el contenido del panel de detalles debe permanecer.
+  const panelContentClasses = cn("flex flex-col h-full overflow-hidden", {
+    "opacity-50 pointer-events-none transition-opacity duration-300": isLoadingGlobal && !isEditingTicket,
+  });
 
   const combinedError = ticketEditorError || actionsManagerError;
 
@@ -128,19 +150,22 @@ export default function SelectedTicketPanel({
 
   return (
     <Card
-      className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col"
+      className={cn(
+        "shadow-lg rounded-lg p-4 sticky top-4 flex flex-col",
+        { "opacity-50 pointer-events-none transition-opacity duration-300": isLoadingGlobal && !isEditingTicket }
+      )}
       style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})`, maxHeight: `calc(100vh - ${headerAndPagePaddingOffset})` }}
     >
       <div className="flex flex-col h-full overflow-hidden">
         <div className="mb-3 pb-2 border-b flex-shrink-0">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso}</CardTitle>
+              <CardTitle className="text-base">Ticket #{selectedTicket!.numeroCaso}</CardTitle> 
               <Badge 
-                variant={getEstadoBadgeVariant(selectedTicket.estado)}
+                variant={getEstadoBadgeVariant(selectedTicket!.estado)}
                 className="mt-1 whitespace-nowrap text-xs px-2 py-0.5 h-auto rounded-full"
               >
-                Estado: {selectedTicket.estado}
+                Estado: {selectedTicket!.estado}
               </Badge>
             </div>
             {!isEditingTicket && (
@@ -161,7 +186,7 @@ export default function SelectedTicketPanel({
         {isEditingTicket && editableTicketData && (
           <Card className="mb-3 p-3 border-dashed flex-shrink-0 bg-muted/30 dark:bg-muted/10 overflow-y-auto">
             <CardHeader className="p-1 pb-2">
-              <CardTitle className="text-sm">Editando Ticket #{selectedTicket.numeroCaso}</CardTitle>
+              <CardTitle className="text-sm">Editando Ticket #{selectedTicket!.numeroCaso}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-1 text-xs">
               <div className="space-y-0.5">
@@ -237,31 +262,54 @@ export default function SelectedTicketPanel({
 
         {!isEditingTicket && (
           <div className="flex flex-col flex-grow overflow-hidden">
-            <div className="py-2 my-1 text-xs space-y-1 flex-shrink-0">
-              <p><strong>Título:</strong> {selectedTicket.titulo}</p>
-              <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
-              <p><strong>Ubicación:</strong> {selectedTicket.ubicacion?.nombreReferencial || selectedTicket.ubicacion?.direccionCompleta || 'N/A'}</p>
-              <p><strong>Técnico Asignado:</strong> {selectedTicket.tecnicoAsignado?.name || selectedTicket.tecnicoAsignado?.email || 'No asignado'}</p>
-              <p><strong>Solicitante:</strong> {selectedTicket.solicitanteNombre}</p>
-              <p><strong>Prioridad:</strong> {selectedTicket.prioridad.toUpperCase()}</p>
-              <p><strong>Fecha Creación:</strong> {fechaCreacionFormatted}</p>
-              {fechaSolucionFormatted && <p><strong>Fecha Solución:</strong> {fechaSolucionFormatted}</p>}
-              {selectedTicket.descripcionDetallada && (
-                <div className="mt-2">
-                  <strong>Descripción Detallada:</strong>
-                  <div className="mt-1 text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border">
-                    {selectedTicket.descripcionDetallada}
+            {/* Sección de Información General */}
+            <Card className="mb-3 p-3 flex-shrink-0 bg-muted/10 dark:bg-muted/5 border-none shadow-none">
+              <CardHeader className="p-0 pb-2">
+                <CardTitle className="text-sm">Información General</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 p-0 text-xs">
+                <p><strong>Título:</strong> {selectedTicket!.titulo}</p> 
+                <p><strong>Tipo Incidente:</strong> {selectedTicket!.tipoIncidente}</p>
+                <p><strong>Prioridad:</strong> {selectedTicket!.prioridad.toUpperCase()}</p>
+                <p><strong>Fecha Creación:</strong> {fechaCreacionFormatted}</p>
+                {fechaSolucionFormatted && <p><strong>Fecha Solución:</strong> {fechaSolucionFormatted}</p>}
+              </CardContent>
+            </Card>
+
+            {/* Sección de Detalles Adicionales */}
+            {selectedTicket!.descripcionDetallada && (
+              <Card className="mb-3 p-3 flex-shrink-0 bg-muted/10 dark:bg-muted/5 border-none shadow-none">
+                <CardHeader className="p-0 pb-2">
+                  <CardTitle className="text-sm">Descripción Detallada</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1 p-0 text-xs">
+                  <div className="text-xs whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-border">
+                    {selectedTicket!.descripcionDetallada}
                   </div>
-                </div>
-              )}
-            </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sección de Contacto y Ubicación */}
+            <Card className="mb-3 p-3 flex-shrink-0 bg-muted/10 dark:bg-muted/5 border-none shadow-none">
+              <CardHeader className="p-0 pb-2">
+                <CardTitle className="text-sm">Contacto y Ubicación</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 p-0 text-xs">
+                <p><strong>Solicitante:</strong> {selectedTicket!.solicitanteNombre}</p>
+                <p><strong>Ubicación:</strong> {selectedTicket!.ubicacion?.nombreReferencial || selectedTicket!.ubicacion?.direccionCompleta || 'N/A'}</p>
+                <p><strong>Técnico Asignado:</strong> {selectedTicket!.tecnicoAsignado?.name || selectedTicket!.tecnicoAsignado?.email || 'No asignado'}</p>
+              </CardContent>
+            </Card>
+
 
             <div className="mb-2 mt-1 flex-shrink-0">
               <span className="text-sm font-semibold">Bitácora de acciones</span>
             </div>
 
             <div className="overflow-y-auto space-y-2 mb-3 flex-grow">
-              {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act) => (
+              {/* CORRECCIÓN: Tipado explícito de 'act' para evitar 'implicitly has an any type' */}
+              {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act: ActionEntry) => (
                 <div key={act.id} className="text-xs border-b pb-1 flex items-start justify-between gap-2">
                   {editingActionId === act.id ? (
                     <Textarea
@@ -272,7 +320,6 @@ export default function SelectedTicketPanel({
                       disabled={isProcessingAction}
                     />
                   ) : (
-                    // Formatear fecha y hora a 24 horas y sin AM/PM en la bitácora
                     <span className="font-medium flex-grow break-all pt-1">
                       {new Date(act.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)}:{' '}
                       {act.descripcion}
@@ -299,7 +346,6 @@ export default function SelectedTicketPanel({
               )) : <p className="text-xs text-muted-foreground">No hay acciones registradas.</p>}
             </div>
 
-            {/* Se añadió pb-4 a esta sección para darle espacio inferior */}
             <div className="pt-2 border-t flex-shrink-0 pb-4">
               <span className="text-sm font-semibold">Agregar nueva acción</span>
               <Textarea

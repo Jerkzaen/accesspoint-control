@@ -3,11 +3,11 @@
 
 import * as React from "react";
 import { useEffect, useRef } from "react";
-import { TicketFormInModal } from "./TicketFormInModal";
+import { TicketFormInModal } from "./TicketFormInModal"; // Importación correcta
 import { CreationFlowStatus } from "./TicketCard";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button"; // Usar alias @/components/ui/button para consistencia.
 
 // --- INTERFACES ---
 interface EmpresaClienteOption {
@@ -50,6 +50,7 @@ export function TicketModal({
   stashedData
 }: TicketModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null); // Referencia al formulario dentro del modal
   const [isRendered, setIsRendered] = React.useState(false);
 
   // Este efecto maneja el montaje y desmontaje del modal
@@ -58,15 +59,14 @@ export function TicketModal({
     if (isOpen) {
       setIsRendered(true);
     } else {
-      // Espera a que termine la animación de salida antes de desmontar
       const timer = setTimeout(() => {
         setIsRendered(false);
-      }, 300); // Debe coincidir con la duración de la animación de salida
+      }, 300); 
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-
+  // Efecto para manejar el foco y las interacciones con el teclado/clic exterior
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen && flowStatus !== 'loading' && flowStatus !== 'success') {
@@ -83,6 +83,17 @@ export function TicketModal({
       document.body.style.overflow = 'hidden';
       document.addEventListener('keydown', handleEsc);
       document.addEventListener('mousedown', handleClickOutside);
+      
+      const focusTimer = setTimeout(() => {
+        if (formRef.current) {
+          const firstInput = formRef.current.querySelector('input, select, textarea') as HTMLElement;
+          if (firstInput) {
+            firstInput.focus();
+          }
+        }
+      }, 50); 
+      
+      return () => clearTimeout(focusTimer); 
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -92,14 +103,14 @@ export function TicketModal({
       document.removeEventListener('keydown', handleEsc);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose, flowStatus]);
+  }, [isOpen, onClose, flowStatus]); // Dependencias correctas
 
   if (!isRendered) {
     return null;
   }
   
   const modalContainerClasses = cn(
-    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-200", // Transición suave para el tamaño
+    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-200", 
     {
       'w-full max-w-2xl max-h-[90vh]': flowStatus === 'form',
       'w-48 h-48': flowStatus === 'loading',
@@ -117,15 +128,10 @@ export function TicketModal({
       data-state={isOpen ? 'open' : 'closed'}
     >
       <div
-        // CORRECCIÓN 1: La prop `key` fuerza a React a re-renderizar este div como uno nuevo
-        // cada vez que el `flowStatus` cambia. Esto reinicia la animación de entrada
-        // con el tamaño correcto, eliminando el "salto".
         key={flowStatus}
         ref={modalRef}
         className={cn(
             modalContainerClasses,
-            // CORRECCIÓN 2: Se aumenta la duración para una animación más lenta y fluida.
-            // Se aplican tanto en la entrada como en la salida.
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:duration-500",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:duration-300"
         )}
@@ -134,6 +140,7 @@ export function TicketModal({
       >
         {flowStatus === 'form' && (
           <TicketFormInModal
+            ref={formRef} 
             nextNroCaso={nextNroCaso}
             onSubmit={onSubmit}
             onCancel={onClose}
@@ -141,19 +148,27 @@ export function TicketModal({
             serverError={submissionError}
             empresasClientes={empresasClientes}
             ubicacionesDisponibles={ubicacionesDisponibles}
-            initialData={stashedData}
+            initialData={stashedData} // Asegurarse de que stashedData se pase correctamente aquí
           />
         )}
 
         {flowStatus === 'loading' && (
-          <div className="flex flex-col items-center justify-center text-center p-6 w-full h-full">
+          <div 
+            className="flex flex-col items-center justify-center text-center p-6 w-full h-full"
+            role="status" 
+            aria-live="polite" 
+          >
             <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
             <p className="text-muted-foreground">Creando ticket...</p>
           </div>
         )}
 
         {flowStatus === 'success' && (
-          <div className="flex flex-col items-center justify-center text-center p-8 w-full h-full">
+          <div 
+            className="flex flex-col items-center justify-center text-center p-8 w-full h-full"
+            role="status" 
+            aria-live="polite" 
+          >
             <CheckCircle className="h-20 w-20 text-green-500 mb-6" />
             <h3 className="text-xl font-semibold">¡Ticket Creado!</h3>
             <p className="text-muted-foreground text-sm mt-1">El ticket ha sido registrado exitosamente.</p>
@@ -161,7 +176,11 @@ export function TicketModal({
         )}
         
         {flowStatus === 'error' && (
-            <div className="flex flex-col items-center justify-center text-center p-8 w-full h-full">
+            <div 
+                className="flex flex-col items-center justify-center text-center p-8 w-full h-full"
+                role="alert" 
+                aria-live="assertive" 
+            >
                 <AlertCircle className="h-20 w-20 text-destructive mb-6" />
                 <h3 className="text-xl font-semibold">Error al Crear</h3>
                 <p className="text-muted-foreground text-sm mt-1 mb-4">{submissionError || "No se pudo crear el ticket."}</p>
