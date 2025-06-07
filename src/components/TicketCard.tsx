@@ -21,35 +21,31 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
 import { TicketModal } from './TicketModal';
-import { loadLastTicketNro } from '@/app/actions/ticketActions';
+import { createNewTicketAction, loadLastTicketNro } from '@/app/actions/ticketActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 
-// Interfaces para los datos que esperamos
-interface EmpresaClienteOption {
-  id: string;
-  nombre: string;
-}
+// --- INTERFACES Y CONSTANTES ---
+interface EmpresaClienteOption { id: string; nombre: string; }
+interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
 
-interface UbicacionOption {
-  id: string;
-  nombreReferencial: string | null;
-  direccionCompleta: string;
-}
-
+// Interfaz que faltaba y causaba el error. Define las props que espera el componente.
 interface TicketCardProps {
   empresasClientes: EmpresaClienteOption[];
   ubicacionesDisponibles: UbicacionOption[];
 }
 
-// NUEVO: Tipo para la máquina de estados del flujo de creación
 export type CreationFlowStatus = 'idle' | 'form' | 'loading' | 'success' | 'error';
+interface ActionState { error?: string; success?: boolean; ticket?: Ticket; }
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 const MIN_SKELETON_DISPLAY_TIME = 500;
-const NEW_TICKET_HIGHLIGHT_DURATION = 3000; // 3 segundos para el resaltado
-const MODAL_SUCCESS_DISPLAY_DURATION = 2000; // 2 segundos para el mensaje de éxito en el modal
+const MIN_CREATION_LOADER_TIME = 2000; // Mínimo 2 segundos de loader
+const NEW_TICKET_HIGHLIGHT_DURATION = 3000;
+const MODAL_SUCCESS_DISPLAY_DURATION = 2000;
+const initialActionState: ActionState = { error: undefined, success: undefined, ticket: undefined };
 
+// --- COMPONENTE ORQUESTADOR ---
 export default function TicketCard({ empresasClientes, ubicacionesDisponibles }: TicketCardProps) {
   const {
     tickets,
@@ -66,11 +62,11 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const [nextTicketNumber, setNextTicketNumber] = React.useState(0);
   const [newlyCreatedTicketId, setNewlyCreatedTicketId] = React.useState<string | null>(null);
 
-  // --- INICIO: NUEVOS ESTADOS PARA ORQUESTACIÓN ---
+  // --- Estados del Flujo de Creación (El cerebro del orquestador) ---
   const [creationFlow, setCreationFlow] = React.useState<CreationFlowStatus>('idle');
-  // Almacenará los datos del formulario si la creación falla, para poder rellenarlos de nuevo.
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submissionError, setSubmissionError] = React.useState<string | null>(null);
   const [stashedTicketData, setStashedTicketData] = React.useState<FormData | null>(null);
-  // --- FIN: NUEVOS ESTADOS PARA ORQUESTACIÓN ---
 
   const [searchText, setSearchText] = React.useState(currentFilters.searchText || '');
   const [estadoFilter, setEstadoFilter] = React.useState<EstadoTicket | 'all'>(currentFilters.estado as EstadoTicket || 'all');
@@ -81,62 +77,71 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   const isDesktop = useMediaQuery('(min-width: 768px)');
   
   // --- MANEJADORES Y CALLBACKS ---
-
   const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
-    setTickets(prevTickets =>
-      prevTickets.map(t => (t.id === updatedTicket.id ? updatedTicket : t))
-    );
-    if (selectedTicket?.id === updatedTicket.id) {
-      setSelectedTicket(updatedTicket);
-    }
+    setTickets(prev => prev.map(t => (t.id === updatedTicket.id ? updatedTicket : t)));
+    if (selectedTicket?.id === updatedTicket.id) setSelectedTicket(updatedTicket);
   }, [selectedTicket, setTickets]);
 
   const handleOpenCreateModal = React.useCallback(async () => {
+    setSubmissionError(null);
     try {
       const lastNro = await loadLastTicketNro();
       setNextTicketNumber(lastNro + 1);
-      setCreationFlow('form'); // Abre el modal mostrando el formulario
+      setCreationFlow('form');
     } catch (err) {
       console.error("Error al cargar el siguiente número de ticket:", err);
-      // Opcional: mostrar un toast de error aquí
+      setSubmissionError("No se pudo obtener el número de ticket. Intente de nuevo.");
+      setCreationFlow('error');
     }
   }, []);
   
   const handleCloseCreateModal = React.useCallback(() => {
-    setCreationFlow('idle'); // Cierra el modal y resetea el flujo
-    setStashedTicketData(null); // Limpia datos guardados
+    setCreationFlow('idle');
+    setStashedTicketData(null);
+    setSubmissionError(null);
+    setIsSubmitting(false);
   }, []);
-
-  const handleTicketFormCompletion = React.useCallback((newTicket: Ticket | undefined, formData?: FormData, error?: string) => {
-    if (newTicket) {
-      setCreationFlow('success'); // Transición a la vista de éxito
-      refreshTickets();
-      setSelectedTicket(newTicket); // Selecciona inmediatamente el nuevo ticket
-      setNewlyCreatedTicketId(newTicket.id); // Marca para resaltar
-      
-      // Cierra el modal después de que la animación de éxito se muestre
-      setTimeout(() => {
-        handleCloseCreateModal();
-      }, MODAL_SUCCESS_DISPLAY_DURATION);
-
-    } else {
-      // Si hay error, guardamos los datos del formulario para poder reintentar
-      if (formData) {
-        setStashedTicketData(formData);
-      }
-      setCreationFlow('error'); // Transición a la vista de error
-    }
-  }, [refreshTickets, handleCloseCreateModal]);
   
-  const handleSelectTicket = (ticket: Ticket) => {
-    setSelectedTicket(ticket);
-    if (!isDesktop) {
-      setIsSheetOpen(true);
+  // Lógica central para manejar el envío y el temporizador.
+  const handleSubmitTicketForm = async (formData: FormData) => {
+    setIsSubmitting(true);
+    setSubmissionError(null);
+    setCreationFlow('loading');
+
+    // Se crean dos promesas: una para la acción de red y otra para el temporizador.
+    const actionPromise = createNewTicketAction(initialActionState, formData);
+    const timerPromise = new Promise(resolve => setTimeout(resolve, MIN_CREATION_LOADER_TIME));
+    
+    // `Promise.all` espera a que ambas terminen. Esto garantiza que el loader dure al menos 2 segundos.
+    const [actionResult] = await Promise.all([actionPromise, timerPromise]);
+
+    setIsSubmitting(false);
+
+    // Se evalúa el resultado de la acción de red.
+    if (actionResult.success && actionResult.ticket) {
+      setCreationFlow('success');
+      refreshTickets();
+      setSelectedTicket(actionResult.ticket);
+      setNewlyCreatedTicketId(actionResult.ticket.id);
+      
+      // Cierra el modal de éxito después de un tiempo para que el usuario lo vea.
+      setTimeout(() => handleCloseCreateModal(), MODAL_SUCCESS_DISPLAY_DURATION);
+    } else {
+      // Si hay error, guarda los datos del formulario y muestra la pantalla de error.
+      setStashedTicketData(formData);
+      setSubmissionError(actionResult.error || 'Ocurrió un error desconocido.');
+      setCreationFlow('error');
     }
   };
 
-  const handleCloseSheet = () => {
-    setIsSheetOpen(false);
+  const handleRetryCreation = () => {
+    setCreationFlow('form');
+    setSubmissionError(null);
+  };
+  
+  const handleSelectTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    if (!isDesktop) setIsSheetOpen(true);
   };
   
   const handleClearFilters = () => {
@@ -147,14 +152,11 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
   };
 
   // --- EFECTOS ---
-
-  // Efecto para debounce de la búsqueda de texto
   React.useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
     return () => clearTimeout(handler);
   }, [searchText]);
 
-  // Efecto para aplicar filtros
   React.useEffect(() => {
     const newFilters: TicketFilters = {
       searchText: debouncedSearchText.trim() || undefined,
@@ -169,7 +171,6 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     }
   }, [debouncedSearchText, estadoFilter, prioridadFilter, applyFilters, currentFilters]);
 
-  // Efecto para el tiempo mínimo del skeleton de filtros
   React.useEffect(() => {
     if (!isLoading && showFilterSkeleton) {
       const elapsed = Date.now() - (filterStartTimeRef.current || 0);
@@ -183,45 +184,24 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
     }
   }, [isLoading, showFilterSkeleton]);
   
-  // Efecto para el resaltado del nuevo ticket en la lista
   React.useEffect(() => {
     if (newlyCreatedTicketId) {
-      const timer = setTimeout(() => {
-        setNewlyCreatedTicketId(null);
-      }, NEW_TICKET_HIGHLIGHT_DURATION);
+      const timer = setTimeout(() => setNewlyCreatedTicketId(null), NEW_TICKET_HIGHLIGHT_DURATION);
       return () => clearTimeout(timer);
     }
   }, [newlyCreatedTicketId]);
 
-  // Efecto para manejar el panel lateral en móvil
   React.useEffect(() => {
-    if (!isDesktop && selectedTicket) {
-      setIsSheetOpen(true);
-    } else if (isDesktop) {
-      setIsSheetOpen(false);
-    }
+    if (!isDesktop && selectedTicket) setIsSheetOpen(true);
+    else if (isDesktop) setIsSheetOpen(false);
   }, [selectedTicket, isDesktop]);
 
   // --- RENDERIZADO ---
-
   if (isLoading && !tickets.length && !fetchTicketsError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin mb-2" />
-        <p>Cargando tickets...</p>
-      </div>
-    );
+      return <LoadingState />;
   }
-
   if (fetchTicketsError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-4 text-red-600 dark:text-red-400">
-        <AlertTriangle className="h-8 w-8 mb-2" />
-        <p className="mb-1 text-center">Error al cargar los tickets.</p>
-        <p className="text-xs text-center mb-3">{fetchTicketsError}</p>
-        <Button onClick={refreshTickets} variant="default" size="sm">Reintentar</Button>
-      </div>
-    );
+      return <ErrorState error={fetchTicketsError} onRetry={refreshTickets} />;
   }
 
   return (
@@ -240,17 +220,9 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Controles de filtro... */}
-             <div className="space-y-1.5">
+            <div className="space-y-1.5">
               <Label htmlFor="searchText">Buscar por texto</Label>
-              <Input
-                id="searchText"
-                type="text"
-                placeholder="Título, Descripción, Empresa..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="h-9"
-              />
+              <Input id="searchText" type="text" placeholder="Título, Empresa..." value={searchText} onChange={(e) => setSearchText(e.target.value)} className="h-9"/>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="estadoFilter">Estado</Label>
@@ -302,15 +274,11 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
           )}
         </div>
       </div>
-
+      
       {/* Panel de Detalles (Desktop) */}
       {isDesktop && (
         <div className="shadow-lg rounded-lg sticky top-4 flex-shrink-0 md:w-[35%] lg:w-[30%]" style={{ height: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET})` }}>
-          <SelectedTicketPanel
-            selectedTicket={selectedTicket}
-            onTicketUpdated={handleTicketUpdated}
-            headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET}
-          />
+          <SelectedTicketPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} headerAndPagePaddingOffset={HEADER_AND_PAGE_PADDING_OFFSET} isLoadingGlobal={showFilterSkeleton}/>
         </div>
       )}
 
@@ -321,33 +289,47 @@ export default function TicketCard({ empresasClientes, ubicacionesDisponibles }:
             {selectedTicket && (
               <>
                 <SheetHeader className="p-4 border-b flex-row justify-between items-center">
-                   <div>
-                    <SheetTitle>Ticket #{selectedTicket.numeroCaso}</SheetTitle>
-                    <SheetDescription className="sr-only">Detalles del ticket.</SheetDescription>
-                  </div>
+                   <div><SheetTitle>Ticket #{selectedTicket.numeroCaso}</SheetTitle><SheetDescription className="sr-only">Detalles del ticket.</SheetDescription></div>
                    <SheetClose asChild><Button variant="ghost" size="icon"><CloseIcon className="h-5 w-5" /></Button></SheetClose>
                 </SheetHeader>
-                <div className="flex-grow overflow-y-auto">
-                  <SelectedTicketPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} headerAndPagePaddingOffset="0px" />
-                </div>
+                <div className="flex-grow overflow-y-auto"><SelectedTicketPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} headerAndPagePaddingOffset="0px" /></div>
               </>
             )}
           </SheetContent>
         </Sheet>
       )}
 
-      {/* Modal de Creación */}
+      {/* Modal de Creación. Se le pasan todas las props necesarias para que el orquestador lo controle. */}
       <TicketModal
         isOpen={creationFlow !== 'idle'}
         flowStatus={creationFlow}
         onClose={handleCloseCreateModal}
-        onCompletion={handleTicketFormCompletion}
+        onSubmit={handleSubmitTicketForm}
+        onRetry={handleRetryCreation}
+        isSubmitting={isSubmitting}
+        submissionError={submissionError}
         nextNroCaso={nextTicketNumber}
         empresasClientes={empresasClientes}
         ubicacionesDisponibles={ubicacionesDisponibles}
         stashedData={stashedTicketData}
-        onRetry={() => setCreationFlow('form')}
       />
     </div>
   );
 }
+
+// Componentes auxiliares para estados de carga y error
+const LoadingState = () => (
+    <div className="flex flex-col items-center justify-center h-full p-4 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin mb-2" />
+        <p>Cargando tickets...</p>
+    </div>
+);
+
+const ErrorState = ({ error, onRetry }: { error: string, onRetry: () => void }) => (
+    <div className="flex flex-col items-center justify-center h-full p-4 text-red-600 dark:text-red-400">
+        <AlertTriangle className="h-8 w-8 mb-2" />
+        <p className="mb-1 text-center">Error al cargar los tickets.</p>
+        <p className="text-xs text-center mb-3">{error}</p>
+        <Button onClick={onRetry} variant="default" size="sm">Reintentar</Button>
+    </div>
+);

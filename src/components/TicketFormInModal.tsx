@@ -2,10 +2,7 @@
 'use client';
 
 import * as React from "react";
-import { useRef, useEffect } from "react";
-import { useFormState } from "react-dom";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,13 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNewTicketAction } from "@/app/actions/ticketActions";
 import { AlertCircle } from "lucide-react";
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton";
-import { Ticket } from '@/types/ticket';
 import { PrioridadTicket } from "@prisma/client";
+import { Button } from "./ui/button";
 
-// --- INTERFACES Y TIPOS ---
+// --- INTERFACES ---
 interface EmpresaClienteOption {
   id: string;
   nombre: string;
@@ -41,57 +37,41 @@ interface UbicacionOption {
   direccionCompleta: string;
 }
 
-interface ActionState {
-  error?: string;
-  success?: boolean;
-  message?: string;
-  ticket?: Ticket;
-}
-
-// Props actualizadas para un componente controlado
+// Props actualizadas para un componente controlado por el orquestador.
 interface TicketFormInModalProps {
   nextNroCaso: number;
-  onCompletion: (newTicket?: Ticket, formData?: FormData, error?: string) => void;
+  onSubmit: (formData: FormData) => Promise<void>; // Función para manejar el envío, pasada desde el padre.
   onCancel: () => void;
+  isSubmitting: boolean; // Prop para controlar el estado de envío del botón.
+  serverError: string | null; // Para mostrar errores del servidor.
   empresasClientes: EmpresaClienteOption[];
   ubicacionesDisponibles: UbicacionOption[];
-  initialData: FormData | null; // Para rellenar el formulario en caso de error
+  initialData: FormData | null; // Para rellenar el formulario en caso de reintento.
 }
 
-const initialState: ActionState = {
-  error: undefined,
-  success: undefined,
-  message: undefined,
-  ticket: undefined,
-};
-
-// --- COMPONENTE DEL FORMULARIO ---
+// --- COMPONENTE ---
 export function TicketFormInModal({
   nextNroCaso,
-  onCompletion,
+  onSubmit,
   onCancel,
+  isSubmitting,
+  serverError,
   empresasClientes,
   ubicacionesDisponibles,
   initialData,
 }: TicketFormInModalProps) {
-  const formRef = useRef<HTMLFormElement>(null);
-  const [formState, formAction] = useFormState(createNewTicketAction, initialState);
-
-  // Efecto para notificar al componente padre cuando la acción del servidor ha terminado
-  useEffect(() => {
-    if (formState?.success === true) {
-      onCompletion(formState.ticket);
-      formRef.current?.reset();
-    } else if (formState?.error) {
-      // Pasamos los datos del formulario actual al padre para que pueda guardarlos
-      const formData = formRef.current ? new FormData(formRef.current) : undefined;
-      onCompletion(undefined, formData, formState.error);
-    }
-  }, [formState, onCompletion]);
-
+  
+  // El manejo del envío ahora se hace a través de un simple `onSubmit` de React.
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    await onSubmit(formData); // Llama a la función del orquestador.
+  };
+  
   // Función para obtener el valor por defecto de un campo desde el FormData guardado
   const getDefaultValue = (fieldName: string) => initialData?.get(fieldName)?.toString() || '';
 
+  // Función para obtener la fecha y hora local actual en el formato correcto.
   const getLocalDateTimeString = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset();
@@ -107,18 +87,20 @@ export function TicketFormInModal({
       </CardHeader>
 
       <CardContent className="flex-grow overflow-y-auto p-4 sm:p-6">
-        <form ref={formRef} action={formAction} className="space-y-6">
+        {/* El formulario ya no usa `action`, sino `onSubmit` */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           <input type="hidden" name="nroCaso" value={nextNroCaso} />
 
-          {formState?.error && (
+          {serverError && (
             <div className="p-3 mb-4 text-sm text-destructive bg-destructive/10 rounded-lg flex items-center gap-2" role="alert">
               <AlertCircle className="h-5 w-5" />
               <div>
-                <span className="font-medium">Error:</span> {formState.error}
+                <span className="font-medium">Error:</span> {serverError}
               </div>
             </div>
           )}
 
+          {/* Resto del formulario (sin cambios en los campos) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="nroCasoModalDisplay">N° de Caso</Label>
@@ -206,8 +188,9 @@ export function TicketFormInModal({
           </div>
           
           <CardFooter className="px-0 pt-6 flex justify-end gap-3 flex-shrink-0">
-            <Button variant="outline" type="button" onClick={onCancel}>Cancelar</Button>
-            <FormSubmitButton>Guardar Ticket</FormSubmitButton>
+            <Button variant="outline" type="button" onClick={onCancel} disabled={isSubmitting}>Cancelar</Button>
+            {/* El botón de envío ahora usa la prop `pending` para mostrar su estado de carga */}
+            <FormSubmitButton pending={isSubmitting}>Guardar Ticket</FormSubmitButton>
           </CardFooter>
         </form>
       </CardContent>

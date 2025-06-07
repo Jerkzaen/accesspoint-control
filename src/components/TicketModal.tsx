@@ -4,13 +4,12 @@
 import * as React from "react";
 import { useEffect, useRef } from "react";
 import { TicketFormInModal } from "./TicketFormInModal";
-import { Ticket } from '@/types/ticket';
-import { CreationFlowStatus } from "./TicketCard"; // Importando el tipo desde el orquestador
+import { CreationFlowStatus } from "./TicketCard";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 
-// Definimos los tipos para las props
+// --- INTERFACES ---
 interface EmpresaClienteOption {
   id: string;
   nombre: string;
@@ -22,42 +21,44 @@ interface UbicacionOption {
   direccionCompleta: string;
 }
 
-// Props actualizadas para ser controladas por el orquestador
 interface TicketModalProps {
   isOpen: boolean;
   flowStatus: CreationFlowStatus;
   onClose: () => void;
-  onCompletion: (newTicket?: Ticket, formData?: FormData, error?: string) => void;
+  onSubmit: (formData: FormData) => Promise<void>;
   onRetry: () => void;
+  isSubmitting: boolean;
+  submissionError: string | null;
   nextNroCaso: number;
   empresasClientes: EmpresaClienteOption[];
   ubicacionesDisponibles: UbicacionOption[];
   stashedData: FormData | null;
 }
 
+// --- COMPONENTE ---
 export function TicketModal({
   isOpen,
   flowStatus,
   onClose,
-  onCompletion,
+  onSubmit,
   onRetry,
+  isSubmitting,
+  submissionError,
   nextNroCaso,
   empresasClientes,
   ubicacionesDisponibles,
   stashedData
 }: TicketModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  
-  // Efecto para manejar el cierre con ESC y click fuera del modal.
-  // La visibilidad ahora es manejada por la prop `isOpen`.
+
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === 'Escape' && isOpen && flowStatus !== 'loading' && flowStatus !== 'success') {
         onClose();
       }
     };
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node) && isOpen) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node) && isOpen && flowStatus !== 'loading' && flowStatus !== 'success') {
         onClose();
       }
     };
@@ -75,17 +76,17 @@ export function TicketModal({
       document.removeEventListener('keydown', handleEsc);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, flowStatus]);
 
-  if (!isOpen && flowStatus === 'idle') {
+  if (!isOpen) {
     return null;
   }
   
-  // --- LÓGICA DE ANIMACIÓN Y RENDERIZADO CONDICIONAL ---
-  
-  // Clases dinámicas para la animación de tamaño del modal
+  // Clases dinámicas para la animación de tamaño del modal.
   const modalContainerClasses = cn(
-    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-500 ease-in-out",
+    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col",
+    // CORRECCIÓN: Se elimina 'transition-all' para que el cambio de tamaño sea instantáneo
+    // y no genere una animación extraña. La transición de entrada/salida se maneja en el div contenedor.
     {
       'w-full max-w-2xl max-h-[90vh]': flowStatus === 'form',
       'w-48 h-48': flowStatus === 'loading',
@@ -97,6 +98,7 @@ export function TicketModal({
     <div
       className={cn(
         "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4",
+        // Esta transición maneja el fundido de entrada y salida del modal completo.
         "transition-opacity duration-300 ease-out",
         isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
       )}
@@ -109,11 +111,13 @@ export function TicketModal({
         {flowStatus === 'form' && (
           <TicketFormInModal
             nextNroCaso={nextNroCaso}
-            onCompletion={onCompletion}
+            onSubmit={onSubmit}
             onCancel={onClose}
+            isSubmitting={isSubmitting}
+            serverError={submissionError}
             empresasClientes={empresasClientes}
             ubicacionesDisponibles={ubicacionesDisponibles}
-            initialData={stashedData} // Pasamos los datos guardados si existen
+            initialData={stashedData}
           />
         )}
 
@@ -136,7 +140,7 @@ export function TicketModal({
             <div className="flex flex-col items-center justify-center text-center p-8 w-full h-full">
                 <AlertCircle className="h-20 w-20 text-destructive mb-6" />
                 <h3 className="text-xl font-semibold">Error al Crear</h3>
-                <p className="text-muted-foreground text-sm mt-1 mb-4">No se pudo crear el ticket. Por favor, inténtalo de nuevo.</p>
+                <p className="text-muted-foreground text-sm mt-1 mb-4">{submissionError || "No se pudo crear el ticket."}</p>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={onClose}>Cerrar</Button>
                     <Button onClick={onRetry}>Reintentar</Button>
