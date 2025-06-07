@@ -5,10 +5,10 @@ import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input'; // CORREGIDO: Eliminado el ">" extra aquí
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit3, AlertTriangle, Loader2 } from 'lucide-react';
+import { Edit3, AlertTriangle, Loader2, Info } from 'lucide-react'; 
 import { Ticket, ActionEntry } from '@/types/ticket';
 import { useTicketEditor } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import ExpandableText from '@/components/ui/ExpandableText'; 
 
 interface TicketDetailsPanelProps {
   selectedTicket: Ticket | null;
@@ -138,7 +139,7 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
             <CardContent className="space-y-2 p-1 text-xs">
               <div className="space-y-0.5">
                 <Label htmlFor="tecnicoAsignadoEdit" className="text-xs">Técnico Asignado</Label>
-                <Input id="tecnicoAsignadoEdit" value={editableTicketData.tecnicoAsignado} onChange={(e) => handleTicketInputChange('tecnicoAsignado', e.target.value)} className="h-8 text-xs" disabled={isSavingTicket} />
+                <Input id="tecnicoAsignadoEdit" value={editableTicketData.tecnicoAsignado} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleTicketInputChange('tecnicoAsignado', e.target.value)} className="h-8 text-xs" disabled={isSavingTicket} /> {/* CORREGIDO: Añadido tipo a 'e' */}
               </div>
               <div className="space-y-0.5">
                 <Label htmlFor="prioridadEdit" className="text-xs">Prioridad</Label>
@@ -170,51 +171,98 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
 
         {!isEditingTicket && (
           <div className="flex flex-col flex-grow overflow-hidden">
-            <div className="space-y-2 text-xs mb-3 flex-shrink-0">
-                <p><strong>Título:</strong> {selectedTicket.titulo}</p>
-                <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
-                <p><strong>Prioridad:</strong> {selectedTicket.prioridad}</p>
-                <p><strong>Contacto:</strong> {selectedTicket.solicitanteNombre}</p>
-                <p><strong>Técnico:</strong> {selectedTicket.tecnicoAsignado?.name || 'No asignado'}</p>
-                <p><strong>Creado:</strong> {fechaCreacionFormatted}</p>
-                {fechaSolucionFormatted && <p><strong>Solucionado:</strong> {fechaSolucionFormatted}</p>}
-            </div>
-            
-            <div className="flex-grow overflow-y-auto space-y-2 border-t pt-2">
-              <h4 className="text-sm font-semibold mb-2">Bitácora de acciones</h4>
-              {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act: ActionEntry) => (
-                <div key={act.id} className="text-xs border-b pb-1.5 mb-1.5">
-                  {editingActionId === act.id ? (
-                     <div className="flex flex-col gap-2">
-                        <Textarea value={editedActionDescription} onChange={(e) => setEditedActionDescription(e.target.value)} disabled={isProcessingAction} rows={3} />
+            {/* Sección de Información del Ticket */}
+            <Card className="mb-3 p-3 shadow-none border bg-muted/10">
+              <CardHeader className="p-0 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                  <Info className="h-4 w-4 text-primary" /> Información del Ticket
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1.5 p-0 text-xs">
+                  <p><strong>Título:</strong> {selectedTicket.titulo}</p>
+                  <p><strong>Tipo Incidente:</strong> {selectedTicket.tipoIncidente}</p>
+                  <p><strong>Prioridad:</strong> {selectedTicket.prioridad}</p>
+                  <p><strong>Estado:</strong> {selectedTicket.estado}</p>
+                  <p><strong>Creado:</strong> {fechaCreacionFormatted}</p>
+                  {fechaSolucionFormatted && <p><strong>Solucionado:</strong> {fechaSolucionFormatted}</p>}
+              </CardContent>
+            </Card>
+
+            {/* Sección de Información del Solicitante */}
+            <Card className="mb-3 p-3 shadow-none border bg-muted/10">
+              <CardHeader className="p-0 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                  <Info className="h-4 w-4 text-primary" /> Información del Solicitante
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1.5 p-0 text-xs">
+                  <p><strong>Nombre:</strong> {selectedTicket.solicitanteNombre}</p>
+                  {selectedTicket.solicitanteTelefono && <p><strong>Teléfono:</strong> {selectedTicket.solicitanteTelefono}</p>}
+                  {selectedTicket.solicitanteCorreo && <p><strong>Correo:</strong> {selectedTicket.solicitanteCorreo}</p>}
+                  {selectedTicket.empresaCliente?.nombre && <p><strong>Empresa:</strong> {selectedTicket.empresaCliente.nombre}</p>}
+                  {selectedTicket.ubicacion?.nombreReferencial && <p><strong>Ubicación:</strong> {selectedTicket.ubicacion.nombreReferencial}</p>}
+                  {selectedTicket.ubicacion?.direccionCompleta && <p><strong>Dirección:</strong> {selectedTicket.ubicacion.direccionCompleta}</p>}
+              </CardContent>
+            </Card>
+
+            {/* Sección de Descripción Detallada (Expandible) */}
+            <Card className="mb-3 p-3 shadow-none border bg-muted/10">
+              <CardHeader className="p-0 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                  <Info className="h-4 w-4 text-primary" /> Descripción Detallada
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 text-xs">
+                <ExpandableText
+                  text={selectedTicket.descripcionDetallada}
+                  initialLines={4} 
+                  showFade={true} 
+                />
+              </CardContent>
+            </Card>
+
+            {/* Sección de Bitácora de Acciones */}
+            <Card className="mb-3 p-3 shadow-none border bg-muted/10 flex-grow flex flex-col">
+              <CardHeader className="p-0 pb-2 flex-shrink-0">
+                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                  <Info className="h-4 w-4 text-primary" /> Bitácora de Acciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-grow overflow-y-auto space-y-2 p-0 text-xs">
+                {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act: ActionEntry) => (
+                  <div key={act.id} className="text-xs border-b pb-1.5 mb-1.5">
+                    {editingActionId === act.id ? (
+                      <div className="flex flex-col gap-2">
+                        <Textarea value={editedActionDescription} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditedActionDescription(e.target.value)} disabled={isProcessingAction} rows={3} /> {/* CORREGIDO: Añadido tipo a 'e' */}
                         <div className="flex justify-end gap-2">
-                           <Button variant="ghost" size="sm" onClick={cancelEditingAction} disabled={isProcessingAction}>Cancelar</Button>
-                           <Button size="sm" onClick={saveEditedAction} disabled={isProcessingAction}>
-                              {isProcessingAction ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : 'Guardar'}
-                           </Button>
+                          <Button variant="ghost" size="sm" onClick={cancelEditingAction} disabled={isProcessingAction}>Cancelar</Button>
+                          <Button size="sm" onClick={saveEditedAction} disabled={isProcessingAction}>
+                            {isProcessingAction ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : 'Guardar'}
+                          </Button>
                         </div>
-                     </div>
-                  ) : (
-                     <div className="flex justify-between items-start">
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-start">
                         <p className="flex-grow pr-2">
                            <span className="font-semibold">{new Date(act.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)} - </span>
                            {act.descripcion}
                            <span className="text-muted-foreground ml-1"> (por: {act.realizadaPor?.name || 'Sistema'})</span>
                         </p>
                         <Button variant="outline" size="sm" onClick={() => startEditingAction(act)} disabled={isProcessingAction}>Editar</Button>
-                     </div>
-                  )}
-                </div>
-              )) : <p className="text-xs text-muted-foreground">No hay acciones registradas.</p>}
-            </div>
+                      </div>
+                    )}
+                  </div>
+                )) : <p className="text-xs text-muted-foreground">No hay acciones registradas.</p>}
+              </CardContent>
 
-            <div className="pt-2 border-t mt-2 flex-shrink-0">
-              <Label htmlFor="newAction" className="text-sm font-semibold">Agregar nueva acción</Label>
-              <Textarea id="newAction" className="mt-1 w-full" value={newActionDescription} onChange={(e) => setNewActionDescription(e.target.value)} placeholder="Describe la acción realizada..." rows={3} disabled={isProcessingAction} />
-              <Button className="mt-2 w-full" onClick={addAction} disabled={isProcessingAction || !newActionDescription.trim()}>
-                {isProcessingAction ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</> : 'Guardar Acción'}
-              </Button>
-            </div>
+              <div className="pt-2 border-t mt-auto flex-shrink-0"> 
+                <Label htmlFor="newAction" className="text-sm font-semibold">Agregar nueva acción</Label>
+                <Textarea id="newAction" className="mt-1 w-full" value={newActionDescription} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewActionDescription(e.target.value)} placeholder="Describe la acción realizada..." rows={3} disabled={isProcessingAction} /> {/* CORREGIDO: Añadido tipo a 'e' */}
+                <Button className="mt-2 w-full" onClick={addAction} disabled={isProcessingAction || !newActionDescription.trim()}>
+                  {isProcessingAction ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</> : 'Guardar Acción'}
+                </Button>
+              </div>
+            </Card>
           </div>
         )}
       </div>
@@ -223,3 +271,4 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
 };
 
 export default memo(TicketDetailsPanelComponent);
+
