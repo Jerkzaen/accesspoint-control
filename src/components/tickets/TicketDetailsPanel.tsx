@@ -2,14 +2,17 @@
 'use client'; // Directiva para indicar que es un Client Component
 
 import React, { memo, useState, useEffect, useRef } from 'react';
+// Importaciones de Shadcn UI utilizadas directamente en este componente y sus auxiliares
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit3, AlertTriangle, Loader2, Info, ChevronUp, ChevronDown } from 'lucide-react';
-import { Ticket, ActionEntry } from '@/types/ticket';
+import { Button } from '@/components/ui/button'; // Importación CORRECTA para Button
+import { Input } from '@/components/ui/input'; // Para EditTicketFormCard (si se mantiene aquí temporalmente)
+import { Label } from '@/components/ui/label'; // Para EditTicketFormCard (si se mantiene aquí temporalmente)
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Para EditTicketFormCard (si se mantiene aquí temporalmente)
+import { Textarea } from '@/components/ui/textarea'; // Para NewActionFormCard (si se mantiene aquí temporalmente)
+
+
+import { Edit3, AlertTriangle } from 'lucide-react'; // Iconos usados directamente aquí
+import { Ticket } from '@/types/ticket';
 import { useTicketEditor, EditableTicketFields } from '@/hooks/useTicketEditor';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +24,8 @@ import { cn } from '@/lib/utils';
 import TicketInfoAccordions from './TicketInfoAccordions';
 import TicketDescriptionCard from './TicketDescriptionCard';
 import TicketActionsBitacora from './TicketActionsBitacora';
-import NewActionFormCard from './NewActionFormCard'; // <-- NUEVO COMPONENTE
-
+import NewActionFormCard from './NewActionFormCard';
+import EditTicketFormCard from './EditTicketFormCard'; // <-- NUEVO COMPONENTE
 
 interface TicketDetailsPanelProps {
   selectedTicket: Ticket | null;
@@ -188,19 +191,16 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
         {combinedError && <ErrorMessage error={combinedError} />}
 
         {isEditingTicket && editableTicketData ? (
-          // Formulario de edición con scroll interno si es necesario
-          <div className="flex-grow overflow-y-auto pr-2 -mr-2 pb-4 min-h-0">
-            <EditTicketForm
-              editableData={editableTicketData}
-              isSaving={isSavingTicket}
-              onInputChange={handleTicketInputChange}
-              onSaveChanges={saveTicketChanges}
-              onCancel={cancelEditingTicket}
-            />
-          </div>
+          // Componente de Formulario de Edición de Ticket
+          <EditTicketFormCard
+            editableData={editableTicketData}
+            isSaving={isSavingTicket}
+            onInputChange={handleTicketInputChange}
+            onSaveChanges={saveTicketChanges}
+            onCancel={cancelEditingTicket}
+          />
         ) : (
           // Contenedor principal del contenido desplazable (Acordeones, Descripción, Bitácora)
-          // Este div maneja el scroll principal del contenido "variable".
           <div className="flex-grow overflow-y-auto pr-2 -mr-2 flex flex-col gap-2 min-h-0">
               {/* Nuevo componente: Acordeones de Información */}
               <TicketInfoAccordions
@@ -227,6 +227,15 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
                 ticketHeaderHeight={ticketHeaderHeight}
                 newActionCardHeight={newActionCardHeight}
                 headerAndPagePaddingOffset={headerAndPagePaddingOffset}
+                actionsForSelectedTicket={actionsForSelectedTicket}
+                editingActionId={editingActionId}
+                editedActionDescription={editedActionDescription}
+                setEditedActionDescription={setEditedActionDescription}
+                isProcessingAction={isProcessingAction}
+                startEditingAction={startEditingAction}
+                cancelEditingAction={cancelEditingAction}
+                saveEditedAction={saveEditedAction}
+                actionsManagerError={actionsManagerError}
               />
           </div>
         )}
@@ -245,7 +254,7 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
 };
 
 
-// --- Componentes Auxiliares (sin cambios significativos en su funcionalidad) ---
+// --- Componentes Auxiliares que se mantienen aquí (esqueletos y mensajes de error) ---
 const TicketDetailsSkeleton: React.FC<{ headerAndPagePaddingOffset: string }> = ({ headerAndPagePaddingOffset }) => (
   <Card className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col" style={{ height: `calc(100vh - ${headerAndPagePaddingOffset})` }}>
     <div className="w-full h-full flex flex-col gap-4">
@@ -269,60 +278,6 @@ const ErrorMessage: React.FC<{ error: string }> = ({ error }) => (
   <div className="mb-3 p-2 text-xs bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 text-red-700 dark:text-red-300 rounded-md flex items-center gap-2 flex-shrink-0">
     <AlertTriangle className="h-4 w-4" /><span>{error}</span>
   </div>
-);
-
-// Estas interfaces y componentes auxiliares (ActionLog, NewActionForm, EditTicketForm)
-// se mantendrán temporalmente aquí, pero serán extraídos en pasos posteriores.
-
-interface ActionLogProps { actions: ActionEntry[]; editingActionId: string | null; editedActionDescription: string; setEditedActionDescription: (desc: string) => void; isProcessingAction: boolean; startEditingAction: (action: ActionEntry) => void; cancelEditingAction: () => void; saveEditedAction: () => Promise<void>; dateTimeFormatOptions: Intl.DateTimeFormatOptions; }
-const ActionLog: React.FC<ActionLogProps> = ({ actions, editingActionId, editedActionDescription, setEditedActionDescription, isProcessingAction, startEditingAction, cancelEditingAction, saveEditedAction, dateTimeFormatOptions }) => (
-  <>
-    {actions.length > 0 ? actions.map((act) => (
-      <div key={act.id} className="text-xs border-b pb-1 mb-1 last:border-b-0 last:pb-0 last:mb-0">
-        {editingActionId === act.id ? (
-          <div className="flex flex-col gap-1.5">
-            <Textarea value={editedActionDescription} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditedActionDescription(e.target.value)} disabled={isProcessingAction} rows={2} className="text-xs" />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={cancelEditingAction} disabled={isProcessingAction} className="h-7 text-xs">Cancelar</Button>
-              <Button size="sm" onClick={saveEditedAction} disabled={isProcessingAction} className="h-7 text-xs">{isProcessingAction ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Guardando...</> : 'Guardar'}</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-between items-start">
-            <p className="flex-grow pr-1.5">
-              <span className="font-semibold">{new Date(act.fechaAccion).toLocaleString('es-CL', dateTimeFormatOptions)} - </span>{act.descripcion}
-              <span className="text-muted-foreground ml-1">(por: {act.realizadaPor?.name || 'Sistema'})</span>
-            </p>
-            <Button variant="outline" size="sm" onClick={() => startEditingAction(act)} disabled={isProcessingAction} className="h-7 text-xs flex-shrink-0">Editar</Button>
-          </div>
-        )}
-      </div>
-    )) : <p className="text-xs text-muted-foreground text-center pt-4">No hay acciones registradas.</p>}
-  </>
-);
-
-interface NewActionFormProps { newActionDescription: string; setNewActionDescription: (desc: string) => void; isProcessingAction: boolean; addAction: () => Promise<void>; }
-const NewActionForm: React.FC<NewActionFormProps> = ({ newActionDescription, setNewActionDescription, isProcessingAction, addAction }) => (
-  <div>
-    <CardTitle className="text-sm font-semibold flex items-center gap-1.5 mb-2">
-      <Info className="h-3.5 w-3.5 text-primary" /> Agregar nueva acción
-    </CardTitle>
-    <Textarea id="newAction" className="mt-1 w-full text-xs" value={newActionDescription} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewActionDescription(e.target.value)} placeholder="Describe la acción realizada..." rows={2} disabled={isProcessingAction} />
-    <Button className="mt-2 w-full h-8 text-sm" onClick={addAction} disabled={isProcessingAction || !newActionDescription.trim()}>{isProcessingAction ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</> : 'Guardar Acción'}</Button>
-  </div>
-);
-
-interface EditTicketFormProps { editableData: EditableTicketFields; isSaving: boolean; onInputChange: (field: keyof EditableTicketFields, value: any) => void; onSaveChanges: () => void; onCancel: () => void; }
-const EditTicketForm: React.FC<EditTicketFormProps> = ({ editableData, isSaving, onInputChange, onSaveChanges, onCancel }) => (
-  <Card className="mb-3 p-3 border-dashed flex-shrink-0 bg-muted/30 dark:bg-muted/10">
-    <CardHeader className="p-1 pb-2"><CardTitle className="text-sm">Editando Ticket</CardTitle></CardHeader>
-    <CardContent className="space-y-2 p-1 text-xs">
-      <div className="space-y-0.5"><Label htmlFor="tecnicoAsignadoEdit" className="text-xs">Técnico Asignado</Label><Input id="tecnicoAsignadoEdit" value={editableData.tecnicoAsignado} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onInputChange('tecnicoAsignado', e.target.value)} className="h-8 text-xs" disabled={isSaving} /></div>
-      <div className="space-y-0.5"><Label htmlFor="prioridadEdit" className="text-xs">Prioridad</Label><Select value={editableData.prioridad} onValueChange={(value) => onInputChange('prioridad', value)} disabled={isSaving}><SelectTrigger id="prioridadEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{Object.values(PrioridadTicket).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></div>
-      <div className="space-y-0.5"><Label htmlFor="estadoEdit" className="text-xs">Estado</Label><Select value={editableData.estado} onValueChange={(value) => onInputChange('estado', value)} disabled={isSaving}><SelectTrigger id="estadoEdit" className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{Object.values(EstadoTicket).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
-    </CardContent>
-    <div className="flex justify-end gap-2 p-1 pt-2"><Button variant="ghost" size="sm" onClick={onCancel} disabled={isSaving}>Cancelar</Button><Button size="sm" onClick={onSaveChanges} disabled={isSaving}>{isSaving ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Guardando...</> : 'Guardar'}</Button></div>
-  </Card>
 );
 
 export default memo(TicketDetailsPanelComponent);

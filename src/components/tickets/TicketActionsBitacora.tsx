@@ -3,8 +3,8 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button'; // Importación correcta para Button
+import { Textarea } from '@/components/ui/textarea'; // Importación correcta para Textarea
 import { Info, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ticket, ActionEntry } from '@/types/ticket';
@@ -70,40 +70,48 @@ const ActionLog: React.FC<ActionLogProps> = ({
 
 
 interface TicketActionsBitacoraProps {
-  selectedTicket: Ticket | null; // Se necesita el ticket para useTicketActionsManager
+  selectedTicket: Ticket | null;
   onTicketUpdated: (updatedTicket: Ticket) => void;
   isBitacoraExpanded: boolean;
   setIsBitacoraExpanded: React.Dispatch<React.SetStateAction<boolean>>;
-  handleToggleBitacora: () => void; // Recibe la función de toggle del padre
-  ticketHeaderHeight: number; // Altura del encabezado del ticket
-  newActionCardHeight: number; // Altura de la Card de "Agregar nueva acción"
-  headerAndPagePaddingOffset: string; // Offset del header global y padding de la página
+  handleToggleBitacora: () => void;
+  ticketHeaderHeight: number;
+  newActionCardHeight: number;
+  headerAndPagePaddingOffset: string;
+  // Propiedades directamente de useTicketActionsManager que se pasan
+  actionsForSelectedTicket: ActionEntry[]; // Añadido
+  editingActionId: string | null; // Añadido
+  editedActionDescription: string; // Añadido
+  setEditedActionDescription: (desc: string) => void; // Añadido
+  isProcessingAction: boolean; // Añadido
+  startEditingAction: (action: ActionEntry) => void; // Añadido
+  cancelEditingAction: () => void; // Añadido
+  saveEditedAction: () => Promise<void>; // Añadido
+  actionsManagerError: string | null; // Añadido
 }
 
 const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
   selectedTicket,
   onTicketUpdated,
   isBitacoraExpanded,
-  setIsBitacoraExpanded, // También se pasa para resetearla si es necesario
+  setIsBitacoraExpanded,
   handleToggleBitacora,
   ticketHeaderHeight,
   newActionCardHeight,
   headerAndPagePaddingOffset,
+  // Desestructuramos las nuevas props
+  actionsForSelectedTicket,
+  editingActionId,
+  editedActionDescription,
+  setEditedActionDescription,
+  isProcessingAction,
+  startEditingAction,
+  cancelEditingAction,
+  saveEditedAction,
+  actionsManagerError,
 }) => {
-  const {
-    actionsForSelectedTicket,
-    newActionDescription, // Se pasa a NewActionForm, que será extraído después
-    setNewActionDescription, // Se pasa a NewActionForm
-    editingActionId,
-    editedActionDescription,
-    setEditedActionDescription,
-    isProcessingAction,
-    error: actionsManagerError,
-    startEditingAction,
-    cancelEditingAction,
-    saveEditedAction,
-    addAction, // Se pasa a NewActionForm
-  } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
+  // El hook useTicketActionsManager no se usa directamente aquí, las props ya vienen de TicketDetailsPanelComponent
+  // const { ... } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
   const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
 
@@ -129,7 +137,7 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
           className="mt-2 space-y-1 overflow-y-auto pr-2 -mr-2"
           style={{
             // Calcula el espacio restante en el panel principal para la bitácora
-            // Altura total del panel - (altura del header principal + altura del header del ticket + altura del newActionCard + paddings/gaps/bordes extras)
+            // Altura total de la ventana - (altura del header principal + altura del header del ticket + altura del newActionCard + paddings/gaps/bordes extras)
             // NOTA: El '70px' es un ajuste aproximado para compensar paddings/gaps/bordes del layout.
             // Es crucial que este valor se ajuste bien.
             maxHeight: `calc(100vh - ${headerAndPagePaddingOffset} - ${ticketHeaderHeight}px - ${newActionCardHeight}px - 70px)`
