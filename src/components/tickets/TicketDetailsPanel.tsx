@@ -1,7 +1,7 @@
 // RUTA: src/components/tickets/TicketDetailsPanel.tsx
 'use client'; // Directiva para indicar que es un Client Component
 
-import React, { memo, useState, useEffect, useRef } from 'react';
+import React, { memo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 // Importaciones de Shadcn UI utilizadas directamente en este componente y sus auxiliares
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button'; // Importación CORRECTA para Button
@@ -40,8 +40,9 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
   headerAndPagePaddingOffset = '100px', // Offset fijo del header y padding de la página
   isLoadingGlobal = false,
 }) => {
-  // Estado para controlar qué acordeones de información están abiertos
-  const [openInfoSections, setOpenInfoSections] = useState<string[]>([]);
+  // Estado para controlar qué paneles están abiertos
+  const [openPanels, setOpenPanels] = useState<string[]>(["descripcion", "bitacora"]);
+
   // Estado para controlar si la bitácora está expandida o colapsada.
   // Se inicializa a 'false' para que siempre empiece colapsada.
   const [isBitacoraExpanded, setIsBitacoraExpanded] = useState<boolean>(false); 
@@ -55,6 +56,8 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
   const ticketHeaderRef = useRef<HTMLDivElement>(null);
   const [ticketHeaderHeight, setTicketHeaderHeight] = useState(0);
 
+  // Ref para saber si el usuario cerró manualmente bitácora o descripción
+  const userClosed = useRef<{ bitacora: boolean; descripcion: boolean }>({ bitacora: false, descripcion: false });
 
   const {
     isEditingTicket,
@@ -82,16 +85,48 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
     addAction, 
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
-  // Efecto para resetear estados al cambiar de ticket.
+  const centralPanelRef = useRef<HTMLDivElement>(null);
+
+  // Estado para forzar colapso automático de Descripción si el espacio es insuficiente
+  const [forceCollapseDescripcion, setForceCollapseDescripcion] = useState(false);
+
+  // Estado para el alto dinámico del área central
+  const [centralHeight, setCentralHeight] = useState(0);
+
+  // Reset al seleccionar ticket
   useEffect(() => {
     if (!selectedTicket) {
-      setOpenInfoSections([]); 
-      setIsBitacoraExpanded(false); 
+      setOpenPanels([]);
+      userClosed.current = { bitacora: false, descripcion: false };
     } else {
-      setOpenInfoSections(['info-ticket', 'info-solicitante']); 
-      setIsBitacoraExpanded(false); 
+      setOpenPanels(["descripcion", "bitacora"]);
+      userClosed.current = { bitacora: false, descripcion: false };
     }
   }, [selectedTicket]);
+
+  // Apertura automática de paneles centrales si hay espacio
+  useEffect(() => {
+    const infoClosed = !openPanels.includes("info-ticket") && !openPanels.includes("info-solicitante");
+    if (infoClosed && !openPanels.includes("bitacora") && !userClosed.current.bitacora) {
+      setOpenPanels((prev) => prev.includes("bitacora") ? prev : [...prev, "bitacora"]);
+    }
+    if (infoClosed && openPanels.includes("bitacora") && !openPanels.includes("descripcion") && !userClosed.current.descripcion) {
+      setOpenPanels((prev) => prev.includes("descripcion") ? prev : [...prev, "descripcion"]);
+    }
+  }, [openPanels]);
+
+  // ResizeObserver para reabrir bitacora si hay espacio tras cerrar paneles o cambiar tamaño
+  useEffect(() => {
+    if (!centralPanelRef.current) return;
+    const observer = new window.ResizeObserver(() => {
+      const infoClosed = !openPanels.includes("info-ticket") && !openPanels.includes("info-solicitante");
+      if (infoClosed && !openPanels.includes("bitacora") && !userClosed.current.bitacora) {
+        setOpenPanels((prev) => prev.includes("bitacora") ? prev : [...prev, "bitacora"]);
+      }
+    });
+    observer.observe(centralPanelRef.current);
+    return () => observer.disconnect();
+  }, [openPanels]);
 
   // Efecto para medir la altura de la Card de "Agregar nueva acción" y el encabezado del ticket
   useEffect(() => {
@@ -119,6 +154,44 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
     };
   }, [selectedTicket, isBitacoraExpanded, isEditingTicket]); 
 
+  // Lógica para colapsar automáticamente Descripción si el espacio central es insuficiente
+  useLayoutEffect(() => {
+    if (!centralPanelRef.current) return;
+    const handleResize = () => {
+      if (!centralPanelRef.current) return;
+      const centralHeight = centralPanelRef.current.offsetHeight;
+      if (openPanels.includes('descripcion') && openPanels.includes('bitacora')) {
+        if (centralHeight < 220) {
+          setForceCollapseDescripcion(true);
+        } else {
+          setForceCollapseDescripcion(false);
+        }
+      } else {
+        setForceCollapseDescripcion(false);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [openPanels]);
+
+  // ResizeObserver para medir el alto del área central dinámicamente
+  useEffect(() => {
+    if (!centralPanelRef.current) return;
+    const updateHeight = () => {
+      if (centralPanelRef.current) {
+        setCentralHeight(centralPanelRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const observer = new window.ResizeObserver(updateHeight);
+    observer.observe(centralPanelRef.current);
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
 
   // Manejo de estados de carga y cuando no hay ticket seleccionado
   if (isLoadingGlobal && !selectedTicket) {
@@ -152,103 +225,81 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
     }
   };
 
-  // Función para alternar la bitácora y ajustar acordeones/descripción
-  const handleToggleBitacora = () => {
-    setIsBitacoraExpanded(prev => {
-      const newState = !prev;
-      if (newState) {
-          setOpenInfoSections([]); // Cierra acordeones de info si la bitácora se expande
-      } else {
-          setOpenInfoSections(['info-ticket', 'info-solicitante']); // Abre acordeones de info si la bitácora se colapsa
-      }
-      return newState;
+  // Función para alternar paneles (completamente independiente)
+  const handleTogglePanel = (panel: string) => {
+    setOpenPanels((prev) => {
+      const isOpen = prev.includes(panel);
+      if (panel === "bitacora") userClosed.current.bitacora = isOpen;
+      if (panel === "descripcion") userClosed.current.descripcion = isOpen;
+      return isOpen ? prev.filter((p) => p !== panel) : [...prev, panel];
     });
   };
 
   // Renderizado del componente principal
   return (
-    <Card
-        className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col h-[calc(100vh-100px)]" // Altura explícita para la Card principal
-    >
-      <div className={cn("flex flex-col flex-grow min-h-0", panelContentOverlayClasses)}>
-        {/* Sección de Encabezado Fijo del Ticket (Número y Estado) */}
-        <div ref={ticketHeaderRef} className="mb-3 pb-2 border-b flex-shrink-0">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-base">Ticket #{selectedTicket.numeroCaso}</CardTitle>
-              <Badge variant={getEstadoBadgeVariant(selectedTicket.estado)} className="mt-1 text-xs px-2 py-0.5 h-auto rounded-full">
-                Estado: {selectedTicket.estado}
-              </Badge>
-            </div>
-            {!isEditingTicket && (
-              <Button variant="outline" size="sm" onClick={startEditingTicket} className="ml-auto">
-                <Edit3 className="h-3 w-3 mr-1.5" /> Editar Ticket
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {combinedError && <ErrorMessage error={combinedError} />}
-
-        {isEditingTicket && editableTicketData ? (
-          // Componente de Formulario de Edición de Ticket
-          <EditTicketFormCard
-            editableData={editableTicketData}
-            isSaving={isSavingTicket}
-            onInputChange={handleTicketInputChange}
-            onSaveChanges={saveTicketChanges}
-            onCancel={cancelEditingTicket}
+    <Card className="shadow-lg rounded-lg p-4 sticky top-4 flex flex-col h-[calc(100vh-100px)] box-border">
+      <div className="flex flex-col h-full min-h-0">
+        {/* Paneles de información SIEMPRE presentes y visibles arriba */}
+        <div className="flex flex-col gap-2 flex-shrink-0 mb-2 transition-all duration-300 ease-in-out">
+          <TicketInfoAccordions
+            selectedTicket={selectedTicket}
+            openInfoSections={openPanels.filter(p => p === "info-ticket" || p === "info-solicitante")}
+            setOpenInfoSections={(sections) => {
+              setOpenPanels((prev) => {
+                // Mantener los paneles centrales y solo actualizar los de información
+                const centrales = prev.filter(p => p !== "info-ticket" && p !== "info-solicitante");
+                return [...centrales, ...sections];
+              });
+            }}
+            isBitacoraExpanded={openPanels.includes('bitacora')}
+            fechaCreacionFormatted={fechaCreacionFormatted}
           />
-        ) : (
-          // Contenedor principal del contenido desplazable (Acordeones, Descripción, Bitácora)
-          <div className="flex-grow overflow-y-auto pr-2 -mr-2 flex flex-col gap-2 min-h-0">
-              {/* Nuevo componente: Acordeones de Información */}
-              <TicketInfoAccordions
-                selectedTicket={selectedTicket}
-                openInfoSections={openInfoSections}
-                setOpenInfoSections={setOpenInfoSections}
-                isBitacoraExpanded={isBitacoraExpanded}
-                fechaCreacionFormatted={fechaCreacionFormatted}
-              />
-
-              {/* Nuevo componente: Card de Descripción Detallada */}
-              <TicketDescriptionCard 
-                selectedTicketDescription={selectedTicket?.descripcionDetallada}
-                isBitacoraExpanded={isBitacoraExpanded}
-              />
-
-              {/* Nuevo componente: Bitácora de Acciones */}
-              <TicketActionsBitacora
-                selectedTicket={selectedTicket}
-                onTicketUpdated={onTicketUpdated}
-                isBitacoraExpanded={isBitacoraExpanded}
-                setIsBitacoraExpanded={setIsBitacoraExpanded}
-                handleToggleBitacora={handleToggleBitacora}
-                ticketHeaderHeight={ticketHeaderHeight}
-                newActionCardHeight={newActionCardHeight}
-                headerAndPagePaddingOffset={headerAndPagePaddingOffset}
-                actionsForSelectedTicket={actionsForSelectedTicket}
-                editingActionId={editingActionId}
-                editedActionDescription={editedActionDescription}
-                setEditedActionDescription={setEditedActionDescription}
-                isProcessingAction={isProcessingAction}
-                startEditingAction={startEditingAction}
-                cancelEditingAction={cancelEditingAction}
-                saveEditedAction={saveEditedAction}
-                actionsManagerError={actionsManagerError}
-              />
-          </div>
-        )}
+        </div>
+        {/* Área central: Descripción y Bitácora SIEMPRE ocupan todo el espacio restante */}
+        <div className="flex flex-col flex-grow min-h-0 gap-2 transition-all duration-300 ease-in-out" ref={centralPanelRef}>
+          {/* Ambos paneles pueden estar abiertos, Bitácora aprovecha el espacio sobrante */}
+          <TicketDescriptionCard
+            selectedTicketDescription={selectedTicket?.descripcionDetallada}
+            isOpen={openPanels.includes('descripcion')}
+            onToggle={() => handleTogglePanel('descripcion')}
+            creatorName={selectedTicket?.solicitanteNombre}
+            previewMode={false}
+            className={openPanels.includes('descripcion') ? 'flex-shrink-0' : 'hidden'}
+            centralHeight={centralHeight}
+          />
+          <TicketActionsBitacora
+            selectedTicket={selectedTicket}
+            onTicketUpdated={onTicketUpdated}
+            isBitacoraExpanded={openPanels.includes('bitacora')}
+            setIsBitacoraExpanded={() => handleTogglePanel('bitacora')}
+            handleToggleBitacora={() => handleTogglePanel('bitacora')}
+            ticketHeaderHeight={ticketHeaderHeight}
+            newActionCardHeight={newActionCardHeight}
+            headerAndPagePaddingOffset={headerAndPagePaddingOffset}
+            actionsForSelectedTicket={actionsForSelectedTicket}
+            editingActionId={editingActionId}
+            editedActionDescription={editedActionDescription}
+            setEditedActionDescription={setEditedActionDescription}
+            isProcessingAction={isProcessingAction}
+            startEditingAction={startEditingAction}
+            cancelEditingAction={cancelEditingAction}
+            saveEditedAction={saveEditedAction}
+            actionsManagerError={actionsManagerError}
+            className={openPanels.includes('bitacora') ? 'flex-1 min-h-0 flex flex-col' : 'hidden'}
+            centralHeight={centralHeight}
+          />
+        </div>
+        {/* Panel Agregar nueva acción SIEMPRE ABAJO */}
+        <div className="flex-shrink-0 mt-2">
+          <NewActionFormCard
+            newActionDescription={newActionDescription}
+            setNewActionDescription={setNewActionDescription}
+            isProcessingAction={isProcessingAction}
+            addAction={addAction}
+            cardRef={newActionCardRef}
+          />
+        </div>
       </div>
-
-      {/* Nuevo componente: Formulario para Nueva Acción */}
-      <NewActionFormCard
-        newActionDescription={newActionDescription}
-        setNewActionDescription={setNewActionDescription}
-        isProcessingAction={isProcessingAction}
-        addAction={addAction}
-        cardRef={newActionCardRef} // Pasamos la ref al componente hijo
-      />
     </Card>
   );
 };

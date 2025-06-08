@@ -1,7 +1,7 @@
 // RUTA: src/components/tickets/TicketActionsBitacora.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button'; // Importación correcta para Button
 import { Textarea } from '@/components/ui/textarea'; // Importación correcta para Textarea
@@ -9,6 +9,9 @@ import { Info, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ticket, ActionEntry } from '@/types/ticket';
 import { useTicketActionsManager } from '@/hooks/useTicketActionsManager'; // Se re-importa el hook aquí para la modularización
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 // Componente auxiliar ActionLog (se mueve aquí, ya que es interno a la bitácora)
 interface ActionLogProps {
@@ -78,16 +81,23 @@ interface TicketActionsBitacoraProps {
   ticketHeaderHeight: number;
   newActionCardHeight: number;
   headerAndPagePaddingOffset: string;
-  // Propiedades directamente de useTicketActionsManager que se pasan
-  actionsForSelectedTicket: ActionEntry[]; // Añadido
-  editingActionId: string | null; // Añadido
-  editedActionDescription: string; // Añadido
-  setEditedActionDescription: (desc: string) => void; // Añadido
-  isProcessingAction: boolean; // Añadido
-  startEditingAction: (action: ActionEntry) => void; // Añadido
-  cancelEditingAction: () => void; // Añadido
-  saveEditedAction: () => Promise<void>; // Añadido
-  actionsManagerError: string | null; // Añadido
+  actionsForSelectedTicket: ActionEntry[];
+  editingActionId: string | null;
+  editedActionDescription: string;
+  setEditedActionDescription: (desc: string) => void;
+  isProcessingAction: boolean;
+  startEditingAction: (action: ActionEntry) => void;
+  cancelEditingAction: () => void;
+  saveEditedAction: () => Promise<void>;
+  actionsManagerError: string | null;
+  className?: string;
+  centralHeight?: number;
+}
+
+interface BitacoraFilters {
+  searchTerm: string
+  category: string
+  dateRange: string
 }
 
 const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
@@ -99,7 +109,6 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
   ticketHeaderHeight,
   newActionCardHeight,
   headerAndPagePaddingOffset,
-  // Desestructuramos las nuevas props
   actionsForSelectedTicket,
   editingActionId,
   editedActionDescription,
@@ -109,56 +118,108 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
   cancelEditingAction,
   saveEditedAction,
   actionsManagerError,
+  className,
+  centralHeight
 }) => {
-  // El hook useTicketActionsManager no se usa directamente aquí, las props ya vienen de TicketDetailsPanelComponent
-  // const { ... } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
+  const [filters, setFilters] = React.useState<BitacoraFilters>({
+    searchTerm: '',
+    category: 'all',
+    dateRange: 'all'
+  })
+
+  // Estado local para colapsar/expandir Bitácora
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [showCollapseBtn, setShowCollapseBtn] = useState(false);
+
+  // Detectar si el contenido supera el alto máximo (60% del área central)
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const maxHeight = centralHeight ? centralHeight * 0.6 : 300;
+    setShowCollapseBtn(contentRef.current.scrollHeight > maxHeight);
+  }, [actionsForSelectedTicket, isCollapsed, centralHeight]);
+
+  const maxBitacoraHeight = centralHeight ? centralHeight * 0.6 : 300;
+
+  const filteredActions = React.useMemo(() => {
+    return actionsForSelectedTicket.filter(action => {
+      const matchesSearch = action.descripcion.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      const matchesCategory = filters.category === 'all' || action.categoria === filters.category
+      // Implementar lógica de filtrado por fecha según dateRange
+      return matchesSearch && matchesCategory
+    })
+  }, [actionsForSelectedTicket, filters])
+
+  // Altura máxima para el listado de acciones (ajustable según diseño)
+  const MAX_ACTIONS_HEIGHT = 220;
 
   const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
 
   return (
-    <Card
-      className={cn(
-        "p-3 shadow-none border bg-muted/10 flex flex-col transition-all duration-300 ease-in-out",
-        { "flex-grow min-h-0": isBitacoraExpanded }, // Permite que crezca y maneje su propio scroll cuando expandida
-        { "flex-shrink-0 h-auto": !isBitacoraExpanded } // Contrae la altura para el header solamente
-      )}
-    >
-      <CardHeader className="p-0 pb-1.5 flex flex-row justify-between items-center flex-shrink-0">
-        <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-          <Info className="h-3.5 w-3.5 text-primary" /> Bitácora de Acciones
-        </CardTitle>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleToggleBitacora}>
-          <span className="sr-only">{isBitacoraExpanded ? 'Colapsar Bitácora' : 'Expandir Bitácora'}</span>
-          {isBitacoraExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </Button>
-      </CardHeader>
-      {isBitacoraExpanded && (
-        <div
-          className="mt-2 space-y-1 overflow-y-auto pr-2 -mr-2"
-          style={{
-            // Calcula el espacio restante en el panel principal para la bitácora
-            // Altura total de la ventana - (altura del header principal + altura del header del ticket + altura del newActionCard + paddings/gaps/bordes extras)
-            // NOTA: El '70px' es un ajuste aproximado para compensar paddings/gaps/bordes del layout.
-            // Es crucial que este valor se ajuste bien.
-            maxHeight: `calc(100vh - ${headerAndPagePaddingOffset} - ${ticketHeaderHeight}px - ${newActionCardHeight}px - 70px)`
-          }}
-        >
-          <ActionLog
-            actions={actionsForSelectedTicket}
-            editingActionId={editingActionId}
-            editedActionDescription={editedActionDescription}
-            setEditedActionDescription={setEditedActionDescription}
-            isProcessingAction={isProcessingAction}
-            startEditingAction={startEditingAction}
-            cancelEditingAction={cancelEditingAction}
-            saveEditedAction={saveEditedAction}
-            dateTimeFormatOptions={commonDateTimeFormatOptions}
-          />
-          {actionsManagerError && (
-            <div className="mt-2 text-destructive text-xs">
-              Error: {actionsManagerError}
+    <Card className={cn("p-0 shadow-none border bg-muted/10 flex flex-col transition-all duration-300 ease-in-out min-h-0", { "flex-1 min-h-0 flex flex-col": !isCollapsed }, { "flex-shrink-0 h-auto": isCollapsed }, className)}>
+      <button type="button" className="w-full flex items-center justify-between px-4 py-3 border-b bg-white/80 hover:bg-muted/20 transition-colors cursor-pointer focus:outline-none" onClick={handleToggleBitacora} aria-expanded={!isCollapsed}>
+        <span className="text-sm font-semibold flex items-center gap 1.5">
+          <Info className="h-4 w-4 text-primary" /> Bitácora de Acciones
+        </span>
+        <span className="ml-2">
+          {isCollapsed ? <ChevronDown className="h-5 w-5 text-muted-foreground" onClick={() => setIsCollapsed(false)} /> : <ChevronUp className="h-5 w-5 text-muted-foreground" onClick={() => setIsCollapsed(true)} />}
+        </span>
+      </button>
+      {!isCollapsed && (
+        <div ref={contentRef} style={{ maxHeight: maxBitacoraHeight, overflowY: 'auto' }} className="flex flex-col flex-grow min-h-0">
+          <div className="flex flex-col gap-2 flex-shrink-0 px-4 pt-3 pb-2 border-b bg-white/80">
+            <Input placeholder="Buscar en bitácora..." value={filters.searchTerm} onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))} className="h-8 text-xs" />
+            <div className="flex gap-2">
+              <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  <SelectItem value="update">Actualizaciones</SelectItem>
+                  <SelectItem value="comment">Comentarios</SelectItem>
+                  <SelectItem value="status">Cambios de estado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filters.dateRange} onValueChange={(value) => setFilters(prev => ({ ...prev, dateRange: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Rango de fecha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo el tiempo</SelectItem>
+                  <SelectItem value="today">Hoy</SelectItem>
+                  <SelectItem value="week">Esta semana</SelectItem>
+                  <SelectItem value="month">Este mes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            <Tabs defaultValue="timeline" className="w-full flex-shrink-0">
+              <TabsList className="w-full grid grid-cols-2 h-8">
+                <TabsTrigger value="timeline" className="text-xs">Timeline</TabsTrigger>
+                <TabsTrigger value="list" className="text-xs">Lista</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          <div className="flex flex-col flex-grow min-h-0 px-4 pt-2 pb-3 bg-white/80">
+            <Tabs defaultValue="timeline" className="w-full h-full flex flex-col flex-grow min-h-0">
+              <TabsContent value="timeline" className="flex flex-col flex-grow min-h-0">
+                <div className="space-y-4 flex-grow min-h-0 overflow-y-auto">
+                  {filteredActions.map((action, index) => (
+                    <div key={action.id} className="relative pl-4 border-l-2 border-primary/20">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary/20 border-2 border-background" />
+                      <div className="text-xs space-y-1 break-words whitespace-pre-line">
+                        <p className="font-semibold text-primary">
+                          {new Date(action.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)}
+                        </p>
+                        <p>{action.descripcion}</p>
+                        <p className="text-muted-foreground text-[10px]"> por: {action.realizadaPor?.name || 'Sistema'} </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       )}
     </Card>

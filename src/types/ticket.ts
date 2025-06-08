@@ -27,7 +27,8 @@ export interface ActionEntry {
   fechaAccion: Date; 
   descripcion: string;
   realizadaPor?: UsuarioBasico | null; 
-  usuarioId?: string; 
+  usuarioId?: string;
+  categoria?: 'update' | 'comment' | 'status' | null;
 }
 
 export interface Ticket {
