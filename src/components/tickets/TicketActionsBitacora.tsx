@@ -156,7 +156,7 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
   const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
 
   return (
-    <Card className={cn("p-0 shadow-none border bg-muted/10 flex flex-col transition-all duration-300 ease-in-out min-h-0", { "flex-1 min-h-0 flex flex-col": !isCollapsed }, { "flex-shrink-0 h-auto": isCollapsed }, className)}>
+    <Card className={cn("p-0 shadow-none border bg-muted/10 flex-1 min-h-0 flex flex-col transition-all duration-300 ease-in-out", { "flex-shrink-0 h-auto": isCollapsed }, className)}>
       <button type="button" className="w-full flex items-center justify-between px-4 py-3 border-b bg-white/80 hover:bg-muted/20 transition-colors cursor-pointer focus:outline-none" onClick={handleToggleBitacora} aria-expanded={!isCollapsed}>
         <span className="text-sm font-semibold flex items-center gap 1.5">
           <Info className="h-4 w-4 text-primary" /> Bitácora de Acciones
@@ -166,7 +166,7 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
         </span>
       </button>
       {!isCollapsed && (
-        <div ref={contentRef} style={{ maxHeight: maxBitacoraHeight, overflowY: 'auto' }} className="flex flex-col flex-grow min-h-0">
+        <div ref={contentRef} className="flex-grow overflow-auto flex flex-col">
           <div className="flex flex-col gap-2 flex-shrink-0 px-4 pt-3 pb-2 border-b bg-white/80">
             <Input placeholder="Buscar en bitácora..." value={filters.searchTerm} onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))} className="h-8 text-xs" />
             <div className="flex gap-2">

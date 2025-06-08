@@ -255,9 +255,8 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
             fechaCreacionFormatted={fechaCreacionFormatted}
           />
         </div>
-        {/* Área central: Descripción y Bitácora SIEMPRE ocupan todo el espacio restante */}
-        <div className="flex flex-col flex-grow min-h-0 gap-2 transition-all duration-300 ease-in-out" ref={centralPanelRef}>
-          {/* Ambos paneles pueden estar abiertos, Bitácora aprovecha el espacio sobrante */}
+        {/* Área central: Descripción y Bitácora ocupan todo el espacio restante */}
+        <div ref={centralPanelRef} className="flex flex-col flex-1 min-h-0 gap-2">
           <TicketDescriptionCard
             selectedTicketDescription={selectedTicket?.descripcionDetallada}
             isOpen={openPanels.includes('descripcion')}
@@ -290,15 +289,13 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
           />
         </div>
         {/* Panel Agregar nueva acción SIEMPRE ABAJO */}
-        <div className="flex-shrink-0 mt-2">
-          <NewActionFormCard
-            newActionDescription={newActionDescription}
-            setNewActionDescription={setNewActionDescription}
-            isProcessingAction={isProcessingAction}
-            addAction={addAction}
-            cardRef={newActionCardRef}
-          />
-        </div>
+        <NewActionFormCard
+          newActionDescription={newActionDescription}
+          setNewActionDescription={setNewActionDescription}
+          isProcessingAction={isProcessingAction}
+          addAction={addAction}
+          cardRef={newActionCardRef}
+        />
       </div>
     </Card>
   );
