@@ -16,11 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-// ExpandableText ya no es necesario importarlo directamente aquí
-// Accordion, AccordionContent, AccordionItem, AccordionTrigger ya no son necesarios aquí
-// Importamos los nuevos componentes
+
+// Importamos los nuevos componentes modularizados
 import TicketInfoAccordions from './TicketInfoAccordions';
 import TicketDescriptionCard from './TicketDescriptionCard';
+import TicketActionsBitacora from './TicketActionsBitacora';
+import NewActionFormCard from './NewActionFormCard'; // <-- NUEVO COMPONENTE
 
 
 interface TicketDetailsPanelProps {
@@ -65,21 +66,20 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
 
   const {
     actionsForSelectedTicket,
-    newActionDescription,
-    setNewActionDescription,
-    editingActionId,
-    editedActionDescription,
-    setEditedActionDescription,
-    isProcessingAction,
-    error: actionsManagerError,
-    startEditingAction,
-    cancelEditingAction,
-    saveEditedAction,
-    addAction,
+    newActionDescription, 
+    setNewActionDescription, 
+    editingActionId, 
+    editedActionDescription, 
+    setEditedActionDescription, 
+    isProcessingAction, 
+    error: actionsManagerError, 
+    startEditingAction, 
+    cancelEditingAction, 
+    saveEditedAction, 
+    addAction, 
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
   // Efecto para resetear estados al cambiar de ticket.
-  // Cuando selectedTicket cambia, la bitácora se colapsa y los acordeones de información se abren.
   useEffect(() => {
     if (!selectedTicket) {
       setOpenInfoSections([]); 
@@ -217,61 +217,29 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
                 isBitacoraExpanded={isBitacoraExpanded}
               />
 
-              {/* Card para Bitácora de Acciones: Gestiona su altura y scroll interno */}
-              <Card
-                className={cn(
-                  "p-3 shadow-none border bg-muted/10 flex flex-col transition-all duration-300 ease-in-out",
-                  { "flex-grow min-h-0": isBitacoraExpanded }, 
-                  { "flex-shrink-0 h-auto": !isBitacoraExpanded }
-                )}
-              >
-                <CardHeader className="p-0 pb-1.5 flex flex-row justify-between items-center flex-shrink-0">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                    <Info className="h-3.5 w-3.5 text-primary" /> Bitácora de Acciones
-                  </CardTitle>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleToggleBitacora}>
-                    <span className="sr-only">{isBitacoraExpanded ? 'Colapsar Bitácora' : 'Expandir Bitácora'}</span>
-                    {isBitacoraExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </Button>
-                </CardHeader>
-                {isBitacoraExpanded && (
-                  // Contenido de la bitácora: este div es el que tiene el scroll interno
-                  // Ajuste dinámico del max-height para que se apoye en la Card de "Agregar nueva acción"
-                  <div className="mt-2 space-y-1 overflow-y-auto pr-2 -mr-2"
-                       style={{ 
-                         maxHeight: `calc(100vh - ${headerAndPagePaddingOffset} - ${ticketHeaderHeight}px - ${newActionCardHeight}px - 70px)` // Altura total de la ventana - offset global - altura del header del ticket - altura del newActionCard - padding/margenes/gaps extra
-                       }} 
-                  >
-                    <ActionLog
-                      actions={actionsForSelectedTicket}
-                      editingActionId={editingActionId}
-                      editedActionDescription={editedActionDescription}
-                      setEditedActionDescription={setEditedActionDescription}
-                      isProcessingAction={isProcessingAction}
-                      startEditingAction={startEditingAction}
-                      cancelEditingAction={cancelEditedAction}
-                      saveEditedAction={saveEditedAction}
-                      dateTimeFormatOptions={commonDateTimeFormatOptions}
-                    />
-                  </div>
-                )}
-              </Card>
+              {/* Nuevo componente: Bitácora de Acciones */}
+              <TicketActionsBitacora
+                selectedTicket={selectedTicket}
+                onTicketUpdated={onTicketUpdated}
+                isBitacoraExpanded={isBitacoraExpanded}
+                setIsBitacoraExpanded={setIsBitacoraExpanded}
+                handleToggleBitacora={handleToggleBitacora}
+                ticketHeaderHeight={ticketHeaderHeight}
+                newActionCardHeight={newActionCardHeight}
+                headerAndPagePaddingOffset={headerAndPagePaddingOffset}
+              />
           </div>
         )}
       </div>
 
-      {/* Contenedor FIJO para el formulario de nueva acción. Siempre visible en la parte inferior. */}
-      {/* Se añade la referencia para medir su altura */}
-      <div ref={newActionCardRef} className="flex-shrink-0 pt-2 border-t mt-auto">
-        <Card className="p-3 shadow-none border bg-muted/10">
-          <NewActionForm
-            newActionDescription={newActionDescription}
-            setNewActionDescription={setNewActionDescription}
-            isProcessingAction={isProcessingAction}
-            addAction={addAction}
-          />
-        </Card>
-      </div>
+      {/* Nuevo componente: Formulario para Nueva Acción */}
+      <NewActionFormCard
+        newActionDescription={newActionDescription}
+        setNewActionDescription={setNewActionDescription}
+        isProcessingAction={isProcessingAction}
+        addAction={addAction}
+        cardRef={newActionCardRef} // Pasamos la ref al componente hijo
+      />
     </Card>
   );
 };
@@ -305,7 +273,6 @@ const ErrorMessage: React.FC<{ error: string }> = ({ error }) => (
 
 // Estas interfaces y componentes auxiliares (ActionLog, NewActionForm, EditTicketForm)
 // se mantendrán temporalmente aquí, pero serán extraídos en pasos posteriores.
-// Componente auxiliar InfoAccordionItem ya ha sido extraído a TicketInfoAccordions.tsx.
 
 interface ActionLogProps { actions: ActionEntry[]; editingActionId: string | null; editedActionDescription: string; setEditedActionDescription: (desc: string) => void; isProcessingAction: boolean; startEditingAction: (action: ActionEntry) => void; cancelEditingAction: () => void; saveEditedAction: () => Promise<void>; dateTimeFormatOptions: Intl.DateTimeFormatOptions; }
 const ActionLog: React.FC<ActionLogProps> = ({ actions, editingActionId, editedActionDescription, setEditedActionDescription, isProcessingAction, startEditingAction, cancelEditingAction, saveEditedAction, dateTimeFormatOptions }) => (
