@@ -23,7 +23,7 @@ interface TicketActionsBitacoraProps {
 }
 
 const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
-  actionsForSelectedTicket,
+  actionsForSelectedTicket = [],
   editingActionId,
   editedActionDescription,
   setEditedActionDescription,
@@ -32,33 +32,40 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
   cancelEditingAction,
   saveEditedAction,
 }) => {
-  const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+  const commonDateTimeFormatOptions: Intl.DateTimeFormatOptions = {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  };
 
   return (
-    <AccordionItem value="bitacora-panel" className="border rounded-lg bg-background shadow-sm">
-      <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline">
+    // LAYOUT FIX: Este item ahora es un contenedor flex que crece para ocupar el espacio disponible.
+    <AccordionItem value="bitacora-panel" className="border rounded-lg bg-background shadow-sm flex-1 flex flex-col min-h-0">
+      <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline flex-shrink-0">
         <span className="flex items-center gap-2"><Info className="h-4 w-4 text-primary" />Bitácora de Acciones</span>
       </AccordionTrigger>
-      <AccordionContent className="p-4 pt-0">
-        <div className="space-y-2 mb-4">
-           <Input placeholder="Buscar en bitácora..." className="h-8 text-xs" />
-           <div className="flex gap-2">
-              <Select><SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Categoría" /></SelectTrigger><SelectContent><SelectItem value="all">Todas</SelectItem></SelectContent></Select>
-              <Select><SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Fecha" /></SelectTrigger><SelectContent><SelectItem value="all">Todo</SelectItem></SelectContent></Select>
-           </div>
-           <Tabs defaultValue="timeline" className="w-full">
+      {/* LAYOUT FIX: El contenido también es un contenedor flex para manejar sus hijos */}
+      <AccordionContent className="p-4 pt-0 flex-1 flex flex-col min-h-0">
+        {/* Controles de filtro (tamaño fijo) */}
+        <div className="space-y-2 mb-4 flex-shrink-0">
+            <Input placeholder="Buscar en bitácora..." className="h-8 text-xs" />
+            <div className="flex gap-2">
+                <Select><SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Todas las categorías" /></SelectTrigger><SelectContent><SelectItem value="all">Todas</SelectItem></SelectContent></Select>
+                <Select><SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Todo el tiempo" /></SelectTrigger><SelectContent><SelectItem value="all">Todo</SelectItem></SelectContent></Select>
+            </div>
+            <Tabs defaultValue="timeline" className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-9">
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="list">Lista</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                <TabsTrigger value="list">Lista</TabsTrigger>
             </TabsList>
-           </Tabs>
+            </Tabs>
         </div>
         
-        <div className="max-h-64 overflow-y-auto pr-2">
-          <div className="relative">
+        {/* LAYOUT FIX: La lista de acciones es ahora el elemento flexible con scroll interno */}
+        <div className="flex-1 overflow-y-auto pr-2">
+            <div className="relative">
             {actionsForSelectedTicket.length > 0 && <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-muted-foreground/20" aria-hidden="true"></div>}
             <div className="space-y-6">
-                {actionsForSelectedTicket.length > 0 ? actionsForSelectedTicket.map((act) => (
+                {actionsForSelectedTicket.map((act) => (
                     <div key={act.id} className="relative pl-8">
                         <div className="absolute -left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background" aria-hidden="true">
                             <div className="h-2.5 w-2.5 rounded-full bg-primary" />
@@ -76,21 +83,24 @@ const TicketActionsBitacora: React.FC<TicketActionsBitacoraProps> = ({
                           </div>
                         ) : (
                           <div>
-                              <div className="flex justify-between items-center">
-                                  <div className="text-xs text-muted-foreground">
-                                      <span className="font-semibold text-primary">{new Date(act.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)}</span>
-                                      <span className="ml-2">por: {act.realizadaPor?.name || 'Sistema'}</span>
-                                  </div>
+                              <div className="flex justify-between items-center mb-1">
+                                  <time dateTime={act.fechaAccion.toString()} className="font-semibold text-primary">
+                                    {new Date(act.fechaAccion).toLocaleString('es-CL', commonDateTimeFormatOptions)}
+                                  </time>
                                   <Button variant="outline" size="sm" onClick={() => startEditingAction(act)} disabled={isProcessingAction} className="h-6 px-2 text-xs">Editar</Button>
                               </div>
-                              <p className="mt-1 text-foreground whitespace-pre-wrap">{act.descripcion}</p>
+                              <p className="text-foreground whitespace-pre-wrap text-[13px] leading-relaxed">{act.descripcion}</p>
+                              <p className="text-muted-foreground mt-1.5">por: {act.realizadaPor?.name || 'Sistema'}</p>
+                            </div>
+                          )}
                           </div>
-                        )}
-                        </div>
-                    </div>
-                )) : <p className="text-xs text-muted-foreground text-center py-4">No hay acciones registradas.</p>}
+                      </div>
+                ))}
+                {actionsForSelectedTicket.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No hay acciones registradas.</p>
+                )}
             </div>
-          </div>
+            </div>
         </div>
       </AccordionContent>
     </AccordionItem>

@@ -1,15 +1,14 @@
-// src/hooks/useTicketActionsManager.ts
+// RUTA: src/hooks/useTicketActionsManager.ts
+'use client';
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Ticket, ActionEntry, UsuarioBasico } from '@/types/ticket'; // Asegúrate que ActionEntry y UsuarioBasico estén bien definidos
 
-// Actualizar ActionEntry para que coincida con lo que devuelve la API
-interface ActionEntryWithUser extends ActionEntry {
-  realizadaPor?: UsuarioBasico | null; 
-}
+// Se elimina la interfaz redundante ActionEntryWithUser
 
 interface UseTicketActionsManagerProps {
   selectedTicket: Ticket | null;
-  onTicketUpdated: (updatedTicket: Ticket) => void; 
+  onTicketUpdated: (updatedTicket: Ticket) => void;
 }
 
 export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: UseTicketActionsManagerProps) {
@@ -19,15 +18,10 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
   const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Las acciones ahora vendrán del ticket actualizado que incluye la relación 'acciones'
-  // y cada acción incluye 'realizadaPor'.
-  const actionsForSelectedTicket = useMemo((): ActionEntryWithUser[] => {
-    // El tipo Ticket en el frontend debe reflejar que 'acciones' es un array de objetos
-    // que ya vienen parseados desde la API, no un string JSON.
-    // Si tu API devuelve el ticket con `include: { acciones: { include: { realizadaPor: true } } }`
-    // entonces selectedTicket.acciones ya será el array correcto.
+  const actionsForSelectedTicket = useMemo((): ActionEntry[] => {
+    // CORRECCIÓN: Se usa directamente el tipo ActionEntry, que ya incluye el usuario.
     if (selectedTicket && Array.isArray(selectedTicket.acciones)) {
-      return selectedTicket.acciones as ActionEntryWithUser[]; // Castear si es necesario
+      return selectedTicket.acciones as ActionEntry[];
     }
     return [];
   }, [selectedTicket]);
@@ -40,7 +34,7 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
     setError(null);
   }, [selectedTicket]);
 
-  const startEditingAction = useCallback((action: ActionEntryWithUser) => {
+  const startEditingAction = useCallback((action: ActionEntry) => {
     setEditingActionId(action.id);
     setEditedActionDescription(action.descripcion);
     setError(null);
@@ -62,7 +56,6 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
     setError(null);
 
     try {
-      // Ahora solo enviamos la descripción de la nueva acción
       const response = await fetch(`/api/tickets/${selectedTicket.id}/accion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,10 +67,9 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
         throw new Error(errorData.message || 'Error al agregar la acción');
       }
 
-      // La API ahora devuelve el ticket completo y actualizado con todas sus acciones
       const updatedTicketData: Ticket = await response.json();
-      onTicketUpdated(updatedTicketData); 
-      setNewActionDescription(''); 
+      onTicketUpdated(updatedTicketData);
+      setNewActionDescription('');
     } catch (err: any) {
       console.error('Error al agregar acción:', err);
       setError(err.message || "Ocurrió un error desconocido al agregar la acción.");
@@ -86,10 +78,6 @@ export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: Use
     }
   }, [selectedTicket, newActionDescription, onTicketUpdated]);
 
-  // La edición de una acción individual (PUT a /api/tickets/[id]/accion/[accionId])
-  // también necesitará ajustes si el backend cambia.
-  // Por ahora, asumimos que ese endpoint sigue funcionando como antes,
-  // pero idealmente también debería devolver el ticket actualizado.
   const saveEditedAction = useCallback(async () => {
     if (!selectedTicket || !editingActionId || !editedActionDescription.trim()) {
       setError("La descripción de la acción editada no puede estar vacía.");

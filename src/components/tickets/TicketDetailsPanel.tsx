@@ -1,7 +1,7 @@
 // RUTA: src/components/tickets/TicketDetailsPanel.tsx
 'use client';
 
-import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit3, AlertTriangle } from 'lucide-react';
@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { EstadoTicket } from '@prisma/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion } from '@/components/ui/accordion';
 
 // Componentes Hijos
@@ -47,8 +46,7 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
   onTicketUpdated,
   isLoadingGlobal = false,
 }) => {
-  const [openPanels, setOpenPanels] = useState<string[]>(['bitacora-panel', 'descripcion-panel']);
-  const newActionCardRef = useRef<HTMLDivElement>(null);
+  const [openPanels, setOpenPanels] = useState<string[]>(['bitacora-panel', 'descripcion-panel', 'info-ticket', 'info-solicitante']);
 
   const {
     isEditingTicket, editableTicketData, isSaving: isSavingTicket, error: ticketEditorError,
@@ -61,40 +59,12 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
     isProcessingAction, error: actionsManagerError, startEditingAction,
     cancelEditingAction, saveEditedAction, addAction,
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
-  
-  const handlePanelChange = useCallback((newOpenValues: string[]) => {
-      const wasBitacoraOpen = openPanels.includes('bitacora-panel');
-      const isBitacoraNowOpen = newOpenValues.includes('bitacora-panel');
-      const wasDescriptionOpen = openPanels.includes('descripcion-panel');
-
-      // Escenario 1: ABRIENDO Bitácora (cuando estaba cerrada)
-      if (isBitacoraNowOpen && !wasBitacoraOpen) {
-          setOpenPanels(['bitacora-panel']); // Cierra todo excepto bitácora
-          return;
-      }
-      
-      // Escenario 2: CERRANDO Bitácora
-      if (!isBitacoraNowOpen && wasBitacoraOpen) {
-          setOpenPanels(['info-ticket', 'info-solicitante', 'descripcion-panel']); // Abre todo lo demás
-          return;
-      }
-
-      // Escenario 3: Interacción con otros paneles mientras bitácora está abierta
-      // Si la bitácora está abierta, solo permite que 'descripción' cambie su estado.
-      if (isBitacoraNowOpen) {
-          const descriptionPanelOnly = newOpenValues.filter(p => p === 'descripcion-panel');
-          setOpenPanels(['bitacora-panel', ...descriptionPanelOnly]);
-          return;
-      }
-      
-      setOpenPanels(newOpenValues);
-  }, [openPanels]);
 
   useEffect(() => {
     if (selectedTicket) {
-      setOpenPanels(['descripcion-panel', 'bitacora-panel']);
+      setOpenPanels(['bitacora-panel', 'descripcion-panel', 'info-ticket', 'info-solicitante']);
     } else {
-        setOpenPanels([]);
+      setOpenPanels([]);
     }
   }, [selectedTicket]);
 
@@ -117,7 +87,8 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
   });
 
   return (
-    <Card className="shadow-lg rounded-lg p-0 flex flex-col h-full box-border">
+    <Card className="shadow-lg rounded-lg p-0 flex flex-col h-full box-border overflow-hidden">
+      {/* SECCIÓN 1: HEADER (TAMAÑO FIJO) */}
       <div className="flex-shrink-0 border-b p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2"><h2 className="text-lg font-bold">Ticket #{selectedTicket.numeroCaso}</h2><Badge variant={getEstadoBadgeVariant(selectedTicket.estado)}>{selectedTicket.estado}</Badge></div>
@@ -126,22 +97,46 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
         {combinedError && <ErrorMessage error={combinedError} />}
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className={cn("p-3 space-y-3", { "opacity-50 pointer-events-none": isLoadingGlobal })}>
-          {isEditingTicket && editableTicketData && (
-            <EditTicketFormCard editableData={editableTicketData} isSaving={isSavingTicket} onInputChange={handleTicketInputChange} onSaveChanges={saveTicketChanges} onCancel={cancelEditingTicket}/>
-          )}
-          
-          <Accordion type="multiple" value={openPanels} onValueChange={handlePanelChange} className="w-full space-y-2">
-            <TicketInfoAccordions selectedTicket={selectedTicket} fechaCreacionFormatted={fechaCreacionFormatted} />
-            <TicketDescriptionCard description={selectedTicket.descripcionDetallada} creatorName={selectedTicket.solicitanteNombre} />
-            <TicketActionsBitacora actionsForSelectedTicket={actionsForSelectedTicket || []} editingActionId={editingActionId} editedActionDescription={editedActionDescription} setEditedActionDescription={setEditedActionDescription} isProcessingAction={isProcessingAction} startEditingAction={startEditingAction} cancelEditingAction={cancelEditingAction} saveEditedAction={saveEditedAction} />
-          </Accordion>
+      {/* SECCIÓN 2: CONTENIDO CENTRAL (FLEXIBLE) */}
+      <div className={cn("flex-1 p-3 flex flex-col gap-3 overflow-hidden", { "opacity-50 pointer-events-none": isLoadingGlobal })}>
+        
+        {isEditingTicket && editableTicketData && (
+          <div className="flex-shrink-0">
+            <EditTicketFormCard editableData={editableTicketData} isSaving={isSavingTicket} onInputChange={handleTicketInputChange} onSaveChanges={saveTicketChanges} onCancel={cancelEditingAction}/>
+          </div>
+        )}
+        
+        {/* Acordeones Superiores (Tamaño Automático) */}
+        <div className="flex-shrink-0 space-y-2">
+            <Accordion type="multiple" value={openPanels} onValueChange={setOpenPanels} className="w-full space-y-2">
+                <TicketInfoAccordions selectedTicket={selectedTicket} fechaCreacionFormatted={fechaCreacionFormatted} />
+                <TicketDescriptionCard description={selectedTicket.descripcionDetallada} creatorName={selectedTicket.solicitanteNombre} />
+            </Accordion>
         </div>
-      </ScrollArea>
+
+        {/* Acordeón de Bitácora (Ocupa el espacio restante) */}
+        <Accordion type="multiple" value={openPanels} onValueChange={setOpenPanels} className="w-full flex-1 flex flex-col min-h-0">
+             <TicketActionsBitacora 
+              actionsForSelectedTicket={actionsForSelectedTicket || []}
+              editingActionId={editingActionId} 
+              editedActionDescription={editedActionDescription} 
+              setEditedActionDescription={setEditedActionDescription} 
+              isProcessingAction={isProcessingAction} 
+              startEditingAction={startEditingAction} 
+              cancelEditingAction={cancelEditingAction} 
+              saveEditedAction={saveEditedAction} 
+            />
+        </Accordion>
+      </div>
       
-      <div className="flex-shrink-0 border-t p-3">
-        <NewActionFormCard newActionDescription={newActionDescription} setNewActionDescription={setNewActionDescription} isProcessingAction={isProcessingAction} addAction={addAction} cardRef={newActionCardRef} />
+      {/* SECCIÓN 3: FOOTER (TAMAÑO FIJO) */}
+      <div className="flex-shrink-0 border-t p-3 bg-muted/30">
+        <NewActionFormCard 
+          newActionDescription={newActionDescription} 
+          setNewActionDescription={setNewActionDescription} 
+          isProcessingAction={isProcessingAction} 
+          addAction={addAction}
+        />
       </div>
     </Card>
   );
