@@ -1,7 +1,7 @@
 // RUTA: src/components/tickets/TicketDetailsPanel.tsx
 'use client';
 
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit3, AlertTriangle } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { EstadoTicket } from '@prisma/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Accordion } from '@/components/ui/accordion';
+import { Accordion } from '@/components/ui/accordion'; // Importar Accordion
 
 // Componentes Hijos
 import TicketInfoAccordions from './TicketInfoAccordions';
@@ -46,7 +46,14 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
   onTicketUpdated,
   isLoadingGlobal = false,
 }) => {
-  const [openPanels, setOpenPanels] = useState<string[]>(['bitacora-panel', 'descripcion-panel', 'info-ticket', 'info-solicitante']);
+  // Nombres de los paneles para fácil referencia
+  const INFO_TICKET_PANEL = 'info-ticket';
+  const INFO_SOLICITANTE_PANEL = 'info-solicitante';
+  const DESCRIPCION_PANEL = 'descripcion-panel';
+  const BITACORA_PANEL = 'bitacora-panel';
+
+  // Estado para controlar qué paneles del acordeón están abiertos
+  const [openPanels, setOpenPanels] = useState<string[]>([]);
 
   const {
     isEditingTicket, editableTicketData, isSaving: isSavingTicket, error: ticketEditorError,
@@ -60,13 +67,45 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
     cancelEditingAction, saveEditedAction, addAction,
   } = useTicketActionsManager({ selectedTicket, onTicketUpdated });
 
+  // Efecto para inicializar el estado de los paneles cuando se selecciona un nuevo ticket
+  // O al cargar el componente si ya hay un ticket seleccionado (ej. al refrescar la página)
   useEffect(() => {
     if (selectedTicket) {
-      setOpenPanels(['bitacora-panel', 'descripcion-panel', 'info-ticket', 'info-solicitante']);
+      // Estado inicial: todos los paneles abiertos (como en la primera imagen)
+      setOpenPanels([INFO_TICKET_PANEL, INFO_SOLICITANTE_PANEL, DESCRIPCION_PANEL, BITACORA_PANEL]);
     } else {
-      setOpenPanels([]);
+      setOpenPanels([]); // Si no hay ticket seleccionado, no hay paneles abiertos
     }
   }, [selectedTicket]);
+
+  // Función para manejar el cambio de estado de los acordeones
+  const handleAccordionValueChange = useCallback((newOpenValues: string[]) => {
+    const prevOpenPanels = openPanels;
+
+    const wasBitacoraOpen = prevOpenPanels.includes(BITACORA_PANEL);
+    const isBitacoraNowOpen = newOpenValues.includes(BITACORA_PANEL);
+
+    let nextPanelsState: string[];
+
+    // Escenario: La Bitácora cambia de estado (se abre o se cierra)
+    if (wasBitacoraOpen !== isBitacoraNowOpen) {
+        // Si la Bitácora se acaba de COLAPSAR (estaba abierta y ahora se cierra)
+        if (wasBitacoraOpen && !isBitacoraNowOpen) {
+            nextPanelsState = [INFO_TICKET_PANEL, INFO_SOLICITANTE_PANEL, DESCRIPCION_PANEL];
+        }
+        // Si la Bitácora se acaba de EXPANDIR (estaba cerrada y ahora se abre)
+        else { // (!wasBitacoraOpen && isBitacoraNowOpen)
+            nextPanelsState = [BITACORA_PANEL];
+        }
+    } else {
+        // Si la Bitácora no cambió de estado, o si se interactuó con otros paneles
+        // Mantener el comportamiento predeterminado de un acordeón múltiple para los demás paneles
+        // Esto permite abrir/cerrar Información y Descripción libremente si la Bitácora está colapsada
+        nextPanelsState = newOpenValues;
+    }
+    
+    setOpenPanels(nextPanelsState);
+  }, [openPanels]); // Dependencia de openPanels para acceder a su estado anterior
 
   if (isLoadingGlobal && !selectedTicket) return <TicketDetailsSkeleton />;
   if (!selectedTicket) return <NoTicketSelectedMessage />;
@@ -78,6 +117,10 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
       case EstadoTicket.ABIERTO: return "default";
       case EstadoTicket.CERRADO: return "destructive";
       case EstadoTicket.EN_PROGRESO: return "secondary";
+      case EstadoTicket.PENDIENTE_TERCERO: return "outline";
+      case EstadoTicket.PENDIENTE_CLIENTE: return "outline";
+      case EstadoTicket.RESUELTO: return "default";
+      case EstadoTicket.CANCELADO: return "destructive";
       default: return "outline";
     }
   };
@@ -85,6 +128,9 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
   const fechaCreacionFormatted = new Date(selectedTicket.fechaCreacion).toLocaleString('es-CL', {
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
   });
+
+  // Determinar si la bitácora está actualmente expandida para pasar la prop a TicketDescriptionCard
+  const isBitacoraExpanded = openPanels.includes(BITACORA_PANEL);
 
   return (
     <Card className="shadow-lg rounded-lg p-0 flex flex-col h-full box-border overflow-hidden">
@@ -106,17 +152,13 @@ const TicketDetailsPanelComponent: React.FC<TicketDetailsPanelProps> = ({
           </div>
         )}
         
-        {/* Acordeones Superiores (Tamaño Automático) */}
-        <div className="flex-shrink-0 space-y-2">
-            <Accordion type="multiple" value={openPanels} onValueChange={setOpenPanels} className="w-full space-y-2">
-                <TicketInfoAccordions selectedTicket={selectedTicket} fechaCreacionFormatted={fechaCreacionFormatted} />
-                <TicketDescriptionCard description={selectedTicket.descripcionDetallada} creatorName={selectedTicket.solicitanteNombre} />
-            </Accordion>
-        </div>
-
-        {/* Acordeón de Bitácora (Ocupa el espacio restante) */}
-        <Accordion type="multiple" value={openPanels} onValueChange={setOpenPanels} className="w-full flex-1 flex flex-col min-h-0">
-             <TicketActionsBitacora 
+        {/* ÚNICO Accordion que gestiona todos los paneles de información y la bitácora */}
+        <Accordion type="multiple" value={openPanels} onValueChange={handleAccordionValueChange} className="w-full flex-1 flex flex-col min-h-0 space-y-2">
+            {/* Estos componentes renderizan sus propios AccordionItem */}
+            <TicketInfoAccordions selectedTicket={selectedTicket} fechaCreacionFormatted={fechaCreacionFormatted} />
+            {/* Pasamos la prop isMinimizedForBitacora a TicketDescriptionCard */}
+            <TicketDescriptionCard description={selectedTicket.descripcionDetallada} creatorName={selectedTicket.solicitanteNombre} isMinimizedForBitacora={isBitacoraExpanded} />
+            <TicketActionsBitacora 
               actionsForSelectedTicket={actionsForSelectedTicket || []}
               editingActionId={editingActionId} 
               editedActionDescription={editedActionDescription} 
