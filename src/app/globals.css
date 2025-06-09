@@ -25,6 +25,10 @@
     --input: 0 0% 92%;  /* SUGERENCIA: Borde de input igual al borde general */
     --ring: 0 72.2% 50.6%;
     --radius: 1rem;
+
+    /* NUEVAS VARIABLES CSS */
+    --bitacora-header-height: 50px; /* Altura aproximada del header de la bitácora */
+    --description-line-height: 1.5em; /* Altura de línea para cálculo de max-height */
   }
 
   .dark {
@@ -47,6 +51,10 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 72.2% 50.6%;
+
+    /* NUEVAS VARIABLES CSS */
+    --bitacora-header-height: 50px; /* Altura aproximada del header de la bitácora */
+    --description-line-height: 1.5em; /* Altura de línea para cálculo de max-height */
   }
 }
 

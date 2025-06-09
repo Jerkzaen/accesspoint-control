@@ -4,35 +4,36 @@
 import React from 'react';
 import {
   AccordionContent,
-  AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Info } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Asegúrate de importar cn para las clases condicionales
+import { cn } from '@/lib/utils'; 
+// Eliminar la importación de ExpandableText, ya no se usa aquí
 
 interface TicketDescriptionCardProps {
   description?: string | null;
   creatorName?: string | null;
-  isMinimizedForBitacora?: boolean; // Nueva prop para controlar la minimización
+  isPanelOpen?: boolean; // Para controlar la altura del contenido interno cuando el AccordionContent está abierto
 }
 
 const TicketDescriptionCard: React.FC<TicketDescriptionCardProps> = ({
   description,
   creatorName,
-  isMinimizedForBitacora = false, // Valor por defecto: false
+  isPanelOpen = false,
 }) => {
   return (
-    <AccordionItem value="descripcion-panel" className="border rounded-lg bg-background shadow-sm">
+    <> {/* Fragmento para envolver el Trigger y Content */}
       <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline">
         <span className="flex items-center gap-2"><Info className="h-4 w-4 text-primary" />Descripción Detallada</span>
       </AccordionTrigger>
-      <AccordionContent className="px-4 pb-4 pt-0">
+      {/* El AccordionContent gestiona la animación de colapso */}
+      <AccordionContent className="px-4 pb-4 pt-0"> 
         <div 
           className={cn(
             "text-xs text-muted-foreground whitespace-pre-wrap pr-2 transition-all duration-300 ease-in-out",
             {
-              "max-h-32 min-h-[2rem] overflow-y-auto": !isMinimizedForBitacora, // Altura original si no está minimizado
-              "max-h-[6em] min-h-[2rem] overflow-y-auto": isMinimizedForBitacora, // Aprox. 4 líneas (1.5em/línea * 4) cuando está minimizado
+              "max-h-[8em] overflow-y-auto": isPanelOpen, // Aproximadamente 5 líneas (1.5em/línea * 5 = 7.5em, ajustamos a 8em)
+              "max-h-0 overflow-hidden": !isPanelOpen // Completamente oculto si no está abierto
             }
           )}
         >
@@ -42,7 +43,7 @@ const TicketDescriptionCard: React.FC<TicketDescriptionCardProps> = ({
           )}
         </div>
       </AccordionContent>
-    </AccordionItem>
+    </>
   );
 };
 
