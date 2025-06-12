@@ -5,7 +5,6 @@ import * as React from 'react';
 import { SidebarItem } from "@/types/sidebar"; 
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle, 
@@ -13,7 +12,7 @@ import {
   SheetTrigger,
 } from "./ui/sheet"; 
 import { Button } from "./ui/button"; 
-import { LogOut, Menu, MoreHorizontal, Settings, X, UserCircle2, LogIn, Loader2 } from "lucide-react"; // Añadido UserCircle2, LogIn, Loader2
+import { LogOut, Menu, MoreHorizontal, Settings, X, UserCircle2, LogIn, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarButton } from "./sidebar-button"; 
@@ -23,9 +22,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "./ui/popover";
-import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"; // Añadido AvatarImage
-import { useSession, signIn, signOut } from "next-auth/react"; // Importaciones de NextAuth
-import { Skeleton } from "./ui/skeleton"; // Importar Skeleton
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { Skeleton } from "./ui/skeleton";
 
 interface SidebarMobileProps {
   sidebarItems: SidebarItem;
@@ -33,12 +32,12 @@ interface SidebarMobileProps {
 
 export function SidebarMobile(props: SidebarMobileProps) {
   const pathname = usePathname();
-  const { data: session, status } = useSession(); // Hook de NextAuth
+  const { data: session, status } = useSession();
   const [popoverOpen, setPopoverOpen] = React.useState(false);
-  const [sheetOpen, setSheetOpen] = React.useState(false); // Estado para controlar el Sheet
+  const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const handleLinkClick = () => {
-    setSheetOpen(false); // Cierra el sheet al hacer clic en un enlace
+    setSheetOpen(false);
   };
 
   const handlePopoverAndSheetClose = () => {
@@ -55,10 +54,10 @@ export function SidebarMobile(props: SidebarMobileProps) {
       </SheetTrigger>
       <SheetContent 
         side="left" 
-        className="px-3 py-4 flex flex-col w-[270px] sm:w-[300px]" // Ancho ajustado
-        hideClose // Usaremos nuestro propio botón de cierre
+        className="px-3 py-4 flex flex-col w-[270px] sm:w-[300px]"
+        hideClose
       >
-        <SheetHeader className="flex flex-row justify-between items-center space-y-0 flex-shrink-0 mb-4"> {/* Añadido mb-4 */}
+        <SheetHeader className="flex flex-row justify-between items-center space-y-0 flex-shrink-0 mb-4">
           <SheetTitle className="text-lg font-semibold text-foreground mx-3">
             AccessPoint Control
           </SheetTitle>
@@ -70,28 +69,27 @@ export function SidebarMobile(props: SidebarMobileProps) {
           </Button>
         </SheetHeader>
         
-        <div className="flex-grow overflow-y-auto"> {/* Eliminado py-5, el padding ya está en SheetContent */}
+        <div className="flex-grow overflow-y-auto">
           <div className="flex flex-col w-full gap-1">
             {props.sidebarItems.links.map((link, idx) => (
-              // SheetClose ya no es necesario alrededor de cada Link si usamos setSheetOpen(false) en el Popover y en los links
               <Link 
                 key={idx} 
                 href={link.href} 
-                onClick={handleLinkClick} // Cierra el sheet al hacer clic
+                onClick={handleLinkClick}
                 className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none text-left"
               > 
                 <SidebarButton
                   variant={pathname === link.href ? "secondary" : "ghost"}
                   icon={link.icon}
-                  className="w-full text-sm" // Tamaño de texto ajustado
+                  className="w-full text-sm"
                 >
                   {link.label}
                 </SidebarButton>
               </Link>
             ))}
+            {/* Se renderizan los extras, que incluyen la sección de admin si el usuario es ADMIN */}
             {status === "authenticated" && props.sidebarItems.extras && (
-                // SheetClose ya no es necesario
-                 <div>{props.sidebarItems.extras}</div> // Envolver extras en un div o fragmento si es necesario
+                 <div onClick={handleLinkClick}>{props.sidebarItems.extras}</div>
             )}
           </div>
         </div>
@@ -134,7 +132,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
               </Button>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-[calc(100%-1.5rem)] max-w-[280px] p-2 mb-2" // Ancho ajustado para que quepa mejor, y p-2
+              className="w-[calc(100%-1.5rem)] max-w-[280px] p-2 mb-2"
               side="top" 
               align="start" 
               sideOffset={5}
@@ -151,11 +149,6 @@ export function SidebarMobile(props: SidebarMobileProps) {
                     Conectado como: <strong className="block truncate font-medium" title={session.user.email || ""}>{session.user.email}</strong>
                   </div>
                   <Separator />
-                  {/* <Link href="/profile" onClick={handlePopoverAndSheetClose}>
-                    <SidebarButton size="sm" icon={Settings} className="w-full text-xs font-normal">
-                      Mi Perfil / Config.
-                    </SidebarButton>
-                  </Link> */}
                   <SidebarButton
                     onClick={() => {
                       signOut({ callbackUrl: "/auth/signin" });
