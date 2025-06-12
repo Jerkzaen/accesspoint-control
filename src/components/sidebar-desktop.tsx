@@ -7,11 +7,11 @@ import Link from "next/link";
 import { Separator } from "./ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"; // Importar AvatarImage
-import { LogOut, MoreHorizontal, Settings, LogIn, UserCircle2, Loader2 } from "lucide-react"; // Importar LogIn, UserCircle2 y Loader2
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import { LogOut, MoreHorizontal, Settings, LogIn, UserCircle2, Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useSession, signIn, signOut } from "next-auth/react"; // Importar hooks y funciones de NextAuth
-import { Skeleton } from "./ui/skeleton"; // Importar Skeleton para el estado de carga
+import { useSession, signIn, signOut } from "next-auth/react";
+import { Skeleton } from "./ui/skeleton";
 
 interface SidebarDesktopProps {
   sidebarItems: SidebarItem;
@@ -19,7 +19,7 @@ interface SidebarDesktopProps {
 
 export function SidebarDesktop(props: SidebarDesktopProps) {
   const pathname = usePathname();
-  const { data: session, status } = useSession(); // Obtener datos de la sesión y estado
+  const { data: session, status } = useSession();
 
   return (
     <aside className="w-[270px] max-w-xs h-screen fixed left-0 top-0 z-40 border-r bg-background flex flex-col">
@@ -41,7 +41,7 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                   </SidebarButton>
                 </Link>
               ))}
-              {/* Renderizar extras solo si el usuario está autenticado y los extras existen */}
+              {/* Renderiza los extras, que ahora incluyen la sección de admin si corresponde */}
               {status === "authenticated" && props.sidebarItems.extras}
             </div>
           </div>
@@ -57,7 +57,7 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                     {status === "loading" && (
                       <>
                         <Skeleton className="h-6 w-6 rounded-full" />
-                        <Skeleton className="h-4 w-32" /> {/* Ajustado ancho del skeleton */}
+                        <Skeleton className="h-4 w-32" />
                       </>
                     )}
                     {status === "authenticated" && session?.user && (
@@ -97,14 +97,8 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
                     Conectado como: <strong className="block truncate font-medium" title={session.user.email || ""}>{session.user.email}</strong>
                   </div>
                   <Separator />
-                  {/* Puedes añadir un enlace a una página de perfil del usuario si existe */}
-                  {/* <Link href="/perfil"> 
-                    <SidebarButton size="sm" icon={Settings} className="w-full text-xs font-normal">
-                      Mi Perfil
-                    </SidebarButton>
-                  </Link> */}
                   <SidebarButton
-                    onClick={() => signOut({ callbackUrl: "/auth/signin" })} // Redirige a signin después de cerrar sesión
+                    onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                     size="sm"
                     icon={LogOut}
                     className="w-full text-xs font-normal text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
@@ -115,9 +109,7 @@ export function SidebarDesktop(props: SidebarDesktopProps) {
               )}
               {status === "unauthenticated" && (
                 <SidebarButton
-                  onClick={() => signIn("google")} // No es necesario callbackUrl aquí si tu middleware ya maneja la redirección post-login.
-                                                 // Pero si quieres forzar una ruta específica después del login desde aquí, puedes añadirlo:
-                                                 // { callbackUrl: "/tickets/dashboard" }
+                  onClick={() => signIn("google", { callbackUrl: "/tickets/dashboard" })}
                   size="sm"
                   icon={LogIn} 
                   className="w-full text-sm font-medium"
