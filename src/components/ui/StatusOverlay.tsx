@@ -6,19 +6,36 @@ import { cn } from '@/lib/utils';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Definimos los posibles estados de flujo de una operación
+/**
+ * Define los posibles estados de flujo de una operación para el StatusOverlay.
+ * 'idle': No hay operación activa, el overlay está oculto.
+ * 'loading': La operación está en curso, se muestra un indicador de carga.
+ * 'success': La operación se completó exitosamente.
+ * 'error': La operación falló, se muestra un mensaje de error.
+ */
 export type FlowStatus = 'idle' | 'loading' | 'success' | 'error';
 
+/**
+ * Propiedades para el componente StatusOverlay.
+ */
 interface StatusOverlayProps {
-  isOpen: boolean; // Controla si el overlay es visible
-  flowStatus: FlowStatus; // El estado actual: 'loading', 'success', 'error', 'idle'
-  message?: string | null; // Mensaje principal a mostrar
-  subMessage?: string | null; // Mensaje secundario o de detalle (ej. para errores)
-  onClose?: () => void; // Función para cerrar el overlay (opcional)
-  onRetry?: () => void; // Función para reintentar (opcional, útil en estado 'error')
-  minDisplayTime?: number; // Tiempo mínimo en ms que el overlay debe mostrarse (para estados de carga/éxito)
+  isOpen: boolean; // Controla si el overlay es visible.
+  flowStatus: FlowStatus; // El estado actual del flujo (loading, success, error).
+  message?: string | null; // Mensaje principal a mostrar en el overlay.
+  subMessage?: string | null; // Mensaje secundario o de detalle (útil para errores o información adicional).
+  onClose?: () => void; // Función opcional para cerrar el overlay (llamada por un botón "Cerrar").
+  onRetry?: () => void; // Función opcional para reintentar la operación (llamada por un botón "Reintentar" en estado de error).
+  minDisplayTime?: number; // Tiempo mínimo en milisegundos que el overlay debe mostrarse para estados 'loading' o 'success'.
+  isNested?: boolean; // Si es true, el componente no renderiza su propio fondo ni animaciones de superposición;
+                      // asume que es un contenido dentro de otro componente que ya maneja eso (ej. un modal).
 }
 
+/**
+ * `StatusOverlay` es un componente reutilizable para mostrar estados visuales de operaciones.
+ * Puede funcionar como un overlay de pantalla completa o anidado dentro de otro componente.
+ *
+ * @param {StatusOverlayProps} props - Las propiedades del componente.
+ */
 const StatusOverlay: React.FC<StatusOverlayProps> = ({
   isOpen,
   flowStatus,
@@ -27,65 +44,85 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
   onClose,
   onRetry,
   minDisplayTime = 0, // Por defecto, no hay tiempo mínimo de visualización
+  isNested = false,   // Por defecto, se comporta como un overlay de pantalla completa
 }) => {
   const [isRendered, setIsRendered] = React.useState(false);
   const displayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Efecto para controlar las animaciones de entrada/salida y el tiempo mínimo de visualización
+  // Efecto para controlar el montaje y desmontaje del componente,
+  // permitiendo animaciones de salida y respetando el tiempo mínimo de visualización.
   useEffect(() => {
     if (isOpen) {
-      setIsRendered(true);
+      setIsRendered(true); // Si se abre, lo marcamos para renderizar
       if (minDisplayTime > 0 && (flowStatus === 'loading' || flowStatus === 'success')) {
+        // Establecer un temporizador para asegurar que el overlay se muestre por el tiempo mínimo.
+        // El cierre real lo controla el componente padre o una interacción del usuario.
         displayTimerRef.current = setTimeout(() => {
-          // Si el estado sigue siendo loading/success después del tiempo mínimo,
-          // permitir que onClose se active (si existe)
-          // Esto es más para prevenir que el loader desaparezca demasiado rápido.
-          if (onClose && (flowStatus === 'loading' || flowStatus === 'success')) {
-            // onClose(); // No lo cerramos automáticamente aquí, solo aseguramos que pueda cerrar.
-          }
+          // El temporizador ha finalizado.
         }, minDisplayTime);
       }
     } else {
-      // Limpiar cualquier temporizador pendiente al cerrar el overlay
+      // Si se cierra, limpiamos cualquier temporizador pendiente.
       if (displayTimerRef.current) {
         clearTimeout(displayTimerRef.current);
         displayTimerRef.current = null;
       }
-      // Retrasar el desmontaje del componente para permitir animaciones de salida
-      const timer = setTimeout(() => setIsRendered(false), 300); // Duración de la animación de salida
-      return () => clearTimeout(timer);
+      // Para el desmontaje, si no es anidado, esperamos la duración de la transición del fondo.
+      // Si es anidado, el padre controla la desaparición de su contenedor, así que podemos desmontar de inmediato.
+      if (!isNested) {
+        const timer = setTimeout(() => setIsRendered(false), 300); // Coincide con la duración de la transición de opacidad del div principal
+        return () => clearTimeout(timer);
+      } else {
+        setIsRendered(false); // Desmontar inmediatamente si es anidado.
+      }
     }
+    // Función de limpieza para asegurar que los temporizadores se borren al desmontar el componente.
     return () => {
         if (displayTimerRef.current) {
             clearTimeout(displayTimerRef.current);
         }
     };
-  }, [isOpen, flowStatus, minDisplayTime, onClose]);
+  }, [isOpen, flowStatus, minDisplayTime, isNested]); // Dependencias del efecto
 
-  // Si no está renderizado, no devuelve nada
-  if (!isRendered) {
+  // Si no debe ser renderizado (está cerrado y su animación de salida terminó, o está en estado 'idle'), no devuelve nada.
+  if (!isRendered || flowStatus === 'idle') {
     return null;
   }
 
-  // Clases CSS condicionales para el contenedor principal del overlay
-  const overlayClasses = cn(
-    "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300",
-    isOpen ? "opacity-100" : "opacity-0 pointer-events-none" // Control de opacidad y eventos para animación
-  );
-
-  // Clases CSS para la tarjeta de contenido dentro del overlay
-  const cardClasses = cn(
-    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-300 ease-in-out transform",
+  // Clases CSS para el contenedor exterior del StatusOverlay.
+  // Si no es anidado, se comporta como un overlay de pantalla completa.
+  // Si es anidado, solo se centra dentro de su contenedor padre.
+  const outerClasses = cn(
+    // Clases para el overlay de pantalla completa (solo si no es anidado)
     {
-      'w-48 h-48': flowStatus === 'loading', // Tamaño pequeño para loader
-      'w-full max-w-sm h-auto': flowStatus === 'success' || flowStatus === 'error', // Tamaño adaptable para éxito/error
-      // Aquí puedes añadir clases para animaciones de entrada/salida de la tarjeta si quieres más allá de la opacidad global
-      // ej: "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
-      // Las animaciones de Radix UI en Dialog/Sheet ya suelen manejar esto si lo usas en el padre.
+      "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300": !isNested,
+      "opacity-100": !isNested && isOpen,
+      "opacity-0 pointer-events-none": !isNested && !isOpen,
+    },
+    // Si es anidado, el `StatusOverlay` siempre debe ocupar el 100% del espacio que le proporciona su padre.
+    // Su padre (CreateTicketModal) ya controla el tamaño y la animación de la "ventana" del modal.
+    {
+      "flex items-center justify-center w-full h-full": isNested,
     }
   );
 
-  let content;
+  // Clases CSS para la tarjeta de contenido real dentro del StatusOverlay.
+  // Estas clases controlan el tamaño y la apariencia visual de la "tarjeta" de estado.
+  const cardClasses = cn(
+    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-300 ease-in-out transform",
+    // SI NO ES ANIDADO, StatusOverlay define su propio tamaño de tarjeta.
+    {
+      'w-48 h-48': !isNested && flowStatus === 'loading', // Solo si no es anidado
+      'w-full max-w-sm h-auto': !isNested && (flowStatus === 'success' || flowStatus === 'error'), // Solo si no es anidado
+    },
+    // SI ES ANIDADO, la tarjeta interna debe ocupar el 100% del espacio que le da el outerClasses del StatusOverlay (que ya es w-full h-full del padre).
+    // El tamaño del "cuadro" del modal ya lo maneja CreateTicketModal.
+    {
+      'w-full h-full': isNested // Para que la tarjeta interna llene el espacio del padre cuando es anidado.
+    }
+  );
+
+  let content; // Variable para almacenar el JSX del contenido específico del estado
   switch (flowStatus) {
     case 'loading':
       content = (
@@ -125,17 +162,14 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
         </div>
       );
       break;
-    default: // 'idle' o cualquier otro estado no visible
+    default:
       content = null;
       break;
   }
 
-  if (flowStatus === 'idle') {
-    return null; // Si está en 'idle', no renderiza nada del overlay
-  }
-
+  // Renderiza el contenedor exterior y, dentro de él, la tarjeta con el contenido específico del estado.
   return (
-    <div className={overlayClasses}>
+    <div className={outerClasses}>
       <div className={cardClasses}>
         {content}
       </div>

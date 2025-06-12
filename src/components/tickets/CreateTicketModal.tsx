@@ -5,8 +5,7 @@ import { useEffect, useRef } from 'react';
 import { CreateTicketForm } from './CreateTicketForm';
 import { CreationFlowStatus } from '@/types/ticket';
 import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import StatusOverlay, { FlowStatus } from '@/components/ui/StatusOverlay'; 
 
 interface EmpresaClienteOption { id: string; nombre: string; }
 interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
@@ -38,39 +37,29 @@ export function CreateTicketModal({
   ubicacionesDisponibles,
   stashedData
 }: CreateTicketModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null); 
+  const modalContentRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [isRendered, setIsRendered] = React.useState(false);
 
-  // Montar modal si se abre
   useEffect(() => {
-    if (isOpen) setIsRendered(true);
+    if (isOpen) {
+      setIsRendered(true);
+    } else {
+      const timer = setTimeout(() => setIsRendered(false), 300); 
+      return () => clearTimeout(timer);
+    }
   }, [isOpen]);
 
-  // Esperar a que termine animación de salida para desmontar
-  useEffect(() => {
-    const modalElement = modalRef.current;
-    if (!modalElement) return;
-
-    const handleAnimationEnd = (e: AnimationEvent) => {
-      if (!isOpen && e.target === modalElement) {
-        setIsRendered(false);
-      }
-    };
-
-    modalElement.addEventListener('animationend', handleAnimationEnd);
-    return () => modalElement.removeEventListener('animationend', handleAnimationEnd);
-  }, [isOpen]);
-
-  // Escape / click fuera / foco
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen && flowStatus !== 'loading' && flowStatus !== 'success') {
         onClose();
       }
     };
+
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node) && isOpen && flowStatus !== 'loading' && flowStatus !== 'success') {
+      if (modalContentRef.current && !modalContentRef.current.contains(event.target as Node) && isOpen && flowStatus !== 'loading' && flowStatus !== 'success') {
         onClose();
       }
     };
@@ -81,7 +70,7 @@ export function CreateTicketModal({
       document.addEventListener('mousedown', handleClickOutside);
 
       const focusTimer = setTimeout(() => {
-        formRef.current?.querySelector<HTMLElement>('input, select, textarea')?.focus();
+        formRef.current?.querySelector<HTMLElement>('input, select, textarea, button:not([tabindex="-1"])')?.focus();
       }, 50);
 
       return () => {
@@ -91,81 +80,70 @@ export function CreateTicketModal({
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [isOpen, onClose, flowStatus]);
+  }, [isOpen, onClose, flowStatus]); 
 
   if (!isRendered) return null;
 
-  const modalContainerClasses = cn(
-    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-300 ease-in-out",
+  const modalContentClasses = cn(
+    "bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden flex flex-col",
+    // MODIFICADO: Aplicamos transiciones solo a 'opacity' y 'transform'
+    "transition-opacity duration-300 ease-in-out transition-transform duration-300 ease-in-out transform",
     {
       'w-full max-w-2xl max-h-[90vh]': flowStatus === 'form',
-      'w-48 h-48': flowStatus === 'loading',
       'w-full max-w-sm h-auto': flowStatus === 'success' || flowStatus === 'error',
+      'w-48 h-48': flowStatus === 'loading', // Tamaño para el loader
+      'opacity-100 translate-y-0 scale-100': isOpen,
+      'opacity-0 translate-y-4 scale-95': !isOpen,
     }
   );
 
+  const overlayFlowStatus: FlowStatus = flowStatus === 'form' ? 'idle' : flowStatus;
+
   return (
-  <div
-    className={cn(
-      "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300",
-      isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-    )}
-  >
     <div
-      key={flowStatus}
       ref={modalRef}
       className={cn(
-        modalContainerClasses,
-        "transform transition-all duration-300 ease-in-out",
-        isOpen
-          ? "opacity-100 translate-y-0 scale-100"
-          : "opacity-0 translate-y-4 scale-95"
+        "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300",
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
       role="dialog"
       aria-modal="true"
     >
-      {flowStatus === 'form' && (
-        <CreateTicketForm
-          ref={formRef}
-          nextNroCaso={nextNroCaso}
-          onSubmit={onSubmit}
-          onCancel={onClose}
-          isSubmitting={isSubmitting}
-          serverError={submissionError}
-          empresasClientes={empresasClientes}
-          ubicacionesDisponibles={ubicacionesDisponibles}
-          initialData={stashedData}
-        />
-      )}
-
-      {flowStatus === 'loading' && (
-        <div className="flex flex-col items-center justify-center text-center p-6 w-full h-full" role="status" aria-live="polite">
-          <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-          <p className="text-muted-foreground">Creando ticket...</p>
-        </div>
-      )}
-
-      {flowStatus === 'success' && (
-        <div className="flex flex-col items-center justify-center text-center p-8 w-full h-full" role="status" aria-live="polite">
-          <CheckCircle className="h-20 w-20 text-green-500 mb-6" />
-          <h3 className="text-xl font-semibold">¡Ticket Creado!</h3>
-          <p className="text-muted-foreground text-sm mt-1">El ticket ha sido registrado exitosamente.</p>
-        </div>
-      )}
-
-      {flowStatus === 'error' && (
-        <div className="flex flex-col items-center justify-center text-center p-8 w-full h-full" role="alert" aria-live="assertive">
-          <AlertCircle className="h-20 w-20 text-destructive mb-6" />
-          <h3 className="text-xl font-semibold">Error al Crear</h3>
-          <p className="text-muted-foreground text-sm mt-1 mb-4">{submissionError || "No se pudo crear el ticket."}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={onRetry}>Reintentar</Button>
-          </div>
-        </div>
-      )}
+      <div
+        key={flowStatus} 
+        ref={modalContentRef}
+        className={modalContentClasses}
+      >
+        {flowStatus === 'form' ? (
+          <CreateTicketForm
+            ref={formRef}
+            nextNroCaso={nextNroCaso}
+            onSubmit={onSubmit}
+            onCancel={onClose}
+            isSubmitting={isSubmitting}
+            serverError={submissionError}
+            empresasClientes={empresasClientes}
+            ubicacionesDisponibles={ubicacionesDisponibles}
+            stashedData={stashedData}
+            initialData={null} 
+          />
+        ) : (
+          <StatusOverlay
+            isOpen={true} 
+            flowStatus={overlayFlowStatus}
+            message={
+              flowStatus === 'loading' ? "Creando ticket..." :
+              flowStatus === 'success' ? "¡Ticket Creado!" :
+              flowStatus === 'error' ? "Error al Crear" : ""
+            }
+            subMessage={submissionError}
+            onClose={onClose}
+            onRetry={onRetry}
+            minDisplayTime={flowStatus === 'loading' || flowStatus === 'success' ? 2000 : 0}
+            isNested={true} 
+          />
+        )}
+      </div>
     </div>
-  </div>
-);
-
+  );
 }

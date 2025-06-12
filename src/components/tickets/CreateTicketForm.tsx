@@ -35,6 +35,8 @@ interface CreateTicketFormProps {
   empresasClientes: EmpresaClienteOption[];
   ubicacionesDisponibles: UbicacionOption[];
   initialData: FormData | null;
+  // ¡CORRECCIÓN CRÍTICA!: Asegurarse de que stashedData esté presente en la interfaz de props
+  stashedData: FormData | null; 
 }
 
 // --- Esquema de Validación Zod ---
@@ -65,6 +67,7 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
   empresasClientes,
   ubicacionesDisponibles,
   initialData,
+  stashedData, // <-- ¡Asegurarse de que se desestructure aquí también!
 }, ref) => {
 
   const {
@@ -76,32 +79,35 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
   } = useForm<TicketFormInput>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: {
-      fechaCreacion: (initialData?.get('fechaCreacion')?.toString() || getLocalDateTimeString()),
-      empresaClienteId: initialData?.get('empresaClienteId')?.toString() || '',
-      tipoIncidente: initialData?.get('tipoIncidente')?.toString() || "Software",
-      prioridad: (initialData?.get('prioridad')?.toString() as PrioridadTicket) || PrioridadTicket.MEDIA,
-      ubicacionId: initialData?.get('ubicacionId')?.toString() || '',
-      solicitanteNombre: initialData?.get('solicitanteNombre')?.toString() || "",
-      solicitanteTelefono: initialData?.get('solicitanteTelefono')?.toString() || "",
-      solicitanteCorreo: initialData?.get('solicitanteCorreo')?.toString() || "",
-      titulo: initialData?.get('titulo')?.toString() || "",
-      descripcionDetallada: initialData?.get('descripcionDetallada')?.toString() || "",
-      accionInicial: initialData?.get('accionInicial')?.toString() || "",
-      fechaSolucionEstimada: initialData?.get('fechaSolucionEstimada')?.toString() || "",
+      // Priorizar stashedData si existe, luego initialData, luego valor por defecto.
+      fechaCreacion: (stashedData?.get('fechaCreacion')?.toString() || initialData?.get('fechaCreacion')?.toString() || getLocalDateTimeString()),
+      empresaClienteId: stashedData?.get('empresaClienteId')?.toString() || initialData?.get('empresaClienteId')?.toString() || '',
+      tipoIncidente: stashedData?.get('tipoIncidente')?.toString() || initialData?.get('tipoIncidente')?.toString() || "Software",
+      prioridad: (stashedData?.get('prioridad')?.toString() as PrioridadTicket) || (initialData?.get('prioridad')?.toString() as PrioridadTicket) || PrioridadTicket.MEDIA,
+      ubicacionId: stashedData?.get('ubicacionId')?.toString() || initialData?.get('ubicacionId')?.toString() || '',
+      solicitanteNombre: stashedData?.get('solicitanteNombre')?.toString() || initialData?.get('solicitanteNombre')?.toString() || "",
+      solicitanteTelefono: stashedData?.get('solicitanteTelefono')?.toString() || initialData?.get('solicitanteTelefono')?.toString() || "",
+      solicitanteCorreo: stashedData?.get('solicitanteCorreo')?.toString() || initialData?.get('solicitanteCorreo')?.toString() || "",
+      titulo: stashedData?.get('titulo')?.toString() || initialData?.get('titulo')?.toString() || "",
+      descripcionDetallada: stashedData?.get('descripcionDetallada')?.toString() || initialData?.get('descripcionDetallada')?.toString() || "",
+      accionInicial: stashedData?.get('accionInicial')?.toString() || initialData?.get('accionInicial')?.toString() || "",
+      fechaSolucionEstimada: stashedData?.get('fechaSolucionEstimada')?.toString() || initialData?.get('fechaSolucionEstimada')?.toString() || "",
     }
   });
   
   React.useEffect(() => {
-    if (initialData) {
+    const dataToUse = stashedData || initialData;
+    if (dataToUse) {
       const dataToReset: Partial<TicketFormInput> = {};
-      initialData.forEach((value, key) => {
+      dataToUse.forEach((value, key) => {
         if (key in ticketFormSchema.shape) {
           dataToReset[key as keyof TicketFormInput] = value as any;
         }
       });
       reset(dataToReset);
     }
-  }, [initialData, reset]);
+  }, [stashedData, initialData, reset]);
+
 
   const onFormSubmit = async (data: TicketFormInput) => {
     const formData = new FormData();
