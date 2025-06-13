@@ -23,7 +23,8 @@ async function getInitialData() {
     let error: string | null = null;
 
     try {
-        const cookieStore = cookies();
+        // MODIFICACIÓN: Se añadió 'await' a cookies() para compatibilidad con Next.js 15
+        const cookieStore = await cookies(); 
         const fetchHeaders = new Headers();
         const sessionCookie = cookieStore.get('next-auth.session-token');
         if (sessionCookie) {
@@ -75,3 +76,4 @@ export default async function TicketsDashboardPage() {
     </div>
   );
 }
+
