@@ -141,7 +141,8 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="nroCasoModalDisplay">N° de Caso</Label>
-              <Input id="nroCasoModalDisplay" value={nextNroCaso} readOnly className="bg-muted" />
+              {/* CORRECCIÓN: Convertir nextNroCaso a string explícitamente para evitar NaN en el atributo value */}
+              <Input id="nroCasoModalDisplay" value={String(nextNroCaso)} readOnly className="bg-muted" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="fechaCreacionModal">Fecha Reporte</Label>
@@ -238,3 +239,4 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
     </Card>
   );
 });
+
