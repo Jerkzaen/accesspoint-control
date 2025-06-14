@@ -5,15 +5,16 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { RoleUsuario, EstadoTicket, PrioridadTicket } from "@prisma/client";
 import { z } from "zod";
-import { revalidatePath } from 'next/cache'; // Importamos revalidatePath
+import { revalidatePath } from 'next/cache';
 
-// Define el tipo de usuario esperado en la sesión
+// Define el tipo de usuario esperado en la sesión para mayor seguridad de tipos.
 interface SessionUser {
   id: string;
   rol?: RoleUsuario;
 }
 
-// Define el esquema de validación para una fila del CSV usando Zod
+// Define el esquema de validación para cada fila que viene del frontend usando Zod.
+// Esto asegura que los datos son correctos antes de intentar guardarlos.
 const ticketCsvRowSchema = z.object({
   titulo: z.string().min(1, "El título es obligatorio."),
   descripcionDetallada: z.string().optional().nullable(),
@@ -32,7 +33,7 @@ const ticketCsvRowSchema = z.object({
 type TicketCsvRow = z.infer<typeof ticketCsvRowSchema>;
 
 export async function POST(request: NextRequest) {
-  // 1. Verificación de sesión y rol de administrador
+  // 1. Verificación de sesión y rol de administrador.
   const session = await getServerSession(authOptions);
   const user = session?.user as SessionUser | undefined;
 
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Acceso denegado. Se requiere rol de Administrador." }, { status: 403 });
   }
 
-  // 2. Recepción y validación del cuerpo de la solicitud
+  // 2. Recepción y validación del cuerpo de la solicitud (se espera un JSON).
   let records: TicketCsvRow[];
   try {
     records = await request.json();
@@ -48,15 +49,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "No se proporcionaron registros o el formato es incorrecto." }, { status: 400 });
     }
   } catch (error) {
-    return NextResponse.json({ message: "Error al parsear el cuerpo de la solicitud." }, { status: 400 });
+    return NextResponse.json({ message: "Error al parsear el cuerpo de la solicitud JSON." }, { status: 400 });
   }
 
-  // 3. Preparación de datos para la transacción
-  const errors: { row: number; data: any; error: string }[] = []; 
+  const errors: { row: number; data: any; error: string }[] = [];
   let successfulCount = 0;
 
   try {
-    // Optimización: Pre-cargar datos necesarios
+    // 3. Optimización: Pre-cargamos en memoria los datos que se consultarán repetidamente.
     const [empresas, tecnicos, lastTicket] = await Promise.all([
       prisma.empresaCliente.findMany({ select: { id: true, nombre: true } }),
       prisma.user.findMany({ where: { rol: 'TECNICO' }, select: { id: true, email: true } }),
@@ -67,11 +67,13 @@ export async function POST(request: NextRequest) {
     const tecnicoMap = new Map(tecnicos.map(t => [t.email?.toLowerCase(), t.id]));
     let currentNumeroCaso = lastTicket?.numeroCaso || 0;
 
+    // 4. Lógica de Negocio dentro de una Transacción Atómica.
+    // O todo se guarda, o no se guarda nada. Esto previene datos corruptos.
     await prisma.$transaction(async (tx) => {
       for (let i = 0; i < records.length; i++) {
         const record = records[i];
-        const rowIndex = i + 2; // Línea en el CSV, +1 por encabezado, +1 por índice base 0
-        
+        const rowIndex = i + 2; // Simula la línea en el CSV para los mensajes de error.
+
         const cleanedRecord = Object.fromEntries(
           Object.entries(record as Record<string, unknown>).map(([key, value]) => [key, value === '' ? null : value])
         ) as TicketCsvRow;
@@ -88,104 +90,100 @@ export async function POST(request: NextRequest) {
             ...ticketData
         } = validation.data;
 
+        // Búsqueda de IDs relacionados
         const empresaClienteId = empresaClienteNombre ? empresaMap.get(empresaClienteNombre.toLowerCase()) : null;
         if (empresaClienteNombre && !empresaClienteId) {
-          errors.push({ row: rowIndex, data: record, error: `La empresa '${empresaClienteNombre}' no fue encontrada en la base de datos.` });
+          errors.push({ row: rowIndex, data: record, error: `La empresa '${empresaClienteNombre}' no fue encontrada.` });
           continue;
         }
 
         const tecnicoAsignadoId = tecnicoAsignadoEmail ? tecnicoMap.get(tecnicoAsignadoEmail.toLowerCase()) : null;
-        const finalTecnicoAsignadoId = tecnicoAsignadoId || user.id; 
         if (tecnicoAsignadoEmail && !tecnicoAsignadoId) {
-          errors.push({ row: rowIndex, data: record, error: `El técnico con email '${tecnicoAsignadoEmail}' no fue encontrado en la base de datos. Se asignará al usuario de carga.` });
+          errors.push({ row: rowIndex, data: record, error: `El técnico con email '${tecnicoAsignadoEmail}' no fue encontrado.` });
+          // Opcional: podrías decidir continuar y asignar al usuario actual.
         }
+        
+        const finalTecnicoAsignadoId = tecnicoAsignadoId || user.id;
 
         currentNumeroCaso++;
-        
-        try {
-            await tx.ticket.create({
-                data: {
-                    ...ticketData,
-                    numeroCaso: currentNumeroCaso,
-                    fechaCreacion: new Date(ticketData.fechaCreacion),
-                    fechaSolucionEstimada: ticketData.fechaSolucionEstimada ? new Date(ticketData.fechaSolucionEstimada) : null,
-                    empresaClienteId: empresaClienteId,
-                    tecnicoAsignadoId: finalTecnicoAsignadoId,
-                },
-            });
-            successfulCount++;
-        } catch (dbError: any) {
-            let errorMessage = `Error al insertar en la base de datos: ${dbError.message}`;
-            if (dbError.code === 'P2002') {
-                errorMessage = `Error de clave única (ej. número de caso ${currentNumeroCaso} duplicado o email de solicitante/contacto ya existe).`;
-            } else if (dbError.code === 'P2003') {
-                errorMessage = `Fallo de relación.`; 
-            }
-            errors.push({ row: rowIndex, data: record, error: errorMessage });
-        }
+
+        await tx.ticket.create({
+            data: {
+                ...ticketData,
+                numeroCaso: currentNumeroCaso,
+                fechaCreacion: new Date(ticketData.fechaCreacion),
+                fechaSolucionEstimada: ticketData.fechaSolucionEstimada ? new Date(ticketData.fechaSolucionEstimada) : null,
+                empresaClienteId: empresaClienteId,
+                tecnicoAsignadoId: finalTecnicoAsignadoId,
+            },
+        });
+        successfulCount++;
       }
 
-      // Si hay CUALQUIER error (ya sea de validación Zod o de DB), forzamos un rollback completo
+      // Si se encuentra CUALQUIER error durante la validación, se lanza un error
+      // para revertir (rollback) toda la transacción.
       if (errors.length > 0) {
          const detailedErrorMessage = JSON.stringify({
-            message: "Se encontraron errores durante la importación. Se ha realizado un rollback completo.",
-            detailedErrors: errors, 
+            message: "Se encontraron errores de validación. La importación fue cancelada y revertida.",
+            detailedErrors: errors,
          });
          throw new Error(detailedErrorMessage);
       }
     });
 
-    // 5. Envío de respuesta exitosa
-    // Si llegamos aquí, la transacción fue exitosa y no hubo errores que forzaran el rollback.
-    revalidatePath('/tickets/dashboard'); // <-- ¡Añadido aquí!
+    // 5. REVALIDACIÓN DE CACHÉ (LA SOLUCIÓN CLAVE)
+    // Si llegamos aquí, la transacción fue exitosa.
+    // Le ordenamos a Next.js que borre el caché de estas páginas.
+    // La próxima vez que un usuario las visite, Next.js las generará de nuevo con los datos actualizados.
+    console.log("Transacción exitosa. Revalidando rutas...");
+    revalidatePath('/tickets/dashboard'); // Revalida la página principal del dashboard.
+    revalidatePath('/tickets'); // Revalida la ruta base de tickets por si hay layouts cacheados.
+    revalidatePath('/'); // Revalida la página de inicio por si muestra algún contador o resumen.
 
+
+    // 6. Envío de respuesta exitosa al cliente.
     return NextResponse.json({
         message: "Proceso de importación finalizado con éxito.",
         successfulCount: successfulCount,
-        failedCount: errors.length, 
-        errors: errors, 
+        failedCount: 0,
+        errors: [],
     }, { status: 200 });
 
   } catch (error: any) {
-    let mainMessage = "Error catastrófico durante la transacción. No se importó ningún ticket.";
-    let finalErrorsArray = errors;
+    // 7. Manejo de Errores y Rollback.
+    // Este bloque se ejecuta si la transacción falla.
+    let mainMessage = "Error durante la transacción. No se importó ningún ticket.";
+    let finalErrorsArray = errors; // Errores de validación que causaron el rollback.
 
+    // Intenta parsear el error por si es el que lanzamos nosotros con detalles.
     try {
         const parsedError = JSON.parse(error.message);
         if (parsedError.message && parsedError.detailedErrors) {
             mainMessage = parsedError.message;
             finalErrorsArray = parsedError.detailedErrors;
-        } else {
-            mainMessage = error.message; 
         }
     } catch (parseError) {
-        mainMessage = error.message;
+       // Si no es nuestro error JSON, es un error de base de datos u otro.
+       mainMessage = "Error inesperado en la base de datos durante la transacción. Se ha realizado un rollback.";
+       console.error("Error de importación (catch principal):", error.message);
     }
-
-    console.warn("Advertencia de Importación de Tickets (Rollback):", mainMessage);
+    
+    // Logueamos los errores en el servidor para depuración.
+    console.warn("Rollback de Importación de Tickets:", mainMessage);
     if (finalErrorsArray.length > 0) {
-        console.table(finalErrorsArray.map(err => ({ 
-            Línea: err.row, 
-            Error: err.error, 
-            Datos: JSON.stringify(err.data).substring(0, 100) + '...'
-        })));
-    } else {
-        console.warn("No se encontraron errores detallados específicos para el log. Mensaje general:", mainMessage);
+        console.table(finalErrorsArray.map(err => ({ Línea: err.row, Error: err.error, Datos: JSON.stringify(err.data).substring(0, 80) + '...' })));
     }
-
+    
+    // Si el array de errores está vacío pero aún así hubo un error, añadimos un error genérico.
     if (finalErrorsArray.length === 0) {
-        finalErrorsArray.push({ 
-            row: 0, 
-            data: {}, 
-            error: mainMessage,
-        });
+      finalErrorsArray.push({ row: 0, data: {}, error: mainMessage });
     }
 
     return NextResponse.json({
       message: mainMessage,
-      successfulCount: 0, 
-      failedCount: records.length, 
-      errors: finalErrorsArray, 
-    }, { status: 500 }); 
+      successfulCount: 0,
+      failedCount: records.length,
+      errors: finalErrorsArray,
+    }, { status: 400 }); // Usamos 400 (Bad Request) ya que usualmente es por datos inválidos.
   }
 }
