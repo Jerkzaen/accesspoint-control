@@ -1,8 +1,9 @@
-// src/hooks/useTickets.ts (ACTUALIZADO)
-import { useState, useEffect, useCallback } from 'react';
-import { Ticket } from '@/types/ticket'; // Asegúrate que la ruta a tus tipos sea correcta
+// RUTA: src/hooks/useTickets.ts
 
-// Definir la interfaz para los filtros
+import { useState, useEffect, useCallback } from 'react';
+import { Ticket } from '@/types/ticket';
+
+// Interfaz para los filtros, esto no cambia.
 export interface TicketFilters {
   searchText?: string;
   estado?: string;
@@ -13,14 +14,13 @@ export function useTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // Estado para almacenar los filtros actuales
   const [currentFilters, setCurrentFilters] = useState<TicketFilters>({});
 
   const fetchTickets = useCallback(async (filters: TicketFilters = {}) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Construir los parámetros de la URL a partir de los filtros
+      // La construcción de la URL es correcta.
       const queryParams = new URLSearchParams();
       if (filters.searchText) {
         queryParams.append("searchText", filters.searchText);
@@ -33,7 +33,13 @@ export function useTickets() {
       }
 
       const url = `/api/tickets?${queryParams.toString()}`;
-      const res = await fetch(url);
+      
+      // ======================= INICIO DE LA SOLUCIÓN FINAL =======================
+      // Añadimos la opción { cache: 'no-store' } a la llamada fetch.
+      // Esto le ordena a Next.js y al navegador que esta petición específica
+      // siempre debe ir a la red y nunca debe usar una respuesta del caché.
+      const res = await fetch(url, { cache: 'no-store' });
+      // ======================== FIN DE LA SOLUCIÓN FINAL =========================
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ message: `Error HTTP: ${res.status}` }));
@@ -49,17 +55,15 @@ export function useTickets() {
     }
   }, []);
 
-  // Efecto para cargar tickets cuando los filtros cambian o al montar
+  // La lógica de los efectos y callbacks se mantiene, ya que es correcta.
   useEffect(() => {
     fetchTickets(currentFilters);
-  }, [fetchTickets, currentFilters]); // Dependencia de currentFilters
+  }, [fetchTickets, currentFilters]);
 
-  // Función para actualizar los filtros y recargar los tickets
   const applyFilters = useCallback((filters: TicketFilters) => {
     setCurrentFilters(filters);
   }, []);
 
-  // `refreshTickets` ahora simplemente recarga con los filtros actuales
   const refreshTickets = useCallback(() => {
     fetchTickets(currentFilters);
   }, [fetchTickets, currentFilters]);
@@ -70,8 +74,8 @@ export function useTickets() {
     setTickets,
     isLoading,
     error,
-    refreshTickets, // Para recargar la lista manualmente
-    applyFilters,   // Para aplicar nuevos filtros
-    currentFilters, // Exponer los filtros actuales si es necesario para la UI
+    refreshTickets,
+    applyFilters,
+    currentFilters,
   };
 }

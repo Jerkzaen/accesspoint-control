@@ -1,8 +1,10 @@
 // RUTA: src/app/tickets/dashboard/page.tsx
 
-// Importamos el componente renombrado y refactorizado
 import TicketsDashboard from "@/components/tickets/TicketsDashboard";
 import { cookies } from 'next/headers';
+
+// Directiva para forzar el renderizado dinámico, esto es correcto y debe quedarse.
+export const dynamic = 'force-dynamic';
 
 // Interfaces para los datos que esperamos
 interface EmpresaClienteOption {
@@ -23,8 +25,11 @@ async function getInitialData() {
     let error: string | null = null;
 
     try {
-        // MODIFICACIÓN: Se añadió 'await' a cookies() para compatibilidad con Next.js 15
+        // ======================= INICIO DE LA CORRECCIÓN =======================
+        // La función cookies() es asíncrona y debe ser esperada con 'await'.
         const cookieStore = await cookies(); 
+        // ======================== FIN DE LA CORRECCIÓN =========================
+
         const fetchHeaders = new Headers();
         const sessionCookie = cookieStore.get('next-auth.session-token');
         if (sessionCookie) {
@@ -66,7 +71,6 @@ export default async function TicketsDashboardPage() {
     );
   }
 
-  // Usamos el nuevo componente orquestador
   return (
     <div className="flex flex-col h-full">
       <TicketsDashboard
@@ -76,4 +80,3 @@ export default async function TicketsDashboardPage() {
     </div>
   );
 }
-

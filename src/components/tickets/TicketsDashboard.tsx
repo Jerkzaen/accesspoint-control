@@ -1,17 +1,15 @@
-// RUTA FINAL: src/components/tickets/TicketsDashboard.tsx
+// RUTA: src/components/tickets/TicketsDashboard.tsx
 'use client';
 
 import * as React from 'react';
-// Importamos los componentes que hemos creado y aislado
 import { TicketFiltersPanel } from './TicketFiltersPanel';
 import { TicketList } from './TicketList';
 import { default as TicketDetailsPanel } from './TicketDetailsPanel';
 import { CreateTicketModal } from './CreateTicketModal';
-
 import { Ticket, CreationFlowStatus } from '@/types/ticket';
 import { useMediaQuery } from 'usehooks-ts';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
 import { createNewTicketAction, loadLastTicketNro } from '@/app/actions/ticketActions';
@@ -19,21 +17,20 @@ import { createNewTicketAction, loadLastTicketNro } from '@/app/actions/ticketAc
 // --- Interfaces y Constantes ---
 interface EmpresaClienteOption { id: string; nombre: string; }
 interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
+interface ActionState { error?: string; success?: boolean; ticket?: Ticket; }
 
+// Interfaz para las props del componente principal
 interface TicketsDashboardProps {
   empresasClientes: EmpresaClienteOption[];
   ubicacionesDisponibles: UbicacionOption[];
 }
 
-interface ActionState { error?: string; success?: boolean; ticket?: Ticket; }
-
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
 const MIN_CREATION_LOADER_TIME = 2000;
 const NEW_TICKET_HIGHLIGHT_DURATION = 3000;
-const MODAL_SUCCESS_DISPLAY_DURATION = 2000;
+
 const initialActionState: ActionState = { error: undefined, success: undefined, ticket: undefined };
 
-// --- Componente Orquestador Principal ---
 export default function TicketsDashboard({ empresasClientes, ubicacionesDisponibles }: TicketsDashboardProps) {
   const { tickets, setTickets, isLoading, error: fetchTicketsError, refreshTickets, applyFilters, currentFilters } = useTickets();
 
@@ -46,6 +43,9 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
   const [submissionError, setSubmissionError] = React.useState<string | null>(null);
   const [stashedTicketData, setStashedTicketData] = React.useState<FormData | null>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  
+  // Guardamos la información del último ticket creado para la pantalla de éxito.
+  const [lastCreatedTicket, setLastCreatedTicket] = React.useState<Ticket | null>(null);
   
   const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
     setTickets(prev => prev.map(t => (t.id === updatedTicket.id ? updatedTicket : t)));
@@ -61,11 +61,12 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
 
   const handleOpenCreateModal = React.useCallback(async () => {
     setSubmissionError(null);
+    setLastCreatedTicket(null);
     try {
       const lastNro = await loadLastTicketNro();
       setNextTicketNumber(lastNro + 1);
       setCreationFlow('form');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error al cargar el siguiente número de ticket:", err);
       setSubmissionError("No se pudo obtener el número de ticket. Intente de nuevo.");
       setCreationFlow('error');
@@ -77,6 +78,7 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
     setStashedTicketData(null);
     setSubmissionError(null);
     setIsSubmitting(false);
+    setLastCreatedTicket(null); // Limpiamos el ticket al cerrar.
   }, []);
   
   const handleSubmitTicketForm = React.useCallback(async (formData: FormData) => {
@@ -85,20 +87,22 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
     setCreationFlow('loading');
     const actionPromise = createNewTicketAction(initialActionState, formData);
     const timerPromise = new Promise(resolve => setTimeout(resolve, MIN_CREATION_LOADER_TIME));
+    
     const [actionResult] = await Promise.all([actionPromise, timerPromise]);
+    
     setIsSubmitting(false);
     if (actionResult.success && actionResult.ticket) {
       setCreationFlow('success');
+      setLastCreatedTicket(actionResult.ticket); // Guardamos el ticket creado.
       refreshTickets();
       setSelectedTicket(actionResult.ticket);
       setNewlyCreatedTicketId(actionResult.ticket.id);
-      setTimeout(handleCloseCreateModal, MODAL_SUCCESS_DISPLAY_DURATION);
     } else {
       setStashedTicketData(formData);
       setSubmissionError(actionResult.error || 'Ocurrió un error desconocido.');
       setCreationFlow('error');
     }
-  }, [refreshTickets, handleCloseCreateModal]);
+  }, [refreshTickets]);
   
   const handleRetryCreation = () => setCreationFlow('form');
   
@@ -106,11 +110,17 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
     applyFilters(newFilters);
   }, [applyFilters]);
 
+  // Nueva función para el botón de acción "Ver Ticket"
+  const handleViewTicket = () => {
+    if (lastCreatedTicket) {
+      handleSelectTicket(lastCreatedTicket);
+    }
+    handleCloseCreateModal();
+  };
+
   React.useEffect(() => {
     if (selectedTicket && !isLoading) {
-      if (!tickets.some(t => t.id === selectedTicket.id)) {
-        setSelectedTicket(null);
-      }
+      if (!tickets.some(t => t.id === selectedTicket.id)) setSelectedTicket(null);
     }
   }, [tickets, selectedTicket, isLoading]);
 
@@ -125,31 +135,43 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
 
   return (
     <div className="flex flex-col md:flex-row flex-grow h-full p-1 sm:p-4 gap-4">
-      {/* Columna Izquierda, ahora contiene los componentes memoizados */}
       <div className={`flex flex-col h-full overflow-hidden ${isDesktop ? 'md:w-[calc(65%-0.5rem)] lg:w-[calc(70%-0.5rem)]' : 'w-full'}`}>
-        <TicketFiltersPanel 
-            onFiltersChange={handleFiltersChange}
-            onOpenCreateModal={handleOpenCreateModal}
-            initialFilters={currentFilters}
-        />
-        <TicketList 
-            tickets={tickets}
-            isLoading={isLoading}
-            selectedTicket={selectedTicket}
-            isDesktop={isDesktop}
-            newlyCreatedTicketId={newlyCreatedTicketId}
-            onSelectTicket={handleSelectTicket}
-            onTicketUpdated={handleTicketUpdated}
-            listHeightStyle={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 170px)` }}
-        />
+        <TicketFiltersPanel onFiltersChange={handleFiltersChange} onOpenCreateModal={handleOpenCreateModal} initialFilters={currentFilters} />
+        <TicketList tickets={tickets} isLoading={isLoading} selectedTicket={selectedTicket} isDesktop={isDesktop} newlyCreatedTicketId={newlyCreatedTicketId} onSelectTicket={handleSelectTicket} onTicketUpdated={handleTicketUpdated} listHeightStyle={{ maxHeight: `calc(100vh - ${HEADER_AND_PAGE_PADDING_OFFSET} - 170px)` }} />
       </div>
       
-      {/* Columna Derecha */}
       {isDesktop && <div className="w-[400px] flex-shrink-0"><TicketDetailsPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} isLoadingGlobal={isLoading} /></div>}
-      {!isDesktop && <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}><SheetContent side="right" className="w-[90vw] sm:w-[75vw] p-0 flex flex-col">{selectedTicket && <TicketDetailsPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} isLoadingGlobal={isLoading} />}</SheetContent></Sheet>}
       
-      {/* Modal de Creación */}
-      <CreateTicketModal isOpen={creationFlow !== 'idle'} flowStatus={creationFlow} onClose={handleCloseCreateModal} onSubmit={handleSubmitTicketForm} onRetry={handleRetryCreation} isSubmitting={isSubmitting} submissionError={submissionError} nextNroCaso={nextTicketNumber} empresasClientes={empresasClientes} ubicacionesDisponibles={ubicacionesDisponibles} stashedData={stashedTicketData} />
+      {!isDesktop && (
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetContent side="right" className="w-[90vw] sm:w-[75vw] p-0 flex flex-col">
+            {selectedTicket && (
+              <>
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>Detalles del Ticket #{selectedTicket.numeroCaso}</SheetTitle>
+                </SheetHeader>
+                <TicketDetailsPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} isLoadingGlobal={isLoading} />
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
+      )}
+      
+      <CreateTicketModal
+        isOpen={creationFlow !== 'idle'}
+        flowStatus={creationFlow}
+        onClose={handleCloseCreateModal}
+        onSubmit={handleSubmitTicketForm}
+        onRetry={handleRetryCreation}
+        isSubmitting={isSubmitting}
+        submissionError={submissionError}
+        nextNroCaso={nextTicketNumber}
+        empresasClientes={empresasClientes}
+        ubicacionesDisponibles={ubicacionesDisponibles}
+        stashedData={stashedTicketData}
+        createdTicket={lastCreatedTicket}
+        onViewTicket={handleViewTicket}
+      />
     </div>
   );
 }
