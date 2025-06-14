@@ -8,7 +8,10 @@ import { default as TicketDetailsPanel } from './TicketDetailsPanel';
 import { CreateTicketModal } from './CreateTicketModal';
 import { Ticket, CreationFlowStatus } from '@/types/ticket';
 import { useMediaQuery } from 'usehooks-ts';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+// ======================= INICIO DE LA CORRECCIÓN =======================
+// Se importa 'SheetDescription' para eliminar el warning de accesibilidad.
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+// ======================== FIN DE LA CORRECCIÓN =========================
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTickets, TicketFilters } from '@/hooks/useTickets';
@@ -26,7 +29,7 @@ interface TicketsDashboardProps {
 }
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
-const MIN_CREATION_LOADER_TIME = 3000; // Aumentamos para dar tiempo a los mensajes
+const MIN_CREATION_LOADER_TIME = 3000;
 const NEW_TICKET_HIGHLIGHT_DURATION = 3000;
 
 const initialActionState: ActionState = { error: undefined, success: undefined, ticket: undefined };
@@ -44,9 +47,7 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
   const [stashedTicketData, setStashedTicketData] = React.useState<FormData | null>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   
-  // Estado para guardar la información del último ticket creado
   const [lastCreatedTicket, setLastCreatedTicket] = React.useState<Ticket | null>(null);
-  // Nuevo estado para los mensajes de carga dinámicos
   const [loadingMessage, setLoadingMessage] = React.useState("Iniciando proceso...");
   
   const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
@@ -88,7 +89,6 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
     setSubmissionError(null);
     setCreationFlow('loading');
 
-    // Simulación de progreso con mensajes dinámicos
     setLoadingMessage("Guardando información en base de datos...");
     const messageTimer1 = setTimeout(() => setLoadingMessage("Actualizando el dashboard..."), 1200);
     const messageTimer2 = setTimeout(() => setLoadingMessage("Casi listo..."), 2200);
@@ -121,7 +121,6 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
     applyFilters(newFilters);
   }, [applyFilters]);
 
-  // Nueva función para el botón de acción "Ver Ticket"
   const handleViewTicket = () => {
     if (lastCreatedTicket) {
       handleSelectTicket(lastCreatedTicket);
@@ -160,6 +159,12 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
               <>
                 <SheetHeader className="p-4 border-b">
                   <SheetTitle>Detalles del Ticket #{selectedTicket.numeroCaso}</SheetTitle>
+                  {/* ======================= INICIO DE LA CORRECCIÓN ======================= */}
+                  {/* Se añade una descripción para accesibilidad. `sr-only` la oculta visualmente. */}
+                  <SheetDescription className="sr-only">
+                    Panel con los detalles completos y acciones para el ticket seleccionado.
+                  </SheetDescription>
+                  {/* ======================== FIN DE LA CORRECCIÓN ========================= */}
                 </SheetHeader>
                 <TicketDetailsPanel selectedTicket={selectedTicket} onTicketUpdated={handleTicketUpdated} isLoadingGlobal={isLoading} />
               </>

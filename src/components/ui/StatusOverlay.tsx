@@ -38,6 +38,11 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
   const [autoCloseProgress, setAutoCloseProgress] = useState(100);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const autoCloseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // ======================= INICIO DE LA CORRECCIÓN =======================
+  // Nuevo estado para controlar la finalización del temporizador de forma segura.
+  const [timerFinished, setTimerFinished] = useState(false);
+  // =====================================================================
 
   useEffect(() => {
     if (flowStatus === 'loading' && isOpen) {
@@ -51,6 +56,10 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
   }, [flowStatus, isOpen]);
 
   useEffect(() => {
+    // Reseteamos el estado del temporizador cada vez que el estado del flujo cambia,
+    // para asegurar que no se llame a onClose de forma errónea en ciclos posteriores.
+    setTimerFinished(false); 
+
     if (flowStatus === 'success' && isOpen && onClose) {
       setAutoCloseProgress(100);
       if (autoCloseIntervalRef.current) clearInterval(autoCloseIntervalRef.current);
@@ -59,7 +68,9 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
         setAutoCloseProgress(prev => {
           if (prev <= 0) {
             clearInterval(autoCloseIntervalRef.current!);
-            onClose();
+            // En lugar de llamar a onClose() directamente, lo que causa el error,
+            // cambiamos nuestro estado local.
+            setTimerFinished(true); 
             return 0;
           }
           return prev - intervalStep;
@@ -69,7 +80,18 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
     return () => { if (autoCloseIntervalRef.current) clearInterval(autoCloseIntervalRef.current) };
   }, [flowStatus, isOpen, onClose]);
 
-  // No necesitamos 'isRendered', ya que el padre controla cuándo se muestra este componente.
+  // ======================= INICIO DE LA CORRECCIÓN =======================
+  // Este nuevo useEffect escucha los cambios en `timerFinished`.
+  // Cuando `timerFinished` se vuelve `true`, llama a `onClose` de forma segura,
+  // porque ahora es una reacción a un cambio de estado, no una llamada directa
+  // desde un temporizador durante el renderizado.
+  useEffect(() => {
+    if (timerFinished && onClose) {
+      onClose();
+    }
+  }, [timerFinished, onClose]);
+  // =====================================================================
+
   if (!isOpen || flowStatus === 'idle') return null;
 
   const cardClasses = cn(
@@ -96,7 +118,9 @@ const StatusOverlay: React.FC<StatusOverlayProps> = ({
             <p className="text-sm text-muted-foreground">{subMessage}</p>
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={onClose}>Cerrar</Button>
-              <Button onClick={onPrimaryAction}>{primaryActionText}</Button>
+              {onPrimaryAction && primaryActionText && (
+                <Button onClick={onPrimaryAction}>{primaryActionText}</Button>
+              )}
             </div>
           </div>
           <div className="flex-shrink-0 pt-4">

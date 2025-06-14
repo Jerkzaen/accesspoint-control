@@ -1,17 +1,20 @@
-// src/components/admin/CargaMasivaTickets.tsx
+// RUTA: src/components/admin/CargaMasivaTickets.tsx
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
+// ======================= INICIO DE LA SOLUCIÓN =======================
+// 1. Importamos el hook useRouter de Next.js para poder interactuar con el router.
+import { useRouter } from 'next/navigation';
+// ======================== FIN DE LA SOLUCIÓN =========================
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Download, Upload, Loader2, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { Download, Upload, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '../ui/scroll-area';
-
 import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 import * as z from 'zod';
 
@@ -51,6 +54,11 @@ export default function CargaMasivaTickets() {
   const [serverResult, setServerResult] = useState<UploadResult | null>(null);
   const [clientValidationErrors, setClientValidationErrors] = useState<ValidationError[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ======================= INICIO DE LA SOLUCIÓN =======================
+  // 2. Obtenemos la instancia del router.
+  const router = useRouter();
+  // ======================== FIN DE LA SOLUCIÓN =========================
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -123,32 +131,34 @@ export default function CargaMasivaTickets() {
             body: JSON.stringify(parsedData),
           });
 
-          // Siempre parsear el JSON de la respuesta, ya que el backend siempre envía una estructura JSON.
           const data: UploadResult = await response.json(); 
 
-          // Si response.ok es false, significa un error HTTP del servidor.
-          // El objeto 'data' ya contiene el 'message' y el array 'errors' del backend.
           if (!response.ok) {
-            setServerResult(data); // Usar directamente el resultado completo del servidor.
+            setServerResult(data);
             setStatus('error');
-            return; // Detener la ejecución aquí.
+            return;
           }
           
-          // Si response.ok es true, el servidor devolvió 200 OK.
-          // Puede ser éxito total o parcial (con failedCount > 0).
           setServerResult(data);
-          setStatus(data.failedCount > 0 ? 'error' : 'success'); // Determinar el estado final.
+          setStatus(data.failedCount > 0 ? 'error' : 'success');
+
+          // ======================= INICIO DE LA SOLUCIÓN =======================
+          // 3. Si la respuesta fue exitosa (código 2xx), le decimos al router
+          // que refresque los datos. Esto invalidará el caché del cliente y forzará
+          // una nueva obtención de datos para el dashboard, mostrando los nuevos tickets.
+          if (response.ok) {
+            console.log("Carga masiva exitosa. Refrescando datos del cliente...");
+            router.refresh();
+          }
+          // ======================== FIN DE LA SOLUCIÓN =========================
 
         } catch (error: any) {
-          // Este catch es para errores de red, JSON no parseable o errores inesperados del frontend.
           console.error("Error al subir el archivo (frontend general catch):", error);
           setStatus('error');
-          
-          // Para un error de red o similar, no tendremos un 'data' estructurado del servidor.
           setServerResult({
             successfulCount: 0,
-            failedCount: parsedData.length, // Asumimos que todas las filas fallaron si es un error general
-            errors: [], // No hay errores detallados específicos de fila en un error de red
+            failedCount: parsedData.length,
+            errors: [],
             message: error.message || "Error de red o del servidor al contactar la API. Verifique su conexión.",
           });
         }
@@ -229,7 +239,6 @@ export default function CargaMasivaTickets() {
         <CardFooter className="flex flex-col items-start p-6 border-t">
             <h3 className="text-lg font-semibold mb-4">Resultados de la Importación</h3>
             
-            {/* Mensajes de éxito general o error general */}
             {status === 'success' && serverResult?.failedCount === 0 && (
                  <Alert variant="default" className="w-full bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
                     <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -239,7 +248,6 @@ export default function CargaMasivaTickets() {
                     </AlertDescription>
                 </Alert>
             )}
-            {/* Mensaje si hay errores de validación frontend */}
             {clientValidationErrors.length > 0 && status === 'error' && (
                 <Alert variant="destructive" className="w-full">
                     <XCircle className="h-4 w-4" />
@@ -249,7 +257,6 @@ export default function CargaMasivaTickets() {
                     </AlertDescription>
                 </Alert>
             )}
-            {/* Mensaje si el backend reporta fallos parciales o un error general de API */}
             {serverResult && serverResult.failedCount > 0 && status === 'error' && clientValidationErrors.length === 0 && (
                 <Alert variant="destructive" className="w-full">
                     <XCircle className="h-4 w-4" />
@@ -269,8 +276,6 @@ export default function CargaMasivaTickets() {
                 </Alert>
             )}
 
-
-            {/* Tabla de Detalle de Errores (ya sea de cliente o servidor) */}
             {((serverResult && Array.isArray(serverResult.errors) && serverResult.errors.length > 0) || clientValidationErrors.length > 0) && (
                 <div className="w-full mt-4">
                     <h4 className="font-semibold mb-2">Detalle de Errores ({clientValidationErrors.length > 0 ? 'Cliente' : 'Servidor'}):</h4>
@@ -284,7 +289,6 @@ export default function CargaMasivaTickets() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {/* Mostrar errores de validación del frontend */}
                                 {clientValidationErrors.length > 0 && clientValidationErrors.map((err, i) =>(
                                     <TableRow key={`client-error-${i}`}>
                                         <TableCell>{err.row}</TableCell>
@@ -292,7 +296,6 @@ export default function CargaMasivaTickets() {
                                         <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{JSON.stringify(err.data)}</TableCell>
                                     </TableRow>
                                 ))}
-                                {/* Mostrar errores devueltos por el servidor */}
                                 {clientValidationErrors.length === 0 && serverResult && Array.isArray(serverResult.errors) && serverResult.errors.length > 0 && serverResult.errors.map((err, i) =>( 
                                     <TableRow key={`server-error-${i}`}>
                                         <TableCell>{err.row}</TableCell>

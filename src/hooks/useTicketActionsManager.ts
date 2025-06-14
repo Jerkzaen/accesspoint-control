@@ -1,114 +1,119 @@
 // RUTA: src/hooks/useTicketActionsManager.ts
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Ticket, ActionEntry, UsuarioBasico } from '@/types/ticket'; // Asegúrate que ActionEntry y UsuarioBasico estén bien definidos
-
-// Se elimina la interfaz redundante ActionEntryWithUser
+import { useState, useEffect, useCallback } from 'react';
+import { Ticket, ActionEntry } from '@/types/ticket';
 
 interface UseTicketActionsManagerProps {
   selectedTicket: Ticket | null;
-  onTicketUpdated: (updatedTicket: Ticket) => void;
 }
 
-export function useTicketActionsManager({ selectedTicket, onTicketUpdated }: UseTicketActionsManagerProps) {
+export function useTicketActionsManager({ selectedTicket }: UseTicketActionsManagerProps) {
+  const [actions, setActions] = useState<ActionEntry[]>([]);
+  const [isLoadingActions, setIsLoadingActions] = useState<boolean>(false);
   const [newActionDescription, setNewActionDescription] = useState<string>('');
   const [editingActionId, setEditingActionId] = useState<string | null>(null);
   const [editedActionDescription, setEditedActionDescription] = useState<string>('');
   const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const actionsForSelectedTicket = useMemo((): ActionEntry[] => {
-    // CORRECCIÓN: Se usa directamente el tipo ActionEntry, que ya incluye el usuario.
-    if (selectedTicket && Array.isArray(selectedTicket.acciones)) {
-      return selectedTicket.acciones as ActionEntry[];
+  const fetchActions = useCallback(async () => {
+    if (!selectedTicket) {
+      setActions([]);
+      return;
     }
-    return [];
+    setIsLoadingActions(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/tickets/${selectedTicket.id}/accion`);
+      if (!response.ok) {
+        throw new Error('No se pudo cargar la bitácora.');
+      }
+      const data: ActionEntry[] = await response.json();
+      setActions(data);
+    } catch (err: any) {
+      setError(err.message);
+      setActions([]);
+    } finally {
+      setIsLoadingActions(false);
+    }
   }, [selectedTicket]);
 
-
   useEffect(() => {
+    fetchActions();
     setNewActionDescription('');
     setEditingActionId(null);
     setEditedActionDescription('');
     setError(null);
-  }, [selectedTicket]);
+  }, [selectedTicket, fetchActions]);
 
+  // ======================= INICIO DE LA CORRECCIÓN =======================
+  // Se añade el array de dependencias vacío a las funciones useCallback
+  // que no dependen de ningún estado o prop externo. Esto elimina el error.
   const startEditingAction = useCallback((action: ActionEntry) => {
     setEditingActionId(action.id);
     setEditedActionDescription(action.descripcion);
     setError(null);
-  }, []);
+  }, []); // Array de dependencias añadido.
 
   const cancelEditingAction = useCallback(() => {
     setEditingActionId(null);
     setEditedActionDescription('');
     setError(null);
-  }, []);
+  }, []); // Array de dependencias añadido.
+  // ======================== FIN DE LA CORRECCIÓN =========================
 
   const addAction = useCallback(async () => {
-    if (!selectedTicket || !newActionDescription.trim()) {
-      setError("La descripción de la nueva acción no puede estar vacía.");
-      return;
-    }
-
+    if (!selectedTicket || !newActionDescription.trim()) return;
     setIsProcessingAction(true);
     setError(null);
-
     try {
       const response = await fetch(`/api/tickets/${selectedTicket.id}/accion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ descripcion: newActionDescription.trim() }),
       });
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
+        const errorData = await response.json();
         throw new Error(errorData.message || 'Error al agregar la acción');
       }
-
-      const updatedTicketData: Ticket = await response.json();
-      onTicketUpdated(updatedTicketData);
       setNewActionDescription('');
+      await fetchActions();
     } catch (err: any) {
-      console.error('Error al agregar acción:', err);
-      setError(err.message || "Ocurrió un error desconocido al agregar la acción.");
+      setError(err.message);
     } finally {
       setIsProcessingAction(false);
     }
-  }, [selectedTicket, newActionDescription, onTicketUpdated]);
+  }, [selectedTicket, newActionDescription, fetchActions]);
 
   const saveEditedAction = useCallback(async () => {
-    if (!selectedTicket || !editingActionId || !editedActionDescription.trim()) {
-      setError("La descripción de la acción editada no puede estar vacía.");
-      return;
-    }
+    if (!selectedTicket || !editingActionId || !editedActionDescription.trim()) return;
+    
     setIsProcessingAction(true);
     setError(null);
     try {
-      const response = await fetch(`/api/tickets/${selectedTicket.id}/accion/${editingActionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descripcion: editedActionDescription.trim() }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Error HTTP: ${response.status}` }));
-        throw new Error(errorData.message || 'Error al guardar la acción editada');
-      }
-      const updatedTicketData: Ticket = await response.json();
-      onTicketUpdated(updatedTicketData);
-      setEditingActionId(null);
-      setEditedActionDescription('');
+        const response = await fetch(`/api/tickets/${selectedTicket.id}/accion/${editingActionId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descripcion: editedActionDescription.trim() }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al guardar la acción');
+        }
+        await fetchActions(); // Recarga las acciones para ver la edición.
+        setEditingActionId(null);
+        setEditedActionDescription('');
     } catch (err: any) {
-      console.error('Error al editar acción:', err);
-      setError(err.message || "Ocurrió un error desconocido al guardar la acción editada.");
+        setError(err.message);
     } finally {
-      setIsProcessingAction(false);
+        setIsProcessingAction(false);
     }
-  }, [selectedTicket, editingActionId, editedActionDescription, onTicketUpdated]);
+  }, [selectedTicket, editingActionId, editedActionDescription, fetchActions]);
 
   return {
-    actionsForSelectedTicket,
+    actions: actions,
+    isLoadingActions,
     newActionDescription,
     setNewActionDescription,
     editingActionId,
