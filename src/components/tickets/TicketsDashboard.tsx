@@ -26,7 +26,7 @@ interface TicketsDashboardProps {
 }
 
 const HEADER_AND_PAGE_PADDING_OFFSET = '100px';
-const MIN_CREATION_LOADER_TIME = 2000;
+const MIN_CREATION_LOADER_TIME = 3000; // Aumentamos para dar tiempo a los mensajes
 const NEW_TICKET_HIGHLIGHT_DURATION = 3000;
 
 const initialActionState: ActionState = { error: undefined, success: undefined, ticket: undefined };
@@ -44,8 +44,10 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
   const [stashedTicketData, setStashedTicketData] = React.useState<FormData | null>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   
-  // Guardamos la información del último ticket creado para la pantalla de éxito.
+  // Estado para guardar la información del último ticket creado
   const [lastCreatedTicket, setLastCreatedTicket] = React.useState<Ticket | null>(null);
+  // Nuevo estado para los mensajes de carga dinámicos
+  const [loadingMessage, setLoadingMessage] = React.useState("Iniciando proceso...");
   
   const handleTicketUpdated = React.useCallback((updatedTicket: Ticket) => {
     setTickets(prev => prev.map(t => (t.id === updatedTicket.id ? updatedTicket : t)));
@@ -78,22 +80,31 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
     setStashedTicketData(null);
     setSubmissionError(null);
     setIsSubmitting(false);
-    setLastCreatedTicket(null); // Limpiamos el ticket al cerrar.
+    setLastCreatedTicket(null);
   }, []);
   
   const handleSubmitTicketForm = React.useCallback(async (formData: FormData) => {
     setIsSubmitting(true);
     setSubmissionError(null);
     setCreationFlow('loading');
+
+    // Simulación de progreso con mensajes dinámicos
+    setLoadingMessage("Guardando información en base de datos...");
+    const messageTimer1 = setTimeout(() => setLoadingMessage("Actualizando el dashboard..."), 1200);
+    const messageTimer2 = setTimeout(() => setLoadingMessage("Casi listo..."), 2200);
+    
     const actionPromise = createNewTicketAction(initialActionState, formData);
     const timerPromise = new Promise(resolve => setTimeout(resolve, MIN_CREATION_LOADER_TIME));
     
     const [actionResult] = await Promise.all([actionPromise, timerPromise]);
     
+    clearTimeout(messageTimer1);
+    clearTimeout(messageTimer2);
+
     setIsSubmitting(false);
     if (actionResult.success && actionResult.ticket) {
       setCreationFlow('success');
-      setLastCreatedTicket(actionResult.ticket); // Guardamos el ticket creado.
+      setLastCreatedTicket(actionResult.ticket);
       refreshTickets();
       setSelectedTicket(actionResult.ticket);
       setNewlyCreatedTicketId(actionResult.ticket.id);
@@ -171,6 +182,7 @@ export default function TicketsDashboard({ empresasClientes, ubicacionesDisponib
         stashedData={stashedTicketData}
         createdTicket={lastCreatedTicket}
         onViewTicket={handleViewTicket}
+        loadingMessage={loadingMessage}
       />
     </div>
   );

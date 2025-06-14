@@ -13,10 +13,12 @@ import { CreateTicketForm } from './CreateTicketForm';
 import { CreationFlowStatus, Ticket } from '@/types/ticket';
 import StatusOverlay from '@/components/ui/StatusOverlay';
 
-// Interfaces
+// --- Interfaces ---
 interface EmpresaClienteOption { id: string; nombre: string; }
 interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
 
+// ============ INTERFAZ DE PROPS ACTUALIZADA ============
+// Se añade la nueva propiedad para el mensaje de carga dinámico.
 interface CreateTicketModalProps {
   isOpen: boolean;
   flowStatus: CreationFlowStatus;
@@ -31,6 +33,7 @@ interface CreateTicketModalProps {
   stashedData: FormData | null;
   createdTicket: Ticket | null;
   onViewTicket: () => void;
+  loadingMessage: string; // ¡Propiedad añadida!
 }
 
 export function CreateTicketModal({
@@ -47,6 +50,7 @@ export function CreateTicketModal({
   stashedData,
   createdTicket,
   onViewTicket,
+  loadingMessage, // Se recibe la nueva prop.
 }: CreateTicketModalProps) {
   
   const handleOpenChange = (open: boolean) => {
@@ -58,7 +62,7 @@ export function CreateTicketModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[625px] flex flex-col max-h-[90vh]">
-        {/* El contenido se oculta si el overlay está activo para evitar interacciones */}
+        {/* El contenido del formulario se oculta si el overlay está activo */}
         <div className={isOverlayOpen ? 'hidden' : 'contents'}>
           <DialogHeader>
             <DialogTitle>Crear Nuevo Ticket #{nextNroCaso}</DialogTitle>
@@ -84,9 +88,8 @@ export function CreateTicketModal({
           </div>
         </div>
 
+        {/* El overlay se muestra en lugar del formulario */}
         {isOverlayOpen && (
-            // El overlay ya no necesita estar dentro de un div con posicionamiento absoluto,
-            // ya que se renderiza condicionalmente en lugar del contenido del modal.
             <StatusOverlay 
                 isOpen={isOverlayOpen}
                 flowStatus={flowStatus} 
@@ -101,11 +104,14 @@ export function CreateTicketModal({
                     : 'Procesando...'
                 }
                 subMessage={
-                  flowStatus === 'success'
+                  // =========== LÓGICA DE SUB-MENSAJE ACTUALIZADA ===========
+                  // Ahora, en estado 'loading', muestra el mensaje dinámico que viene de las props.
+                  flowStatus === 'loading'
+                    ? loadingMessage
+                    : flowStatus === 'success'
                     ? "Puedes ver el nuevo ticket en tu dashboard."
-                    : flowStatus === 'error'
-                    ? submissionError
-                    : 'Por favor, espere un momento.'
+                    : submissionError
+                  // =========================================================
                 }
                 primaryActionText="Ver Ticket"
                 onPrimaryAction={onViewTicket}
