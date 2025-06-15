@@ -5,7 +5,10 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { RoleUsuario } from "@prisma/client";
 
+// Asegurarse de que la ruta es siempre dinámica
 export const dynamic = 'force-dynamic';
+// Forzar que no se use caché para los fetch
+export const fetchCache = 'force-no-store';
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -23,39 +26,62 @@ export async function GET(request) {
   const userId = session.user.id;
   
   let where = {};
+  let roleFilter = {};
 
+  // Filtros basados en rol
   if (userRole === RoleUsuario.CLIENTE) {
-    where.solicitanteClienteId = userId;
+    // Permitir que los clientes vean tickets donde son el solicitante asignado
+    // O donde su email coincide con el solicitanteCorreo (para tickets de carga masiva)
+    const userEmail = session.user.email;
+    roleFilter.OR = [
+      { solicitanteClienteId: userId },
+      { solicitanteCorreo: userEmail }
+    ];
   } else if (userRole === RoleUsuario.TECNICO) {
-    where.tecnicoAsignadoId = userId;
+    roleFilter.tecnicoAsignadoId = userId;
   }
 
+  // Filtros de búsqueda
+  let searchFilter = {};
   if (searchText) {
-    // ======================= INICIO DE LA CORRECCIÓN =======================
-    // Eliminamos el `mode: 'insensitive'` que causa el error.
-    // La búsqueda ahora será sensible a mayúsculas/minúsculas.
-    where.OR = [
+    searchFilter.OR = [
       { titulo: { contains: searchText } },
       { descripcionDetallada: { contains: searchText } },
       { numeroCaso: { equals: isNaN(parseInt(searchText)) ? undefined : parseInt(searchText) } },
-      { empresaCliente: { nombre: { contains: searchText } } },
+      { empresa: { nombre: { contains: searchText } } },
     ];
-    // ======================== FIN DE LA CORRECCIÓN =========================
+  }
+
+  // Combinar filtros usando AND
+  let conditions = [];
+
+  if (Object.keys(roleFilter).length > 0) {
+    conditions.push(roleFilter);
+  }
+
+  if (Object.keys(searchFilter).length > 0) {
+    conditions.push(searchFilter);
   }
 
   if (estado && estado !== 'Todos') {
-    where.estado = estado;
+    conditions.push({ estado: estado });
   }
 
   if (prioridad && prioridad !== 'Todas') {
-    where.prioridad = prioridad;
+    conditions.push({ prioridad: prioridad });
   }
+
+  if (conditions.length > 0) {
+    where.AND = conditions;
+  }
+
+  console.log("Prisma where clause:", JSON.stringify(where, null, 2));
 
   try {
     const tickets = await prisma.ticket.findMany({
       where,
       include: {
-        empresaCliente: true,
+        empresa: true,
         solicitanteCliente: true,
         tecnicoAsignado: true,
         ubicacion: true,
@@ -68,6 +94,9 @@ export async function GET(request) {
     return NextResponse.json(tickets);
   } catch (error) {
     console.error("Error al obtener tickets:", error);
+    if (error instanceof Error) {
+      console.error("Error details:", error.message, error.stack);
+    }
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
   }
 }

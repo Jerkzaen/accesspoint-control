@@ -9,6 +9,7 @@ import {
   User,
   Upload,
   ShieldCheck,
+  MapPin,
 } from "lucide-react";
 import { SidebarDesktop } from "./sidebar-desktop";
 import { SidebarItem } from "@/types/sidebar"; 
@@ -52,7 +53,9 @@ export default function Sidebar() {
   if (userRole === RoleUsuario.ADMIN) {
     adminLinks.push(
       // CORRECCIÓN FINAL: Apuntar a la nueva ruta simplificada
-      { label: "Carga Masiva", href: "/admin/carga-masiva", icon: Upload }
+      { label: "Carga Masiva", href: "/admin/carga-masiva", icon: Upload },
+      { label: "Empresas", href: "/admin/empresas", icon: Box },
+      { label: "Direcciones", href: "/admin/direcciones", icon: MapPin } // Usando MapPin para representar direcciones
     );
   }
   

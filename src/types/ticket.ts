@@ -28,7 +28,7 @@ export interface ActionEntry {
   descripcion: string;
   realizadaPor?: UsuarioBasico | null; 
   usuarioId?: string;
-  categoria?: 'update' | 'comment' | 'status' | null;
+  categoria?: string | null;
 }
 
 export interface Ticket {
@@ -59,4 +59,5 @@ export interface Ticket {
   fechaSolucionEstimada?: Date | null;
   fechaSolucionReal?: Date | null; 
   updatedAt: Date; 
+  equipoAfectado?: string | null; // Nuevo campo para el equipo afectado
 }

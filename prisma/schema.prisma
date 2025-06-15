@@ -5,6 +5,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// generator erd {
+//   provider = "prisma-erd-generator"
+//   output   = "./ERD.svg" // Nombre del archivo de salida
+// }
+
 datasource db {
   provider = "sqlite" // O tu base de datos preferida: postgresql, mysql, etc.
   url      = env("DATABASE_URL")
@@ -77,38 +82,69 @@ enum RoleUsuario {
   ADMIN
   TECNICO
   VISUALIZADOR
+  CLIENTE
 }
 
-model EmpresaCliente {
+model Empresa {
   id            String    @id @default(uuid())
   nombre        String    @unique
-  rut           String?   @unique
-  direccion     String?
-  telefono      String?
-  email         String?   @unique
+  rut           String?
   logoUrl       String?
-  contactos     Cliente[]
+  direccionId   String?
+  direccion     Direccion? @relation(fields: [direccionId], references: [id])
+  sucursales    Sucursal[]
+  contactos     ContactoEmpresa[]
   tickets       Ticket[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  @@map("empresas_clientes")
+  @@map("empresas")
 }
 
-model Cliente {
+model ContactoEmpresa {
   id                String              @id @default(uuid())
   nombreCompleto    String
-  email             String?             @unique
-  telefono          String?
+  email             String              @unique
+  telefono          String
   cargo             String?
-  empresaCliente    EmpresaCliente      @relation(fields: [empresaClienteId], references: [id])
-  empresaClienteId  String
+  empresa           Empresa             @relation(fields: [empresaId], references: [id])
+  empresaId         String
   ubicacion         Ubicacion?          @relation(fields: [ubicacionId], references: [id])
   ubicacionId       String?
   ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
   equiposEnPrestamo EquipoEnPrestamo[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
-  @@map("contactos_clientes")
+  @@map("contactos_empresas")
+}
+
+model Direccion {
+  id            String    @id @default(uuid())
+  calle         String
+  numero        String
+  comuna        String
+  provincia     String
+  region        String
+  pais          String
+  empresas      Empresa[]
+  sucursales    Sucursal[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  @@map("direcciones")
+}
+
+model Sucursal {
+  id            String    @id @default(uuid())
+  nombre        String
+  telefono      String?
+  email         String?
+  direccionId   String
+  direccion     Direccion @relation(fields: [direccionId], references: [id])
+  empresaId     String?
+  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("sucursales")
 }
 
 model Ubicacion {
@@ -119,7 +155,7 @@ model Ubicacion {
   region              String?
   pais                String?
   notas               String?
-  contactos           Cliente[]
+  contactos           ContactoEmpresa[]
   tickets             Ticket[]
   equiposInventario   EquipoInventario[] @relation("EquipoUbicacionActual")
   createdAt           DateTime  @default(now())
@@ -138,11 +174,11 @@ model Ticket {
   solicitanteNombre     String        
   solicitanteTelefono   String?       
   solicitanteCorreo     String?       
-  solicitanteCliente    Cliente?      @relation(name: "SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
+  solicitanteCliente    ContactoEmpresa?      @relation(name: "SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
   solicitanteClienteId  String?       
 
-  empresaCliente        EmpresaCliente? @relation(fields: [empresaClienteId], references: [id])
-  empresaClienteId      String?       
+  empresa               Empresa? @relation(fields: [empresaId], references: [id])
+  empresaId             String?       
   
   ubicacion             Ubicacion?    @relation(fields: [ubicacionId], references: [id])
   ubicacionId           String?       
@@ -158,6 +194,7 @@ model Ticket {
   updatedAt             DateTime      @updatedAt
   
   equiposEnPrestamo     EquipoEnPrestamo[]
+  equipoAfectado        String?       // Nuevo campo para el equipo afectado (texto)
 }
 
 model AccionTicket {
@@ -168,6 +205,7 @@ model AccionTicket {
   fechaAccion   DateTime @default(now())
   realizadaPor  User     @relation(fields: [usuarioId], references: [id]) 
   usuarioId     String   
+  categoria     String?  // Nuevo campo para la categoría de la acción
 }
 
 enum PrioridadTicket {
@@ -239,7 +277,7 @@ model EquipoEnPrestamo {
   equipo                    EquipoInventario @relation(fields: [equipoId], references: [id])
   equipoId                  String
   
-  prestadoAContacto         Cliente   @relation(fields: [prestadoAContactoId], references: [id])
+  prestadoAContacto         ContactoEmpresa   @relation(fields: [prestadoAContactoId], references: [id])
   prestadoAContactoId       String    
   personaResponsableEnSitio String    
 

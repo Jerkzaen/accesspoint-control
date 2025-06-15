@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { RoleUsuario, EstadoTicket, PrioridadTicket } from "@prisma/client";
-import { z } from "zod";
+import { z, ZodIssue } from "zod";
 import { revalidatePath } from 'next/cache';
 
 // Define el tipo de usuario esperado en la sesión para mayor seguridad de tipos.
@@ -15,24 +15,55 @@ interface SessionUser {
 
 // Define el esquema de validación para cada fila que viene del frontend usando Zod.
 // Esto asegura que los datos son correctos antes de intentar guardarlos.
-const ticketCsvRowSchema = z.object({
-  titulo: z.string().min(1, "El título es obligatorio."),
+const baseCsvRowSchema = z.object({
+  tipo_registro: z.enum(["TICKET", "ACCION"], { errorMap: () => ({ message: "Tipo de registro inválido. Valores permitidos: TICKET, ACCION." }) }),
+  numero_ticket_asociado: z.union([z.number().int(), z.string().regex(/^\d+$/, "Debe ser un número entero.")]).transform(val => typeof val === 'string' ? parseInt(val, 10) : val).optional().nullable(),
+  titulo: z.string().optional().nullable(),
   descripcionDetallada: z.string().optional().nullable(),
-  tipoIncidente: z.string().min(1, "El tipo de incidente es obligatorio."),
-  prioridad: z.nativeEnum(PrioridadTicket, { errorMap: () => ({ message: "Prioridad inválida. Valores permitidos: BAJA, MEDIA, ALTA, URGENTE." }) }),
-  estado: z.nativeEnum(EstadoTicket, { errorMap: () => ({ message: "Estado inválido. Valores permitidos: ABIERTO, CERRADO, EN_PROGRESO, PENDIENTE_TERCERO, PENDIENTE_CLIENTE, RESUELTO, CANCELADO." }) }),
-  solicitanteNombre: z.string().min(1, "El nombre del solicitante es obligatorio."),
+  tipoIncidente: z.string().optional().nullable(),
+  prioridad: z.nativeEnum(PrioridadTicket, { errorMap: () => ({ message: "Prioridad inválida. Valores permitidos: BAJA, MEDIA, ALTA, URGENTE." }) }).optional().nullable(),
+  estado: z.nativeEnum(EstadoTicket, { errorMap: () => ({ message: "Estado inválido. Valores permitidos: ABIERTO, CERRADO, EN_PROGRESO, PENDIENTE_TERCERO, PENDIENTE_CLIENTE, RESUELTO, CANCELADO." }) }).optional().nullable(),
+  solicitanteNombre: z.string().optional().nullable(),
   solicitanteTelefono: z.string().optional().nullable(),
-  solicitanteCorreo: z.string().email("Correo del solicitante inválido.").optional().or(z.literal('')).nullable(),
+  solicitanteCorreo: z.union([z.string().email("Correo del solicitante inválido."), z.literal(''), z.null()]).optional().nullable(),
+  solicitanteClienteEmail: z.union([z.string().email("Email del cliente solicitante inválido."), z.literal(''), z.null()]).optional().nullable(),
   empresaClienteNombre: z.string().optional().nullable(),
   tecnicoAsignadoEmail: z.string().email("Email del técnico inválido.").optional().or(z.literal('')).nullable(),
-  fechaCreacion: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Formato de fecha de creación inválido (YYYY-MM-DD HH:MM:SS)." }),
+  fechaCreacion: z.string().refine((val) => val === '' || val === null || !isNaN(Date.parse(val)), { message: "Formato de fecha de creación inválido (YYYY-MM-DD HH:MM:SS)." }).optional().nullable(),
   fechaSolucionEstimada: z.string().refine((val) => val === '' || val === null || !isNaN(Date.parse(val)), { message: "Formato de fecha de solución estimada inválido (YYYY-MM-DD)." }).optional().nullable(),
+  equipoAfectado: z.string().optional().nullable(),
+  accion_descripcion: z.string().optional().nullable(),
+  accion_fecha: z.string().refine((val) => val === '' || val === null || !isNaN(Date.parse(val)), { message: "Formato de fecha de acción inválido (YYYY-MM-DD HH:MM:SS)." }).optional().nullable(),
+  accion_usuario_email: z.string().optional().nullable(),
+  accion_categoria: z.string().optional().nullable(),
 });
 
+const ticketCsvRowSchema = baseCsvRowSchema.extend({
+  tipo_registro: z.literal("TICKET"),
+  titulo: z.string().min(1, "El título es obligatorio para tickets."),
+  tipoIncidente: z.string().min(1, "El tipo de incidente es obligatorio para tickets."),
+  prioridad: z.nativeEnum(PrioridadTicket, { errorMap: () => ({ message: "Prioridad inválida. Valores permitidos: BAJA, MEDIA, ALTA, URGENTE." }) }),
+  estado: z.nativeEnum(EstadoTicket, { errorMap: () => ({ message: "Estado inválido. Valores permitidos: ABIERTO, CERRADO, EN_PROGRESO, PENDIENTE_TERCERO, PENDIENTE_CLIENTE, RESUELTO, CANCELADO." }) }),
+  solicitanteNombre: z.string().min(1, "El nombre del solicitante es obligatorio para tickets."),
+  fechaCreacion: z.string().min(1, "La fecha de creación es obligatoria para tickets.").refine((val) => !isNaN(Date.parse(val)), { message: "Formato de fecha de creación inválido (YYYY-MM-DD HH:MM:SS) para tickets." }),
+});
+
+const accionCsvRowSchema = baseCsvRowSchema.extend({
+  tipo_registro: z.literal("ACCION"),
+  numero_ticket_asociado: z.union([z.number().int().min(1, "El número de ticket asociado es obligatorio para acciones."), z.string().regex(/^\d+$/, "Debe ser un número entero.").transform(val => parseInt(val, 10)).refine(val => val >= 1, "El número de ticket asociado debe ser al menos 1.")]),
+  accion_descripcion: z.string().min(1, "La descripción de la acción es obligatoria."),
+  accion_fecha: z.string().min(1, "La fecha de acción es obligatoria.").refine((val) => !isNaN(Date.parse(val)), { message: "Formato de fecha de acción inválido (YYYY-MM-DD HH:MM:SS)." }),
+  accion_usuario_email: z.string().email("Email del usuario de la acción inválido.").optional().or(z.literal('')).nullable(),
+});
+
+type CsvRow = z.infer<typeof baseCsvRowSchema>;
 type TicketCsvRow = z.infer<typeof ticketCsvRowSchema>;
+type AccionCsvRow = z.infer<typeof accionCsvRowSchema>;
 
 export async function POST(request: NextRequest) {
+  let responseData: { message: string; successfulCount: number; failedCount: number; errors: any[] };
+  let statusCode: number;
+
   // 1. Verificación de sesión y rol de administrador.
   const session = await getServerSession(authOptions);
   const user = session?.user as SessionUser | undefined;
@@ -42,13 +73,13 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Recepción y validación del cuerpo de la solicitud (se espera un JSON).
-  let records: TicketCsvRow[];
+  let records: CsvRow[];
   try {
     records = await request.json();
     if (!Array.isArray(records) || records.length === 0) {
       return NextResponse.json({ message: "No se proporcionaron registros o el formato es incorrecto." }, { status: 400 });
     }
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({ message: "Error al parsear el cuerpo de la solicitud JSON." }, { status: 400 });
   }
 
@@ -57,14 +88,16 @@ export async function POST(request: NextRequest) {
 
   try {
     // 3. Optimización: Pre-cargamos en memoria los datos que se consultarán repetidamente.
-    const [empresas, tecnicos, lastTicket] = await Promise.all([
-      prisma.empresaCliente.findMany({ select: { id: true, nombre: true } }),
-      prisma.user.findMany({ where: { rol: 'TECNICO' }, select: { id: true, email: true } }),
+    const [empresas, tecnicos, clientes, lastTicket] = await Promise.all([
+      prisma.empresa.findMany({ select: { id: true, nombre: true } }),
+      prisma.user.findMany({ where: { rol: RoleUsuario.TECNICO }, select: { id: true, email: true } }),
+      prisma.contactoEmpresa.findMany({ select: { id: true, email: true } }),
       prisma.ticket.findFirst({ orderBy: { numeroCaso: 'desc' }, select: { numeroCaso: true } })
     ]);
 
     const empresaMap = new Map(empresas.map(e => [e.nombre.toLowerCase(), e.id]));
     const tecnicoMap = new Map(tecnicos.map(t => [t.email?.toLowerCase(), t.id]));
+    const clienteMap = new Map(clientes.map(c => [c.email?.toLowerCase(), c.id]));
     let currentNumeroCaso = lastTicket?.numeroCaso || 0;
 
     // 4. Lógica de Negocio dentro de una Transacción Atómica.
@@ -76,59 +109,159 @@ export async function POST(request: NextRequest) {
 
         const cleanedRecord = Object.fromEntries(
           Object.entries(record as Record<string, unknown>).map(([key, value]) => [key, value === '' ? null : value])
-        ) as TicketCsvRow;
+        ) as CsvRow;
 
-        const validation = ticketCsvRowSchema.safeParse(cleanedRecord);
-        if (!validation.success) {
-          errors.push({ row: rowIndex, data: record, error: validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ') });
+        // Validar el tipo de registro primero
+        const baseValidation = baseCsvRowSchema.safeParse(cleanedRecord);
+        if (!baseValidation.success) {
+          errors.push({ row: rowIndex, data: record, error: baseValidation.error.errors.map((e: ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ') });
           continue;
         }
 
-        const {
+        const tipoRegistro = baseValidation.data.tipo_registro;
+
+        if (tipoRegistro === "TICKET") {
+          const validation = ticketCsvRowSchema.safeParse(cleanedRecord);
+          if (!validation.success) {
+            errors.push({ row: rowIndex, data: record, error: validation.error.errors.map((e: ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ') });
+            continue;
+          }
+
+          const {
+            titulo,
+            descripcionDetallada,
+            tipoIncidente,
+            prioridad,
+            estado,
+            solicitanteNombre,
+            solicitanteTelefono,
+            solicitanteCorreo,
+            fechaCreacion,
+            fechaSolucionEstimada,
+            equipoAfectado,
+            solicitanteClienteEmail,
             empresaClienteNombre,
             tecnicoAsignadoEmail,
-            ...ticketData
-        } = validation.data;
+          } = validation.data;
 
-        // Búsqueda de IDs relacionados
-        const empresaClienteId = empresaClienteNombre ? empresaMap.get(empresaClienteNombre.toLowerCase()) : null;
-        if (empresaClienteNombre && !empresaClienteId) {
-          errors.push({ row: rowIndex, data: record, error: `La empresa '${empresaClienteNombre}' no fue encontrada.` });
-          continue;
-        }
+           // Búsqueda de IDs relacionados
+           const empresaId = empresaClienteNombre ? empresaMap.get(empresaClienteNombre.toLowerCase()) : null;
+           if (empresaClienteNombre && !empresaId) {
+             errors.push({ row: rowIndex, data: record, error: `La empresa '${empresaClienteNombre}' no fue encontrada.` });
+             continue;
+           }
 
-        const tecnicoAsignadoId = tecnicoAsignadoEmail ? tecnicoMap.get(tecnicoAsignadoEmail.toLowerCase()) : null;
-        if (tecnicoAsignadoEmail && !tecnicoAsignadoId) {
-          errors.push({ row: rowIndex, data: record, error: `El técnico con email '${tecnicoAsignadoEmail}' no fue encontrado.` });
-          // Opcional: podrías decidir continuar y asignar al usuario actual.
-        }
-        
-        const finalTecnicoAsignadoId = tecnicoAsignadoId || user.id;
+           const tecnicoAsignadoId = tecnicoAsignadoEmail ? tecnicoMap.get(tecnicoAsignadoEmail.toLowerCase()) : null;
+           if (tecnicoAsignadoEmail && !tecnicoAsignadoId) {
+             errors.push({ row: rowIndex, data: record, error: `El técnico con email '${tecnicoAsignadoEmail}' no fue encontrado.` });
+             // Opcional: podrías decidir continuar y asignar al usuario actual.
+           }
 
-        currentNumeroCaso++;
+           let solicitanteClienteId = solicitanteClienteEmail ? clienteMap.get(solicitanteClienteEmail.toLowerCase()) || null : null;
+           if (solicitanteClienteEmail && !solicitanteClienteId) {
+             errors.push({ row: rowIndex, data: record, error: `El cliente solicitante con email '${solicitanteClienteEmail}' no fue encontrado.` });
+           }
 
-        await tx.ticket.create({
+           const finalTecnicoAsignadoId = tecnicoAsignadoId || (user && user.id ? user.id : null);
+
+           currentNumeroCaso++;
+
+           // Explicitly build the data object for Prisma
+           const ticketDataForPrisma = {
+               numeroCaso: currentNumeroCaso,
+               titulo: titulo,
+               descripcionDetallada: descripcionDetallada,
+               tipoIncidente: tipoIncidente,
+               prioridad: prioridad,
+               estado: estado,
+               solicitanteNombre: solicitanteNombre,
+               solicitanteTelefono: solicitanteTelefono,
+               solicitanteCorreo: solicitanteCorreo,
+               fechaCreacion: new Date(fechaCreacion),
+               fechaSolucionEstimada: fechaSolucionEstimada ? new Date(fechaSolucionEstimada) : null,
+               equipoAfectado: equipoAfectado,
+               empresaId: empresaId,
+               ...(finalTecnicoAsignadoId !== null && { tecnicoAsignadoId: finalTecnicoAsignadoId }),
+               ...(solicitanteClienteId !== null && { solicitanteClienteId: solicitanteClienteId }),
+           };
+
+
+           const newTicket = await tx.ticket.create({
+               data: ticketDataForPrisma, // Use the explicitly built object
+               include: {
+                   acciones: true,
+               },
+           });
+
+           // Crear una acción de tipo 'comment' para el ticket recién creado
+           await tx.accionTicket.create({
+               data: {
+                   ticketId: newTicket.id,
+                   fechaAccion: new Date(fechaCreacion), // Usar la fecha de creación del ticket para la acción inicial
+                   descripcion: "Ticket creado mediante carga masiva.",
+                   usuarioId: user?.id ?? null, // Asigna al usuario que realiza la importación
+                   categoria: 'comment', // Usa la categoría del CSV o 'comment' por defecto
+               },
+           });
+           successfulCount++;
+         } else if (tipoRegistro === "ACCION") {
+          const validation = accionCsvRowSchema.safeParse(cleanedRecord);
+          if (!validation.success) {
+            errors.push({ row: rowIndex, data: record, error: validation.error.errors.map((e: ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ') });
+            continue;
+          }
+
+          const { numero_ticket_asociado, accion_descripcion, accion_fecha, accion_usuario_email, accion_categoria } = validation.data;
+
+          // Buscar el ticket asociado por numeroCaso
+          const associatedTicket = await tx.ticket.findUnique({
+            where: { numeroCaso: numero_ticket_asociado },
+            select: { id: true },
+          });
+
+          if (!associatedTicket) {
+            errors.push({ row: rowIndex, data: record, error: `El ticket con número ${numero_ticket_asociado} no fue encontrado para asociar la acción.` });
+            continue;
+          }
+
+          // Buscar el usuario de la acción por email
+          let accionUsuarioId: string | null = null;
+          if (accion_usuario_email) {
+            const accionUser = await tx.user.findUnique({
+              where: { email: accion_usuario_email },
+              select: { id: true },
+            });
+            if (!accionUser) {
+              errors.push({ row: rowIndex, data: record, error: `El usuario de la acción con email '${accion_usuario_email}' no fue encontrado.` });
+              continue;
+            }
+            accionUsuarioId = accionUser.id;
+          } else {
+            accionUsuarioId = user?.id ?? null; // Si no se especifica, usa el usuario que importa
+          }
+
+          await tx.accionTicket.create({
             data: {
-                ...ticketData,
-                numeroCaso: currentNumeroCaso,
-                fechaCreacion: new Date(ticketData.fechaCreacion),
-                fechaSolucionEstimada: ticketData.fechaSolucionEstimada ? new Date(ticketData.fechaSolucionEstimada) : null,
-                empresaClienteId: empresaClienteId,
-                tecnicoAsignadoId: finalTecnicoAsignadoId,
+              ticketId: associatedTicket.id,
+              fechaAccion: new Date(accion_fecha),
+              descripcion: accion_descripcion,
+              usuarioId: accionUsuarioId,
+              categoria: accion_categoria || 'comment',
             },
-        });
-        successfulCount++;
+          });
+          successfulCount++;
+        }
       }
 
       // Si se encuentra CUALQUIER error durante la validación, se lanza un error
-      // para revertir (rollback) toda la transacción.
-      if (errors.length > 0) {
-         const detailedErrorMessage = JSON.stringify({
-            message: "Se encontraron errores de validación. La importación fue cancelada y revertida.",
-            detailedErrors: errors,
-         });
-         throw new Error(detailedErrorMessage);
-      }
+        // para revertir (rollback) toda la transacción.
+        if (errors.length > 0) {
+            throw new Error(JSON.stringify({
+                message: "Se encontraron errores de validación. La importación fue cancelada y revertida.",
+                detailedErrors: errors,
+            }));
+        }
+
     });
 
     // 5. REVALIDACIÓN DE CACHÉ (LA SOLUCIÓN CLAVE)
@@ -140,20 +273,22 @@ export async function POST(request: NextRequest) {
     revalidatePath('/tickets'); // Revalida la ruta base de tickets por si hay layouts cacheados.
     revalidatePath('/'); // Revalida la página de inicio por si muestra algún contador o resumen.
 
-
     // 6. Envío de respuesta exitosa al cliente.
-    return NextResponse.json({
+    responseData = {
         message: "Proceso de importación finalizado con éxito.",
         successfulCount: successfulCount,
         failedCount: 0,
         errors: [],
-    }, { status: 200 });
+    };
+    statusCode = 200;
 
   } catch (error: any) {
     // 7. Manejo de Errores y Rollback.
     // Este bloque se ejecuta si la transacción falla.
     let mainMessage = "Error durante la transacción. No se importó ningún ticket.";
     let finalErrorsArray = errors; // Errores de validación que causaron el rollback.
+
+
 
     // Intenta parsear el error por si es el que lanzamos nosotros con detalles.
     try {
@@ -171,7 +306,7 @@ export async function POST(request: NextRequest) {
     // Logueamos los errores en el servidor para depuración.
     console.warn("Rollback de Importación de Tickets:", mainMessage);
     if (finalErrorsArray.length > 0) {
-        console.table(finalErrorsArray.map(err => ({ Línea: err.row, Error: err.error, Datos: JSON.stringify(err.data).substring(0, 80) + '...' })));
+        console.table(finalErrorsArray.map((err: { row: number; error: string; data: any }) => ({ Línea: err.row, Error: err.error, Datos: JSON.stringify(err.data).substring(0, 80) + '...' })));
     }
     
     // Si el array de errores está vacío pero aún así hubo un error, añadimos un error genérico.
@@ -179,11 +314,14 @@ export async function POST(request: NextRequest) {
       finalErrorsArray.push({ row: 0, data: {}, error: mainMessage });
     }
 
-    return NextResponse.json({
+    responseData = {
       message: mainMessage,
       successfulCount: 0,
       failedCount: records.length,
       errors: finalErrorsArray,
-    }, { status: 400 }); // Usamos 400 (Bad Request) ya que usualmente es por datos inválidos.
+    };
+    statusCode = 400;
   }
+
+  return NextResponse.json(responseData, { status: statusCode });
 }

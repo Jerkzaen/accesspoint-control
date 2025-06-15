@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "echo Skipping postinstall",
+
+    "generate-prisma": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -50,9 +52,11 @@
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.0",
     "uuid": "^11.1.0",
-    "zod": "^3.25.56"
+    "zod": "^3.25.56",
+    "sonner": "^1.4.4"
   },
   "devDependencies": {
+
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/papaparse": "^5.3.16",

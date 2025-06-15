@@ -31,19 +31,33 @@ export function useTickets() {
       if (filters.prioridad) {
         queryParams.append("prioridad", filters.prioridad);
       }
+      
+      // Añadir un timestamp para evitar el caché
+      queryParams.append("_t", Date.now().toString());
 
       const url = `/api/tickets?${queryParams.toString()}`;
       
-      // ======================= INICIO DE LA SOLUCIÓN FINAL =======================
       // Añadimos la opción { cache: 'no-store' } a la llamada fetch.
       // Esto le ordena a Next.js y al navegador que esta petición específica
       // siempre debe ir a la red y nunca debe usar una respuesta del caché.
-      const res = await fetch(url, { cache: 'no-store' });
-      // ======================== FIN DE LA SOLUCIÓN FINAL =========================
+      const res = await fetch(url, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        } 
+      });
       
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ message: `Error HTTP: ${res.status}` }));
-        throw new Error(errorData.message || `Error al cargar tickets: ${res.statusText}`);
+        console.error("Response not OK:", res);
+        try {
+          const errorData = await res.json();
+          throw new Error(errorData.message || `Error al cargar tickets: ${res.statusText}`);
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+          throw new Error(`Error al cargar tickets: ${res.statusText}`);
+        }
       }
       const data: Ticket[] = await res.json();
       setTickets(data);

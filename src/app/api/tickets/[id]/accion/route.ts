@@ -30,9 +30,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } } // id del Ticket
 ) {
+  // Esperar los parámetros antes de usarlos
+  const { id } = await params;
+  
   try {
     const actions = await prisma.accionTicket.findMany({
-      where: { ticketId: params.id },
+      where: { ticketId: id },
       include: {
         realizadaPor: { // Incluir los datos del usuario que realizó la acción
           select: {
@@ -46,7 +49,7 @@ export async function GET(
     });
     return NextResponse.json(actions);
   } catch (error: any) {
-    console.error(`Error en GET /api/tickets/${params.id}/accion:`, error);
+    console.error(`Error en GET /api/tickets/${id}/accion:`, error);
     return NextResponse.json(
       { message: "Error interno del servidor al obtener acciones." },
       { status: 500 }
@@ -59,6 +62,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } } // id del Ticket
 ) {
+  // Esperar los parámetros antes de usarlos
+  const { id } = await params;
+  
   const session = await getServerSession(authOptions);
   const currentUser = session?.user as SessionUser | undefined;
 
@@ -78,7 +84,7 @@ export async function POST(
     // El cliente ahora recargará las acciones por separado.
     await prisma.accionTicket.create({
       data: {
-        ticketId: params.id,
+        ticketId: id,
         descripcion: descripcion.trim(),
         usuarioId: currentUser.id,
       },
@@ -88,10 +94,10 @@ export async function POST(
     return NextResponse.json({ message: "Acción agregada con éxito." }, { status: 201 });
 
   } catch (error: any) {
-    console.error(`Error en POST /api/tickets/${params.id}/accion:`, error);
+    console.error(`Error en POST /api/tickets/${id}/accion:`, error);
     let errorMessage = "Error al agregar la acción al ticket.";
     if (error.code === 'P2003') {
-        errorMessage = `El ticket con ID ${params.id} no existe.`;
+        errorMessage = `El ticket con ID ${id} no existe.`;
         return NextResponse.json({ message: errorMessage }, { status: 404 });
     }
     return NextResponse.json({ message: "Error interno del servidor.", error: error.message }, { status: 500 });

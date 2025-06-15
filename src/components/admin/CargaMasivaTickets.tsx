@@ -2,10 +2,7 @@
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
-// ======================= INICIO DE LA SOLUCIÓN =======================
-// 1. Importamos el hook useRouter de Next.js para poder interactuar con el router.
 import { useRouter } from 'next/navigation';
-// ======================== FIN DE LA SOLUCIÓN =========================
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +31,8 @@ interface UploadResult {
 }
 
 const ticketCsvRowSchema = z.object({
+  tipo_registro: z.literal("TICKET", { errorMap: () => ({ message: "El tipo de registro debe ser 'TICKET'." }) }),
+  numero_ticket_asociado: z.string().optional().nullable(), // Opcional para tickets nuevos
   titulo: z.string().min(1, "El título es obligatorio."),
   descripcionDetallada: z.string().optional().nullable(),
   tipoIncidente: z.string().min(1, "El tipo de incidente es obligatorio."),
@@ -46,6 +45,36 @@ const ticketCsvRowSchema = z.object({
   tecnicoAsignadoEmail: z.string().email("Email del técnico inválido.").optional().or(z.literal('')).nullable(),
   fechaCreacion: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Formato de fecha de creación inválido (YYYY-MM-DD HH:MM:SS)." }),
   fechaSolucionEstimada: z.string().refine((val) => val === '' || val === null || !isNaN(Date.parse(val)), { message: "Formato de fecha de solución estimada inválido (YYYY-MM-DD)." }).optional().nullable(),
+  equipoAfectado: z.string().optional().nullable(), // Nuevo campo para el equipo afectado
+  categoriaAccion: z.string().optional().nullable(), // Nuevo campo para la categoría de la acción
+});
+
+const accionCsvRowSchema = z.object({
+  tipo_registro: z.literal("ACCION", { errorMap: () => ({ message: "El tipo de registro debe ser 'ACCION'." }) }),
+  numero_ticket_asociado: z.string().min(1, "El número de ticket asociado es obligatorio para acciones."),
+  accion_descripcion: z.string().min(1, "La descripción de la acción es obligatoria."),
+  accion_fecha: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Formato de fecha de acción inválido (YYYY-MM-DD HH:MM:SS)." }),
+  accion_usuario_email: z.string().email("Email del usuario de acción inválido.").min(1, "El email del usuario de acción es obligatorio."),
+  accion_categoria: z.string().min(1, "La categoría de la acción es obligatoria."),
+  // Todos los demás campos deben ser opcionales o nullables para las acciones
+  titulo: z.string().optional().nullable(),
+  descripcionDetallada: z.string().optional().nullable(),
+  tipoIncidente: z.string().optional().nullable(),
+  prioridad: z.string().optional().nullable(),
+  estado: z.string().optional().nullable(),
+  solicitanteNombre: z.string().optional().nullable(),
+  solicitanteTelefono: z.string().optional().nullable(),
+  solicitanteCorreo: z.string().optional().nullable(),
+  empresaClienteNombre: z.string().optional().nullable(),
+  tecnicoAsignadoEmail: z.string().optional().nullable(),
+  fechaCreacion: z.string().optional().nullable(),
+  fechaSolucionEstimada: z.string().optional().nullable(),
+  equipoAfectado: z.string().optional().nullable(),
+  categoriaAccion: z.string().optional().nullable(),
+});
+
+const baseCsvRowSchema = z.object({
+  tipo_registro: z.string().min(1, "El tipo de registro es obligatorio."),
 });
 
 export default function CargaMasivaTickets() {
@@ -55,10 +84,8 @@ export default function CargaMasivaTickets() {
   const [clientValidationErrors, setClientValidationErrors] = useState<ValidationError[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ======================= INICIO DE LA SOLUCIÓN =======================
-  // 2. Obtenemos la instancia del router.
+  // Obtenemos la instancia del router para refrescar la UI después de la carga
   const router = useRouter();
-  // ======================== FIN DE LA SOLUCIÓN =========================
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -89,6 +116,7 @@ export default function CargaMasivaTickets() {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.trim(),
+      encoding: 'UTF-8', // Se añade esta línea para asegurar la correcta lectura de caracteres especiales como acentos.
       complete: async (results) => {
         const parsedData = results.data;
         const currentClientErrors: ValidationError[] = [];
@@ -101,7 +129,19 @@ export default function CargaMasivaTickets() {
             Object.entries(rowData as Record<string, unknown>).map(([key, value]) => [key, value === '' ? null : value])
           );
 
-          const validation = ticketCsvRowSchema.safeParse(cleanedRowData);
+          // Determinar qué esquema usar basado en tipo_registro
+          let validation;
+          const tipoRegistro = cleanedRowData.tipo_registro;
+
+          if (tipoRegistro === 'TICKET') {
+            validation = ticketCsvRowSchema.safeParse(cleanedRowData);
+          } else if (tipoRegistro === 'ACCION') {
+            validation = accionCsvRowSchema.safeParse(cleanedRowData);
+          } else {
+            // Si el tipo de registro no es reconocido, fallar la validación
+            validation = baseCsvRowSchema.safeParse(cleanedRowData);
+          }
+
           if (!validation.success) {
             currentClientErrors.push({
               row: i + 2,
@@ -142,16 +182,20 @@ export default function CargaMasivaTickets() {
           setServerResult(data);
           setStatus(data.failedCount > 0 ? 'error' : 'success');
 
-          // ======================= INICIO DE LA SOLUCIÓN =======================
-          // 3. Si la respuesta fue exitosa (código 2xx), le decimos al router
+          // Si la respuesta fue exitosa (código 2xx), le decimos al router
           // que refresque los datos. Esto invalidará el caché del cliente y forzará
           // una nueva obtención de datos para el dashboard, mostrando los nuevos tickets.
+          // Si la respuesta fue exitosa (código 2xx), forzamos una recarga completa
           if (response.ok) {
-            console.log("Carga masiva exitosa. Refrescando datos del cliente...");
-            router.refresh();
+            console.log("Carga masiva exitosa. Redirigiendo para mostrar nuevos tickets...");
+            // router.refresh(); // Esto podría no ser suficiente
+            
+            // Esperar un momento para que la transacción se complete completamente
+            setTimeout(() => {
+              // Redirigir al dashboard de tickets para ver los nuevos tickets
+              window.location.href = '/tickets/dashboard';
+            }, 1500);
           }
-          // ======================== FIN DE LA SOLUCIÓN =========================
-
         } catch (error: any) {
           console.error("Error al subir el archivo (frontend general catch):", error);
           setStatus('error');
@@ -172,8 +216,8 @@ export default function CargaMasivaTickets() {
   };
 
   const handleDownloadTemplate = () => {
-    const headers = "titulo,descripcionDetallada,tipoIncidente,prioridad,estado,solicitanteNombre,solicitanteTelefono,solicitanteCorreo,empresaClienteNombre,tecnicoAsignadoEmail,fechaCreacion,fechaSolucionEstimada";
-    const exampleRow = "Problema con impresora,La impresora fiscal no enciende,Hardware,ALTA,ABIERTO,Juan Pérez,912345678,juan.perez@cliente.com,Cliente Ejemplo,tecnico@accesspoint.cl,2025-06-11 10:30:00,2025-06-12";
+    const headers = "titulo,descripcionDetallada,tipoIncidente,prioridad,estado,solicitanteNombre,solicitanteTelefono,solicitanteCorreo,empresaClienteNombre,tecnicoAsignadoEmail,fechaCreacion,fechaSolucionEstimada,equipoAfectado,categoriaAccion";
+    const exampleRow = "Problema con impresora,La impresora fiscal no enciende,Hardware,ALTA,ABIERTO,Juan Pérez,912345678,juan.perez@cliente.com,Cliente Ejemplo,tecnico@accesspoint.cl,2025-06-11 10:30:00,2025-06-12,Impresora Fiscal,Mantenimiento";
     
     const csvContent = `data:text/csv;charset=utf-8,${headers}\n${exampleRow}`;
     const encodedUri = encodeURI(csvContent);

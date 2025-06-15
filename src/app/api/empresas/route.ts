@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const empresas = await prisma.empresaCliente.findMany({
+    const empresas = await prisma.empresa.findMany({
       select: {
         id: true,
         nombre: true,
