@@ -24,7 +24,7 @@ const getLocalDateTimeString = () => {
 
 // --- Interfaces ---
 interface EmpresaClienteOption { id: string; nombre: string; }
-interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
+interface UbicacionOption { id: string; nombreReferencial: string | null; }
 
 interface CreateTicketFormProps {
   nextNroCaso: number;
@@ -192,7 +192,7 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
               <Controller control={control} name="ubicacionId" render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger id="ubicacionId"><SelectValue placeholder="Seleccione Ubicación (Opcional)" /></SelectTrigger>
-                    <SelectContent>{ubicacionesDisponibles.map(u => <SelectItem key={u.id} value={u.id}>{u.nombreReferencial || u.direccionCompleta}</SelectItem>)}</SelectContent>
+                    <SelectContent>{ubicacionesDisponibles.map(u => <SelectItem key={u.id} value={u.id}>{u.nombreReferencial}</SelectItem>)}</SelectContent>
                   </Select>
               )} />
             </div>

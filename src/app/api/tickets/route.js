@@ -84,7 +84,7 @@ export async function GET(request) {
         empresa: true,
         solicitanteCliente: true,
         tecnicoAsignado: true,
-        ubicacion: true,
+        ubicacionReporte: true,
       },
       orderBy: {
         fechaCreacion: 'desc',

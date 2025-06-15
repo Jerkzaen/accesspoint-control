@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
       where: { id: params.id },
       include: { // Asegurarse de incluir las relaciones si este endpoint se usa para mostrar detalles completos
         empresaCliente: { select: { id: true, nombre: true } },
-        ubicacion: { select: { id: true, nombreReferencial: true, direccionCompleta: true } },
+        ubicacion: { select: { id: true, nombreReferencial: true } },
         tecnicoAsignado: { select: { id: true, name: true, email: true } },
         acciones: {
           orderBy: { fechaAccion: 'asc' },
@@ -136,7 +136,7 @@ export async function PUT(request, { params }) {
       data: dataToUpdateInDb,
       include: { // Incluir las relaciones para que el frontend reciba el ticket completo
         empresaCliente: { select: { id: true, nombre: true } },
-        ubicacion: { select: { id: true, nombreReferencial: true, direccionCompleta: true } },
+        ubicacion: { select: { id: true, nombreReferencial: true } },
         tecnicoAsignado: { select: { id: true, name: true, email: true } },
         acciones: {
           orderBy: { fechaAccion: 'asc' },

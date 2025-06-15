@@ -19,7 +19,7 @@ import { createNewTicketAction, loadLastTicketNro } from '@/app/actions/ticketAc
 
 // --- Interfaces y Constantes ---
 interface EmpresaClienteOption { id: string; nombre: string; }
-interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
+interface UbicacionOption { id: string; nombreReferencial: string | null; }
 interface ActionState { error?: string; success?: boolean; ticket?: Ticket; }
 
 // Interfaz para las props del componente principal

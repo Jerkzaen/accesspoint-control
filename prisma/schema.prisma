@@ -108,7 +108,7 @@ model ContactoEmpresa {
   cargo             String?
   empresa           Empresa             @relation(fields: [empresaId], references: [id])
   empresaId         String
-  ubicacion         Ubicacion?          @relation(fields: [ubicacionId], references: [id])
+  ubicacion         Ubicacion?          @relation(fields: [ubicacionId], references: [id], name: "UbicacionContactos")
   ubicacionId       String?
   ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
   equiposEnPrestamo EquipoEnPrestamo[]
@@ -117,14 +117,57 @@ model ContactoEmpresa {
   @@map("contactos_empresas")
 }
 
+model Pais {
+  id        String     @id @default(uuid())
+  nombre    String     @unique
+  regiones  Region[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  @@map("paises")
+}
+
+model Region {
+  id          String      @id @default(uuid())
+  nombre      String
+  paisId      String
+  pais        Pais        @relation(fields: [paisId], references: [id])
+  provincias  Provincia[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  @@unique([nombre, paisId])
+  @@map("regiones")
+}
+
+model Provincia {
+  id          String     @id @default(uuid())
+  nombre      String
+  regionId    String
+  region      Region     @relation(fields: [regionId], references: [id])
+  comunas     Comuna[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  @@unique([nombre, regionId])
+  @@map("provincias")
+}
+
+model Comuna {
+  id          String      @id @default(uuid())
+  nombre      String
+  provinciaId String
+  provincia   Provincia   @relation(fields: [provinciaId], references: [id])
+  direcciones Direccion[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  @@unique([nombre, provinciaId])
+  @@map("comunas")
+}
+
 model Direccion {
   id            String    @id @default(uuid())
   calle         String
   numero        String
-  comuna        String
-  provincia     String
-  region        String
-  pais          String
+  comunaId      String
+  comuna        Comuna    @relation(fields: [comunaId], references: [id])
   empresas      Empresa[]
   sucursales    Sucursal[]
   createdAt     DateTime  @default(now())
@@ -137,29 +180,31 @@ model Sucursal {
   nombre        String
   telefono      String?
   email         String?
-  direccionId   String
-  direccion     Direccion @relation(fields: [direccionId], references: [id])
+  direccionId   String    @unique
+  direccion     Direccion @relation(fields: [direccionId], references: [id], onDelete: Cascade)
   empresaId     String?
   empresa       Empresa?  @relation(fields: [empresaId], references: [id])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  ubicaciones   Ubicacion[]
 
   @@map("sucursales")
 }
 
 model Ubicacion {
+  // Este modelo ahora representa la sucursal desde donde se reporta un problema en un ticket.
+  // Se mantiene el nombre 'Ubicacion' por compatibilidad con el modelo Ticket, pero su significado cambia.
   id                  String    @id @default(uuid())
-  nombreReferencial   String?
-  direccionCompleta   String
-  ciudad              String?
-  region              String?
-  pais                String?
+  nombreReferencial   String? // Puede ser el nombre de la sucursal o un punto de referencia específico dentro de ella
+  sucursalId          String
+  sucursal            Sucursal  @relation(fields: [sucursalId], references: [id])
   notas               String?
-  contactos           ContactoEmpresa[]
-  tickets             Ticket[]
+  contactos           ContactoEmpresa[] @relation("UbicacionContactos")
+  tickets             Ticket[]          @relation("UbicacionTickets")
   equiposInventario   EquipoInventario[] @relation("EquipoUbicacionActual")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  @@map("ubicaciones")
 }
 
 model Ticket {
@@ -180,7 +225,7 @@ model Ticket {
   empresa               Empresa? @relation(fields: [empresaId], references: [id])
   empresaId             String?       
   
-  ubicacion             Ubicacion?    @relation(fields: [ubicacionId], references: [id])
+  ubicacionReporte      Ubicacion?    @relation(fields: [ubicacionId], references: [id], name: "UbicacionTickets")
   ubicacionId           String?       
 
   tecnicoAsignado       User?         @relation(name: "TecnicoTickets", fields: [tecnicoAsignadoId], references: [id]) 

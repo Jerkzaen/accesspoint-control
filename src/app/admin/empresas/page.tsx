@@ -19,10 +19,7 @@ const EmpresasPage = () => {
   const [newEmpresaDireccion, setNewEmpresaDireccion] = useState<Partial<Direccion>>({
     calle: '',
     numero: '',
-    comuna: '',
-    provincia: '',
-    region: '',
-    pais: '',
+    comunaId: ''
   });
 
   const [editingEmpresaId, setEditingEmpresaId] = useState<string | null>(null);
@@ -34,10 +31,7 @@ const EmpresasPage = () => {
   const [editingEmpresaDireccion, setEditingEmpresaDireccion] = useState<Partial<Direccion>>({
     calle: '',
     numero: '',
-    comuna: '',
-    provincia: '',
-    region: '',
-    pais: '',
+    comunaId: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -69,9 +63,7 @@ const EmpresasPage = () => {
       nombre: newEmpresaName.trim(),
       rut: newEmpresaRut.trim() || null,
       logoUrl: newEmpresaLogoUrl.trim() || null,
-      // telefono: newEmpresaTelefono.trim() || null,
-      // email: newEmpresaEmail.trim() || null,
-      direccion: newEmpresaDireccion.pais || newEmpresaDireccion.region || newEmpresaDireccion.provincia || newEmpresaDireccion.comuna || newEmpresaDireccion.calle || newEmpresaDireccion.numero ? newEmpresaDireccion : null,
+      direccion: newEmpresaDireccion.calle || newEmpresaDireccion.numero || newEmpresaDireccion.comunaId ? newEmpresaDireccion : null,
     };
     const result = await addEmpresa(data);
     if (result.success) {
@@ -98,10 +90,7 @@ const EmpresasPage = () => {
     setEditingEmpresaDireccion({
       calle: empresa.direccion?.calle || '',
       numero: empresa.direccion?.numero || '',
-      comuna: empresa.direccion?.comuna || '',
-      provincia: empresa.direccion?.provincia || '',
-      region: empresa.direccion?.region || '',
-      pais: empresa.direccion?.pais || '',
+      comunaId: empresa.direccion?.comunaId || ''
     });
   };
 
@@ -115,10 +104,7 @@ const EmpresasPage = () => {
     setEditingEmpresaDireccion({
       calle: '',
       numero: '',
-      comuna: '',
-      provincia: '',
-      region: '',
-      pais: '',
+      comunaId: ''
     });
   };
 
@@ -131,9 +117,7 @@ const EmpresasPage = () => {
       nombre: editingEmpresaName.trim(),
       rut: editingEmpresaRut.trim() || null,
       logoUrl: editingEmpresaLogoUrl.trim() || null,
-      // telefono: editingEmpresaTelefono.trim() || null,
-      // email: editingEmpresaEmail.trim() || null,
-      direccion: editingEmpresaDireccion.pais || editingEmpresaDireccion.region || editingEmpresaDireccion.provincia || editingEmpresaDireccion.comuna || editingEmpresaDireccion.calle || editingEmpresaDireccion.numero ? editingEmpresaDireccion : null,
+      direccion: editingEmpresaDireccion.calle || editingEmpresaDireccion.numero || editingEmpresaDireccion.comunaId ? editingEmpresaDireccion : null,
     };
     const result = await updateEmpresa(id, data);
     if (result.success) {
@@ -147,10 +131,7 @@ const EmpresasPage = () => {
       setEditingEmpresaDireccion({
         calle: '',
         numero: '',
-        comuna: '',
-        provincia: '',
-        region: '',
-        pais: '',
+        comunaId: ''
       });
       fetchEmpresas(); // Recargar la lista de empresas
     } else {
@@ -220,33 +201,13 @@ const EmpresasPage = () => {
             value={newEmpresaEmail}
             onChange={(e) => setNewEmpresaEmail(e.target.value)}
           /> */}
+
           <Input
             type="text"
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="País"
-            value={newEmpresaDireccion.pais || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, pais: e.target.value })}
-          />
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Región"
-            value={newEmpresaDireccion.region || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, region: e.target.value })}
-          />
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Provincia"
-            value={newEmpresaDireccion.provincia || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, provincia: e.target.value })}
-          />
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Comuna"
-            value={newEmpresaDireccion.comuna || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, comuna: e.target.value })}
+            placeholder="ID de Comuna"
+            value={newEmpresaDireccion.comunaId || ''}
+            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, comunaId: e.target.value })}
           />
           <Input
             type="text"
@@ -305,6 +266,13 @@ const EmpresasPage = () => {
                     <Input
                       type="text"
                       className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                      placeholder="ID de Comuna"
+                      value={editingEmpresaDireccion.comunaId || ''}
+                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, comunaId: e.target.value })}
+                    />
+                    <Input
+                      type="text"
+                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                       placeholder="Calle"
                       value={editingEmpresaDireccion.calle || ''}
                       onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, calle: e.target.value })}
@@ -320,37 +288,10 @@ const EmpresasPage = () => {
                       type="text"
                       className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                       placeholder="Comuna"
-                      value={editingEmpresaDireccion.comuna || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, comuna: e.target.value })}
+                      value={editingEmpresaDireccion.comunaId || ''}
+                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, comunaId: e.target.value })}
                     />
-                    <Input
-                      type="text"
-                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="Provincia"
-                      value={editingEmpresaDireccion.provincia || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, provincia: e.target.value })}
-                    />
-                    <Input
-                      type="text"
-                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="Región"
-                      value={editingEmpresaDireccion.region || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, region: e.target.value })}
-                />
-                <Input
-                  type="text"
-                  className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="Provincia"
-                  value={editingEmpresaDireccion.provincia || ''}
-                  onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, provincia: e.target.value })}
-                />
-                <Input
-                  type="text"
-                  className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="Comuna"
-                  value={editingEmpresaDireccion.comuna || ''}
-                  onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, comuna: e.target.value })}
-                />
+
                 <Input
                   type="text"
                   className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
@@ -364,13 +305,6 @@ const EmpresasPage = () => {
                   placeholder="Número"
                   value={editingEmpresaDireccion.numero || ''}
                   onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, numero: e.target.value })}
-                />
-                <Input
-                  type="text"
-                  className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="País"
-                  value={editingEmpresaDireccion.pais || ''}
-                  onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, pais: e.target.value })}
                 />
                 <div className="flex space-x-2 col-span-full justify-end">
                       <Button
@@ -396,7 +330,7 @@ const EmpresasPage = () => {
                     {empresa.logoUrl && <span className="text-sm text-gray-600">Logo: <a href={empresa.logoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{empresa.logoUrl}</a></span>}
                     {empresa.direccion && (
                     <div className="text-sm text-gray-600">
-                      <p className="text-sm text-gray-600">Dirección: {empresa.direccion?.calle || 'N/A'} {empresa.direccion?.numero || ''}, {empresa.direccion?.comuna || 'N/A'}, {empresa.direccion?.provincia || 'N/A'}, {empresa.direccion?.region || 'N/A'}, {empresa.direccion?.pais || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">Dirección: {empresa.direccion?.calle || 'N/A'} {empresa.direccion?.numero || ''}, Comuna ID: {empresa.direccion?.comunaId || 'N/A'}</p>
                     </div>
                   )}
                   </div>

@@ -55,8 +55,8 @@ export async function PUT(
             }
           }
         },
-        empresaCliente: { select: { id: true, nombre: true } },
-        ubicacion: { select: { id: true, nombreReferencial: true, direccionCompleta: true } },
+        empresa: { select: { id: true, nombre: true } },
+        ubicacionReporte: { include: { sucursal: { include: { direccion: true } } } },
         tecnicoAsignado: { select: { id: true, name: true, email: true } },
       },
     });

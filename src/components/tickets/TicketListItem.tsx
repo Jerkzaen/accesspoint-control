@@ -193,7 +193,7 @@ export default function TicketListItem({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
           {/* Detalles del ticket */}
           <div><strong>Tipo Incidente:</strong> {ticket.tipoIncidente || 'N/A'}</div>
-          <div><strong>Ubicación:</strong> {ticket.ubicacion?.nombreReferencial || ticket.ubicacion?.direccionCompleta || 'N/A'}</div>
+          <div><strong>Ubicación:</strong> {ticket.ubicacion?.nombreReferencial || 'N/A'}</div>
           <div><strong>Técnico:</strong> {ticket.tecnicoAsignado?.name || ticket.tecnicoAsignado?.email || 'No asignado'}</div>
           <div><strong>Contacto:</strong> {ticket.solicitanteNombre || 'N/A'}</div>
           <div className="sm:col-span-2"><strong>Creado:</strong> {fechaCreacionDateFormatted}</div>

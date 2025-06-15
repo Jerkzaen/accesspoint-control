@@ -8,7 +8,7 @@ export async function GET() {
       select: {
         id: true,
         nombreReferencial: true,
-        direccionCompleta: true,
+
       },
       orderBy: { nombreReferencial: 'asc' },
     });

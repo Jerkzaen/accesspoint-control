@@ -15,7 +15,7 @@ interface EmpresaClienteOption {
 interface UbicacionOption {
   id: string;
   nombreReferencial: string | null;
-  direccionCompleta: string;
+
 }
 
 // Función asíncrona para obtener datos del lado del servidor

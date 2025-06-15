@@ -43,6 +43,16 @@ const ticketCsvRowSchema = z.object({
   solicitanteCorreo: z.string().email("Correo del solicitante inválido.").optional().or(z.literal('')).nullable(),
   empresaClienteNombre: z.string().optional().nullable(),
   tecnicoAsignadoEmail: z.string().email("Email del técnico inválido.").optional().or(z.literal('')).nullable(),
+  // Nuevos campos para la ubicación geográfica y sucursal
+  pais: z.string().min(1, "El país es obligatorio para tickets."),
+  region: z.string().min(1, "La región es obligatoria para tickets."),
+  provincia: z.string().min(1, "La provincia es obligatoria para tickets."),
+  comuna: z.string().min(1, "La comuna es obligatoria para tickets."),
+  calle: z.string().min(1, "La calle es obligatoria para tickets."),
+  numero: z.string().min(1, "El número de dirección es obligatorio para tickets."),
+  nombreSucursal: z.string().min(1, "El nombre de la sucursal es obligatorio para tickets."),
+  nombreUbicacionReferencial: z.string().optional().nullable(),
+  notasUbicacion: z.string().optional().nullable(),
   fechaCreacion: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Formato de fecha de creación inválido (YYYY-MM-DD HH:MM:SS)." }),
   fechaSolucionEstimada: z.string().refine((val) => val === '' || val === null || !isNaN(Date.parse(val)), { message: "Formato de fecha de solución estimada inválido (YYYY-MM-DD)." }).optional().nullable(),
   equipoAfectado: z.string().optional().nullable(), // Nuevo campo para el equipo afectado
@@ -71,6 +81,16 @@ const accionCsvRowSchema = z.object({
   fechaSolucionEstimada: z.string().optional().nullable(),
   equipoAfectado: z.string().optional().nullable(),
   categoriaAccion: z.string().optional().nullable(),
+  // Nuevos campos para la ubicación geográfica y sucursal (opcionales para acciones)
+  pais: z.string().optional().nullable(),
+  region: z.string().optional().nullable(),
+  provincia: z.string().optional().nullable(),
+  comuna: z.string().optional().nullable(),
+  calle: z.string().optional().nullable(),
+  numero: z.string().optional().nullable(),
+  nombreSucursal: z.string().optional().nullable(),
+  nombreUbicacionReferencial: z.string().optional().nullable(),
+  notasUbicacion: z.string().optional().nullable(),
 });
 
 const baseCsvRowSchema = z.object({

@@ -54,8 +54,9 @@ export default function Sidebar() {
     adminLinks.push(
       // CORRECCIÓN FINAL: Apuntar a la nueva ruta simplificada
       { label: "Carga Masiva", href: "/admin/carga-masiva", icon: Upload },
-      { label: "Empresas", href: "/admin/empresas", icon: Box },
-      { label: "Direcciones", href: "/admin/direcciones", icon: MapPin } // Usando MapPin para representar direcciones
+      { label: "Sucursales", href: "/admin/sucursales", icon: Box },
+
+      { label: "Geografía", href: "/admin/geografia", icon: MapPin } // Añadido enlace a Geografía
     );
   }
   

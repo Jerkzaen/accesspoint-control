@@ -13,7 +13,7 @@ export interface EmpresaClienteRelacion {
 export interface UbicacionRelacion {
   id: string;
   nombreReferencial?: string | null;
-  direccionCompleta: string;
+
 }
 
 export interface UsuarioBasico { // Para el técnico y el usuario que realiza la acción

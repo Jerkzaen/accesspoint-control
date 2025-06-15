@@ -1,21 +1,33 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { Direccion } from "@prisma/client";
+import { Direccion, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export type DireccionInput = {
   calle: string;
   numero: string;
-  comuna: string;
-  provincia: string;
-  region: string;
-  pais: string;
+  comunaId: string;
 };
 
 export async function getDirecciones(): Promise<Direccion[]> {
   try {
     const direcciones = await prisma.direccion.findMany({
+      include: {
+        comuna: {
+          include: {
+            provincia: {
+              include: {
+                region: {
+                  include: {
+                    pais: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: {
         calle: "asc",
       },
@@ -29,15 +41,16 @@ export async function getDirecciones(): Promise<Direccion[]> {
 
 export async function addDireccion(data: DireccionInput) {
   try {
-    const newDireccion = await prisma.direccion.create({
-      data: {
-        calle: data.calle,
-        numero: data.numero,
-        comuna: data.comuna,
-        provincia: data.provincia,
-        region: data.region,
-        pais: data.pais,
+    const createData: Prisma.DireccionCreateInput = {
+      calle: data.calle,
+      numero: data.numero,
+      comuna: {
+        connect: { id: data.comunaId },
       },
+    };
+
+    const newDireccion = await prisma.direccion.create({
+      data: createData,
     });
     revalidatePath("/admin/direcciones");
     return { success: true, data: newDireccion };
@@ -49,16 +62,18 @@ export async function addDireccion(data: DireccionInput) {
 
 export async function updateDireccion(id: string, data: Partial<DireccionInput>) {
   try {
+    const updateData: Prisma.DireccionUpdateInput = {
+      calle: data.calle,
+      numero: data.numero,
+    };
+
+    if (data.comunaId !== undefined) {
+      updateData.comuna = { connect: { id: data.comunaId } };
+    }
+
     const updatedDireccion = await prisma.direccion.update({
       where: { id },
-      data: {
-        calle: data.calle,
-        numero: data.numero,
-        comuna: data.comuna,
-        provincia: data.provincia,
-        region: data.region,
-        pais: data.pais,
-      },
+      data: updateData,
     });
     revalidatePath("/admin/direcciones");
     return { success: true, data: updatedDireccion };

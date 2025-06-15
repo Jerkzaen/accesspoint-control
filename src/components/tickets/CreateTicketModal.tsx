@@ -15,7 +15,7 @@ import StatusOverlay from '@/components/ui/StatusOverlay';
 
 // --- Interfaces ---
 interface EmpresaClienteOption { id: string; nombre: string; }
-interface UbicacionOption { id: string; nombreReferencial: string | null; direccionCompleta: string; }
+interface UbicacionOption { id: string; nombreReferencial: string | null; }
 
 // ============ INTERFAZ DE PROPS ACTUALIZADA ============
 // Se añade la nueva propiedad para el mensaje de carga dinámico.
