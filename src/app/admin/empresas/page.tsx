@@ -1,10 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Direccion } from '@prisma/client'; // Importar el tipo de Prisma
-import { EmpresaWithDireccion } from '@/app/actions/empresaActions';
-import { getEmpresas, addEmpresa, updateEmpresa, deleteEmpresa } from '@/app/actions/empresaActions';
+// Importa los tipos directamente de @prisma/client si es necesario, 
+// o si confías en que tus migraciones los tienen.
+import type { Direccion as PrismaDireccion } from '@prisma/client'; 
+
+// Importa tu tipo EmpresaWithDireccion desde empresaActions.ts
+import { EmpresaWithDireccion, getEmpresas, addEmpresa, updateEmpresa, deleteEmpresa } from '@/app/actions/empresaActions';
+// Importa los tipos de comuna desde comunaActions.ts
 import { getComunas, searchComunas, ComunaWithProvinciaAndRegion } from '@/app/actions/comunaActions';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -15,9 +20,8 @@ const EmpresasPage = () => {
   const [newEmpresaName, setNewEmpresaName] = useState('');
   const [newEmpresaRut, setNewEmpresaRut] = useState('');
   const [newEmpresaLogoUrl, setNewEmpresaLogoUrl] = useState('');
-  // const [newEmpresaTelefono, setNewEmpresaTelefono] = useState('');
-  // const [newEmpresaEmail, setNewEmpresaEmail] = useState('');
-  const [newEmpresaDireccion, setNewEmpresaDireccion] = useState<Partial<Direccion>>({
+  // Usa PrismaDireccion para el tipo de newEmpresaDireccion
+  const [newEmpresaDireccion, setNewEmpresaDireccion] = useState<Partial<PrismaDireccion>>({
     calle: '',
     numero: '',
     comunaId: ''
@@ -36,9 +40,8 @@ const EmpresasPage = () => {
   const [editingEmpresaName, setEditingEmpresaName] = useState('');
   const [editingEmpresaRut, setEditingEmpresaRut] = useState('');
   const [editingEmpresaLogoUrl, setEditingEmpresaLogoUrl] = useState('');
-  // const [editingEmpresaTelefono, setEditingEmpresaTelefono] = useState('');
-  // const [editingEmpresaEmail, setEditingEmpresaEmail] = useState('');
-  const [editingEmpresaDireccion, setEditingEmpresaDireccion] = useState<Partial<Direccion>>({
+  // Usa PrismaDireccion para el tipo de editingEmpresaDireccion
+  const [editingEmpresaDireccion, setEditingEmpresaDireccion] = useState<Partial<PrismaDireccion>>({
     calle: '',
     numero: '',
     comunaId: ''
@@ -65,41 +68,49 @@ const EmpresasPage = () => {
   const handleSearchComuna = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);
-    const result = await searchComunas(term);
-    if (result.success) {
-      setFilteredComunas(result.data);
+    if (term.length > 0) {
+      const result = await searchComunas(term);
+      if (result.success) {
+        setFilteredComunas(result.data);
+      } else {
+        toast.error(result.error || "Error al buscar comunas.");
+      }
     } else {
-      toast.error(result.error || "Error al buscar comunas.");
+      setFilteredComunas(comunas);
     }
-    setSelectedComuna(null); // Reset selected comuna on search
-    setNewEmpresaDireccion(prev => ({ ...prev, comunaId: '' }));
+    setSelectedComuna(null);
+    setNewEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: '' })); // Tipado para 'prev'
   };
 
   const handleSelectComuna = (comuna: ComunaWithProvinciaAndRegion) => {
     setSelectedComuna(comuna);
-    setSearchTerm(comuna.nombre); // Display selected comuna name in input
-    setNewEmpresaDireccion(prev => ({ ...prev, comunaId: comuna.id }));
-    setFilteredComunas([]); // Hide dropdown after selection
+    setSearchTerm(comuna.nombre);
+    setNewEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: comuna.id })); // Tipado para 'prev'
+    setFilteredComunas([]);
   };
 
   const handleEditingSearchComuna = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setEditingSearchTerm(term);
-    const result = await searchComunas(term);
-    if (result.success) {
-      setEditingFilteredComunas(result.data);
+    if (term.length > 0) {
+      const result = await searchComunas(term);
+      if (result.success) {
+        setEditingFilteredComunas(result.data);
+      } else {
+        toast.error(result.error || "Error al buscar comunas.");
+      }
     } else {
-      toast.error(result.error || "Error al buscar comunas.");
+      setEditingFilteredComunas(comunas); // Mostrar todas si el campo está vacío
     }
-    setEditingSelectedComuna(null); // Reset selected comuna on search
-    setEditingEmpresaDireccion(prev => ({ ...prev, comunaId: '' }));
+    setEditingSelectedComuna(null);
+    setEditingEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: '' })); // Tipado para 'prev'
   };
 
   const handleEditingSelectComuna = (comuna: ComunaWithProvinciaAndRegion) => {
     setEditingSelectedComuna(comuna);
-    setEditingSearchTerm(comuna.nombre); // Display selected comuna name in input
-    setEditingEmpresaDireccion(prev => ({ ...prev, comunaId: comuna.id }));
-    setEditingFilteredComunas([]); // Hide dropdown after selection
+    setEditingSearchTerm(comuna.nombre);
+    setEditingEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: comuna.id })); // Tipado para 'prev'
+    setEditingFilteredComunas([]);
   };
 
   const fetchEmpresas = async () => {
@@ -124,18 +135,16 @@ const EmpresasPage = () => {
       nombre: newEmpresaName.trim(),
       rut: newEmpresaRut.trim() || null,
       logoUrl: newEmpresaLogoUrl.trim() || null,
-      direccionComercial: newEmpresaDireccion.calle || newEmpresaDireccion.numero || newEmpresaDireccion.comunaId ? newEmpresaDireccion : null,
+      direccion: newEmpresaDireccion.calle || newEmpresaDireccion.numero || newEmpresaDireccion.comunaId ? newEmpresaDireccion : null,
     };
     const result = await addEmpresa(data);
     if (result.success) {
       setNewEmpresaName('');
       setNewEmpresaRut('');
       setNewEmpresaLogoUrl('');
-      // setNewEmpresaTelefono('');
-      // setNewEmpresaEmail('');
       setNewEmpresaDireccion({});
       toast.success("Empresa agregada exitosamente.");
-      fetchEmpresas(); // Recargar la lista de empresas
+      fetchEmpresas();
     } else {
       toast.error(result.error || "Error al agregar la empresa.");
     }
@@ -146,8 +155,6 @@ const EmpresasPage = () => {
     setEditingEmpresaName(empresa.nombre);
     setEditingEmpresaRut(empresa.rut || '');
     setEditingEmpresaLogoUrl(empresa.logoUrl || '');
-    // setEditingEmpresaTelefono(empresa.telefono || '');
-    // setEditingEmpresaEmail(empresa.email || '');
     setEditingEmpresaDireccion({
       calle: empresa.direccionComercial?.calle || '',
       numero: empresa.direccionComercial?.numero || '',
@@ -167,13 +174,7 @@ const EmpresasPage = () => {
     setEditingEmpresaName('');
     setEditingEmpresaRut('');
     setEditingEmpresaLogoUrl('');
-    // setEditingEmpresaTelefono('');
-    // setEditingEmpresaEmail('');
-    setEditingEmpresaDireccion({
-      calle: '',
-      numero: '',
-      comunaId: ''
-    });
+    setEditingEmpresaDireccion({});
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -185,7 +186,7 @@ const EmpresasPage = () => {
       nombre: editingEmpresaName.trim(),
       rut: editingEmpresaRut.trim() || null,
       logoUrl: editingEmpresaLogoUrl.trim() || null,
-      direccionComercial: editingEmpresaDireccion.calle || editingEmpresaDireccion.numero || editingEmpresaDireccion.comunaId ? editingEmpresaDireccion : null,
+      direccion: editingEmpresaDireccion.calle || editingEmpresaDireccion.numero || editingEmpresaDireccion.comunaId ? editingEmpresaDireccion : null,
     };
     const result = await updateEmpresa(id, data);
     if (result.success) {
@@ -194,14 +195,8 @@ const EmpresasPage = () => {
       setEditingEmpresaName('');
       setEditingEmpresaRut('');
       setEditingEmpresaLogoUrl('');
-      // setEditingEmpresaTelefono('');
-      // setEditingEmpresaEmail('');
-      setEditingEmpresaDireccion({
-        calle: '',
-        numero: '',
-        comunaId: ''
-      });
-      fetchEmpresas(); // Recargar la lista de empresas
+      setEditingEmpresaDireccion({});
+      fetchEmpresas();
     } else {
       toast.error(result.error || "Error al actualizar la empresa.");
     }
@@ -212,7 +207,7 @@ const EmpresasPage = () => {
       const result = await deleteEmpresa(id);
       if (result.success) {
         toast.success("Empresa eliminada exitosamente.");
-        fetchEmpresas(); // Recargar la lista de empresas
+        fetchEmpresas();
       } else {
         toast.error(result.error || "Error al eliminar la empresa.");
       }

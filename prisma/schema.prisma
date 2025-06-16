@@ -1,13 +1,13 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// Descomentar si quieres usar el generador de ERD, pero por ahora déjalo comentado
 // generator erd {
 //   provider = "prisma-erd-generator"
-//   output   = "./ERD.svg" // Nombre del archivo de salida
+//   output   = "./ERD.svg"
 // }
 
 datasource db {
@@ -15,247 +15,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelos para NextAuth Prisma Adapter
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? // Removido @db.Text
-  access_token      String? // Removido @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? // Removido @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts") 
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions") 
-}
-
-model User {
-  id            String    @id @default(cuid()) 
-  name          String?   
-  email         String?   @unique 
-  emailVerified DateTime? 
-  image         String?   
-  
-  rol           RoleUsuario @default(TECNICO) 
-
-  accounts      Account[]
-  sessions      Session[]
-
-  ticketsAsignados    Ticket[]      @relation("TecnicoTickets")
-  accionesRealizadas  AccionTicket[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@map("users") 
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens") 
-}
-
-// --- Tus modelos existentes ---
-
+// Enums (Los tuyos, tal como los pasaste, pero asegurando que estén definidos antes de usarse)
 enum RoleUsuario {
   ADMIN
   TECNICO
   VISUALIZADOR
   CLIENTE
-}
-
-model Empresa {
-  id                  String     @id @default(uuid())
-  nombre              String     @unique
-  rut                 String?
-  direccionId         String?
-  direccion           Direccion? @relation(fields: [direccionId], references: [id])
-  sucursales          Sucursal[]
-  equiposInventario   EquipoInventario[]
-  contactosEmpresa    ContactoEmpresa[]
-  tickets             Ticket[]
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-
-  @@map("empresas")
-}
-
-model ContactoEmpresa {
-  id                String              @id @default(uuid())
-  nombreCompleto    String
-  email             String              @unique
-  telefono          String
-  cargo             String?
-
-  empresa           Empresa?            @relation(fields: [empresaId], references: [id])
-  empresaId         String?
-
-  ubicacion         Ubicacion?          @relation(fields: [ubicacionId], references: [id], name: "UbicacionContactos")
-  ubicacionId       String?
-  ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
-  equiposEnPrestamo EquipoEnPrestamo[]
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  @@map("contactos_empresas")
-}
-
-model Pais {
-  id        String     @id @default(uuid())
-  nombre    String     @unique
-  regiones  Region[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  @@map("paises")
-}
-
-model Region {
-  id          String      @id @default(uuid())
-  nombre      String
-  paisId      String
-  pais        Pais        @relation(fields: [paisId], references: [id])
-  provincias  Provincia[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  @@unique([nombre, paisId])
-  @@map("regiones")
-}
-
-model Provincia {
-  id          String     @id @default(uuid())
-  nombre      String
-  regionId    String
-  region      Region     @relation(fields: [regionId], references: [id])
-  comunas     Comuna[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  @@unique([nombre, regionId])
-  @@map("provincias")
-}
-
-model Comuna {
-  id          String      @id @default(uuid())
-  nombre      String
-  provinciaId String
-  provincia   Provincia   @relation(fields: [provinciaId], references: [id])
-  direcciones Direccion[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  @@unique([nombre, provinciaId])
-  @@map("comunas")
-}
-
-model Direccion {
-  id            String    @id @default(uuid())
-  calle         String
-  numero        String
-  comunaId      String
-  comuna        Comuna    @relation(fields: [comunaId], references: [id])
-  empresasComerciales      Empresa[]
-  sucursales    Sucursal[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  @@map("direcciones")
-}
-
-model Sucursal {
-  id            String    @id @default(uuid())
-  nombre        String
-  telefono      String?
-  email         String?
-  direccionId   String    @unique
-  direccion     Direccion @relation(fields: [direccionId], references: [id], onDelete: Cascade)
-  empresaId     String?
-  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  ubicaciones   Ubicacion[]
-
-  @@map("sucursales")
-}
-
-model Ubicacion {
-  // Este modelo ahora representa la sucursal desde donde se reporta un problema en un ticket.
-  // Se mantiene el nombre 'Ubicacion' por compatibilidad con el modelo Ticket, pero su significado cambia.
-  id                  String    @id @default(uuid())
-  nombreReferencial   String? // Puede ser el nombre de la sucursal o un punto de referencia específico dentro de ella
-  sucursalId          String
-  sucursal            Sucursal  @relation(fields: [sucursalId], references: [id])
-  notas               String?
-  contactos           ContactoEmpresa[] @relation("UbicacionContactos")
-  tickets             Ticket[]          @relation("UbicacionTickets")
-  equiposInventario   EquipoInventario[] @relation("EquipoUbicacionActual")
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  @@map("ubicaciones")
-}
-
-model Ticket {
-  id                    String        @id @default(uuid())
-  numeroCaso            Int           @unique
-  titulo                String
-  descripcionDetallada  String?
-  tipoIncidente         String        
-  prioridad             PrioridadTicket @default(MEDIA)
-  estado                EstadoTicket  @default(ABIERTO)
-  
-  solicitanteNombre     String        
-  solicitanteTelefono   String?       
-  solicitanteCorreo     String?       
-  solicitanteCliente    ContactoEmpresa?      @relation(name: "SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
-  solicitanteClienteId  String?       
-
-       
-  
-  ubicacionReporte      Ubicacion?    @relation(fields: [ubicacionId], references: [id], name: "UbicacionTickets")
-  ubicacionId           String?       
-
-  tecnicoAsignado       User?         @relation(name: "TecnicoTickets", fields: [tecnicoAsignadoId], references: [id]) 
-  tecnicoAsignadoId     String?       
-
-  acciones              AccionTicket[] 
-
-  fechaCreacion         DateTime      @default(now())
-  fechaSolucionEstimada DateTime?     // Cambiado desde fechaSolucion a fechaSolucionEstimada
-  fechaSolucionReal     DateTime?     // Nuevo campo para la fecha real de solución
-  updatedAt             DateTime      @updatedAt
-  
-  equiposEnPrestamo     EquipoEnPrestamo[]
-  equipoAfectado        String?       // Nuevo campo para el equipo afectado (texto)
-
-  empresa               Empresa?      @relation(fields: [empresaId], references: [id])
-  empresaId             String?
-}
-
-model AccionTicket {
-  id            String   @id @default(uuid())
-  ticket        Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  ticketId      String
-  descripcion   String
-  fechaAccion   DateTime @default(now())
-  realizadaPor  User     @relation(fields: [usuarioId], references: [id]) 
-  usuarioId     String   
-  categoria     String?  // Nuevo campo para la categoría de la acción
 }
 
 enum PrioridadTicket {
@@ -275,46 +40,15 @@ enum EstadoTicket {
   CANCELADO
 }
 
-model EquipoInventario {
-  id                        String              @id @default(uuid())
-  nombreDescriptivo         String              
-  identificadorUnico        String              @unique 
-  tipoEquipo                TipoEquipoInventario
-  marca                     String?
-  modelo                    String?
-  descripcionAdicional      String?
-  estadoEquipo              EstadoEquipoInventario @default(DISPONIBLE)
-  fechaAdquisicion          DateTime?
-  proveedor                 String?
-  
-  ubicacionActual           Ubicacion?          @relation(name: "EquipoUbicacionActual", fields: [ubicacionActualId], references: [id])
-  ubicacionActualId         String?             
-
-  notasGenerales            String?
-  prestamos                 EquipoEnPrestamo[]  
-  
-  panelVtsSerie             String?             @map("panel_vts_serie")
-  pedalVtsSerie             String?             @map("pedal_vts_serie")
-  biarticTipoDispositivo    String?             @map("biartic_tipo_dispositivo") 
-
-  empresa                   Empresa?            @relation(fields: [empresaId], references: [id])
-  empresaId                 String?
-
-  createdAt                 DateTime            @default(now())
-  updatedAt                 DateTime            @updatedAt
-
-  @@map("equipos_inventario")
-}
-
 enum TipoEquipoInventario {
-  VTS         
-  BIARTIC     
+  VTS
+  BIARTIC
   NOTEBOOK
   CELULAR
   TABLET
   IMPRESORA
   MONITOR
-  PERIFERICO  
+  PERIFERICO
   OTRO
 }
 
@@ -327,39 +61,327 @@ enum EstadoEquipoInventario {
   PERDIDO_ROBADO
 }
 
-model EquipoEnPrestamo {
-  id                        String    @id @default(uuid())
-  equipo                    EquipoInventario @relation(fields: [equipoId], references: [id])
-  equipoId                  String
-  
-  prestadoAContacto         ContactoEmpresa   @relation(fields: [prestadoAContactoId], references: [id])
-  prestadoAContactoId       String    
-  personaResponsableEnSitio String    
-
-  fechaPrestamo             DateTime  @default(now())
-  fechaDevolucionEstimada   DateTime
-  fechaDevolucionReal       DateTime?
-  
-  estadoPrestamo            EstadoPrestamoEquipo @default(PRESTADO)
-  
-  ticketAsociado            Ticket?   @relation(fields: [ticketId], references: [id])
-  ticketId                  String?   
-
-  notasPrestamo             String?   
-  notasDevolucion           String?   
-
-  entregadoPorUsuarioId     String?   
-  recibidoPorUsuarioId      String?   
-
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-}
-
 enum EstadoPrestamoEquipo {
   PRESTADO
   DEVUELTO
-  ATRASADO 
+  ATRASADO
   RENOVADO
   PERDIDO_POR_CLIENTE
 }
 
+
+// Modelos para NextAuth Prisma Adapter
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  name               String?
+  email              String?      @unique
+  emailVerified      DateTime?
+  image              String?
+  rol                RoleUsuario  @default(TECNICO)
+
+  accounts           Account[]
+  sessions           Session[]
+  ticketsAsignados   Ticket[]     @relation("TecnicoTickets")
+  accionesRealizadas AccionTicket[]
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// --- Tus modelos de negocio y geografía (revisados) ---
+
+model Pais {
+  id        String    @id @default(uuid())
+  nombre    String    @unique
+  regiones  Region[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("paises")
+}
+
+model Region {
+  id         String    @id @default(uuid())
+  nombre     String
+  paisId     String
+  pais       Pais      @relation(fields: [paisId], references: [id])
+  provincias Provincia[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([nombre, paisId])
+  @@map("regiones")
+}
+
+model Provincia {
+  id        String   @id @default(uuid())
+  nombre    String
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id])
+  comunas   Comuna[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([nombre, regionId])
+  @@map("provincias")
+}
+
+model Comuna {
+  id          String    @id @default(uuid())
+  nombre      String
+  provinciaId String
+  provincia   Provincia @relation(fields: [provinciaId], references: [id])
+  direcciones Direccion[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([nombre, provinciaId])
+  @@map("comunas")
+}
+
+model Direccion {
+  id                  String     @id @default(uuid())
+  calle               String
+  numero              String
+  comunaId            String
+  comuna              Comuna     @relation(fields: [comunaId], references: [id])
+  empresasComerciales Empresa[]  @relation("EmpresaDireccionComercial") // Asegura el nombre de la relación inversa
+  sucursales          Sucursal[]
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  @@map("direcciones")
+}
+
+model Empresa {
+  id                   String            @id @default(uuid())
+  nombre               String            @unique
+  rut                  String?
+  logoUrl              String? // Añadido: ¡CRÍTICO para tu error!
+  telefono             String? // Añadido
+  email                String? // Añadido
+
+  // Clave foránea para la dirección comercial
+  direccionComercialId String?           @map("direccionId") // Mapeo de columna en la DB
+
+  // Relación con el modelo Direccion para la dirección comercial
+  direccionComercial   Direccion?        @relation("EmpresaDireccionComercial", fields: [direccionComercialId], references: [id])
+
+  sucursales           Sucursal[]
+  equiposInventario    EquipoInventario[]
+  contactosEmpresa     ContactoEmpresa[]
+  tickets              Ticket[]          @relation("TicketEmpresa") // Relación con Ticket
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@map("empresas")
+}
+
+model ContactoEmpresa {
+  id                 String             @id @default(uuid())
+  nombreCompleto     String
+  email              String             @unique
+  telefono           String
+  cargo              String?
+
+  empresaId          String? // Permitir que sea opcional si no todos los contactos tienen empresa
+  empresa            Empresa?           @relation(fields: [empresaId], references: [id])
+
+  ubicacionId        String?
+  ubicacion          Ubicacion?         @relation("UbicacionContactos", fields: [ubicacionId], references: [id])
+
+  ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
+  equiposEnPrestamo  EquipoEnPrestamo[]
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@map("contactos_empresas")
+}
+
+model Sucursal {
+  id          String      @id @default(uuid())
+  nombre      String
+  telefono    String?
+  email       String?
+
+  direccionId String      @unique // La dirección es única por sucursal
+  direccion   Direccion   @relation(fields: [direccionId], references: [id], onDelete: Cascade)
+
+  empresaId   String?
+  empresa     Empresa?    @relation(fields: [empresaId], references: [id])
+  ubicaciones Ubicacion[] // Sub-ubicaciones dentro de la sucursal
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("sucursales")
+}
+
+model Ubicacion {
+  id                 String           @id @default(uuid())
+  nombreReferencial  String?
+  sucursalId         String
+  sucursal           Sucursal         @relation(fields: [sucursalId], references: [id])
+  notas              String?
+  contactos          ContactoEmpresa[] @relation("UbicacionContactos")
+  tickets            Ticket[]         @relation("UbicacionTickets")
+  equiposInventario  EquipoInventario[] @relation("EquipoUbicacionActual")
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@map("ubicaciones")
+}
+
+model Ticket {
+  id                   String             @id @default(uuid())
+  numeroCaso           Int                @unique
+  titulo               String
+  descripcionDetallada String?
+  tipoIncidente        String
+  prioridad            PrioridadTicket    @default(MEDIA)
+  estado               EstadoTicket       @default(ABIERTO)
+
+  solicitanteNombre    String
+  solicitanteTelefono  String?
+  solicitanteCorreo    String?
+
+  solicitanteClienteId String?
+  solicitanteCliente   ContactoEmpresa?   @relation("SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
+
+  empresaId            String?
+  empresa              Empresa?           @relation("TicketEmpresa", fields: [empresaId], references: [id])
+
+  ubicacionId          String?
+  ubicacionReporte     Ubicacion?         @relation("UbicacionTickets", fields: [ubicacionId], references: [id])
+
+  tecnicoAsignadoId    String?
+  tecnicoAsignado      User?              @relation("TecnicoTickets", fields: [tecnicoAsignadoId], references: [id])
+
+  acciones             AccionTicket[]
+  equiposEnPrestamo    EquipoEnPrestamo[] @relation("TicketToEquipoEnPrestamo") // Asegura la relación inversa aquí
+
+  fechaCreacion        DateTime           @default(now())
+  fechaSolucionEstimada DateTime?
+  fechaSolucionReal    DateTime?
+  updatedAt            DateTime           @updatedAt
+  equipoAfectado       String?
+}
+
+model AccionTicket {
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  descripcion String
+  fechaAccion DateTime @default(now())
+  usuarioId   String
+  realizadaPor User    @relation(fields: [usuarioId], references: [id])
+  categoria   String?
+
+  createdAt   DateTime @default(now()) // Asegurar timestamps para consistencia
+  updatedAt   DateTime @updatedAt      // Asegurar timestamps para consistencia
+
+  @@map("AccionTicket")
+}
+
+model EquipoInventario {
+  id                     String             @id @default(uuid())
+  nombreDescriptivo      String
+  identificadorUnico     String             @unique
+  tipoEquipo             TipoEquipoInventario
+  marca                  String?
+  modelo                 String?
+  descripcionAdicional   String?
+  estadoEquipo           EstadoEquipoInventario @default(DISPONIBLE)
+  fechaAdquisicion       DateTime?
+  proveedor              String?
+
+  ubicacionActualId      String?
+  ubicacionActual        Ubicacion?         @relation("EquipoUbicacionActual", fields: [ubicacionActualId], references: [id])
+
+  notasGenerales         String?
+  prestamos              EquipoEnPrestamo[]
+
+  panelVtsSerie          String?            @map("panel_vts_serie")
+  pedalVtsSerie          String?            @map("pedal_vts_serie")
+  biarticTipoDispositivo String?            @map("biartic_tipo_dispositivo")
+
+  empresaId              String? // Relaciona el equipo a una empresa
+  empresa                Empresa?           @relation(fields: [empresaId], references: [id])
+
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@map("equipos_inventario")
+}
+
+model EquipoEnPrestamo {
+  id                        String             @id @default(uuid())
+  equipoId                  String
+  equipo                    EquipoInventario   @relation(fields: [equipoId], references: [id])
+
+  prestadoAContactoId       String
+  prestadoAContacto         ContactoEmpresa    @relation(fields: [prestadoAContactoId], references: [id])
+  personaResponsableEnSitio String
+
+  fechaPrestamo             DateTime           @default(now())
+  fechaDevolucionEstimada   DateTime
+  fechaDevolucionReal       DateTime?
+
+  estadoPrestamo            EstadoPrestamoEquipo @default(PRESTADO)
+
+  ticketId                  String?
+  ticketAsociado            Ticket?            @relation("TicketToEquipoEnPrestamo", fields: [ticketId], references: [id]) // Renombrado a ticketAsociado
+
+  notasPrestamo             String?
+  notasDevolucion           String?
+
+  entregadoPorUsuarioId     String? // Asume que es el ID de un User
+  recibidoPorUsuarioId      String? // Asume que es el ID de un User
+
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+}
