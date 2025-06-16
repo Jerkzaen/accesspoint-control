@@ -80,14 +80,16 @@ export async function addSucursal(data: SucursalInput) {
           create: {
             calle: data.direccionCalle,
             numero: data.direccionNumero,
-            comuna: {
-              connect: { id: data.direccionComunaId },
-            },
+            comuna: { connect: { id: data.direccionComunaId } },
           },
         },
         empresa: { connect: { id: data.empresaId } },
       },
     });
+
+
+
+
     revalidatePath("/admin/sucursales");
     return { success: true, data: newSucursal };
   } catch (error) {
@@ -98,6 +100,8 @@ export async function addSucursal(data: SucursalInput) {
 
 export async function updateSucursal(id: string, data: Partial<SucursalInput>) {
   try {
+
+
     const updatedSucursal = await prisma.sucursal.update({
       where: { id },
       data: {
@@ -108,14 +112,14 @@ export async function updateSucursal(id: string, data: Partial<SucursalInput>) {
           update: {
             calle: data.direccionCalle,
             numero: data.direccionNumero,
-            comuna: {
-              connect: { id: data.direccionComunaId },
-            },
+            comuna: data.direccionComunaId ? { connect: { id: data.direccionComunaId } } : undefined,
           },
         },
-        empresa: { connect: { id: data.empresaId } },
+        empresa: data.empresaId ? { connect: { id: data.empresaId } } : undefined,
       },
     });
+
+
     revalidatePath("/admin/sucursales");
     return { success: true, data: updatedSucursal };
   } catch (error) {
@@ -129,11 +133,23 @@ export async function deleteSucursal(id: string) {
     // Primero, encuentra la sucursal para obtener el ID de la dirección asociada
     const sucursalToDelete = await prisma.sucursal.findUnique({
       where: { id },
-      select: { direccionId: true },
+      select: { direccionId: true, empresaId: true },
     });
 
     if (!sucursalToDelete || !sucursalToDelete.direccionId) {
       return { success: false, error: "Sucursal o dirección asociada no encontrada." };
+    }
+
+    // Desconectar la sucursal de la empresa antes de eliminarla
+    if (sucursalToDelete.empresaId) {
+      await prisma.empresa.update({
+        where: { id: sucursalToDelete.empresaId },
+        data: {
+          sucursales: {
+            disconnect: { id: id },
+          },
+        },
+      });
     }
 
     // Elimina la sucursal

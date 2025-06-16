@@ -86,17 +86,18 @@ enum RoleUsuario {
 }
 
 model Empresa {
-  id            String    @id @default(uuid())
-  nombre        String    @unique
-  rut           String?
-  logoUrl       String?
-  direccionId   String?
-  direccion     Direccion? @relation(fields: [direccionId], references: [id])
-  sucursales    Sucursal[]
-  contactos     ContactoEmpresa[]
-  tickets       Ticket[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String     @id @default(uuid())
+  nombre              String     @unique
+  rut                 String?
+  direccionId         String?
+  direccion           Direccion? @relation(fields: [direccionId], references: [id])
+  sucursales          Sucursal[]
+  equiposInventario   EquipoInventario[]
+  contactosEmpresa    ContactoEmpresa[]
+  tickets             Ticket[]
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
   @@map("empresas")
 }
 
@@ -106,8 +107,10 @@ model ContactoEmpresa {
   email             String              @unique
   telefono          String
   cargo             String?
-  empresa           Empresa             @relation(fields: [empresaId], references: [id])
-  empresaId         String
+
+  empresa           Empresa?            @relation(fields: [empresaId], references: [id])
+  empresaId         String?
+
   ubicacion         Ubicacion?          @relation(fields: [ubicacionId], references: [id], name: "UbicacionContactos")
   ubicacionId       String?
   ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
@@ -168,7 +171,7 @@ model Direccion {
   numero        String
   comunaId      String
   comuna        Comuna    @relation(fields: [comunaId], references: [id])
-  empresas      Empresa[]
+  empresasComerciales      Empresa[]
   sucursales    Sucursal[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -222,8 +225,7 @@ model Ticket {
   solicitanteCliente    ContactoEmpresa?      @relation(name: "SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
   solicitanteClienteId  String?       
 
-  empresa               Empresa? @relation(fields: [empresaId], references: [id])
-  empresaId             String?       
+       
   
   ubicacionReporte      Ubicacion?    @relation(fields: [ubicacionId], references: [id], name: "UbicacionTickets")
   ubicacionId           String?       
@@ -240,6 +242,9 @@ model Ticket {
   
   equiposEnPrestamo     EquipoEnPrestamo[]
   equipoAfectado        String?       // Nuevo campo para el equipo afectado (texto)
+
+  empresa               Empresa?      @relation(fields: [empresaId], references: [id])
+  empresaId             String?
 }
 
 model AccionTicket {
@@ -292,8 +297,13 @@ model EquipoInventario {
   pedalVtsSerie             String?             @map("pedal_vts_serie")
   biarticTipoDispositivo    String?             @map("biartic_tipo_dispositivo") 
 
+  empresa                   Empresa?            @relation(fields: [empresaId], references: [id])
+  empresaId                 String?
+
   createdAt                 DateTime            @default(now())
   updatedAt                 DateTime            @updatedAt
+
+  @@map("equipos_inventario")
 }
 
 enum TipoEquipoInventario {

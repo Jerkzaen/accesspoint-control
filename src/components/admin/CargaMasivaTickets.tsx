@@ -44,9 +44,9 @@ const ticketCsvRowSchema = z.object({
   empresaClienteNombre: z.string().optional().nullable(),
   tecnicoAsignadoEmail: z.string().email("Email del técnico inválido.").optional().or(z.literal('')).nullable(),
   // Nuevos campos para la ubicación geográfica y sucursal
-  pais: z.string().min(1, "El país es obligatorio para tickets."),
-  region: z.string().min(1, "La región es obligatoria para tickets."),
-  provincia: z.string().min(1, "La provincia es obligatoria para tickets."),
+  pais: z.string().optional().nullable(),
+  region: z.string().optional().nullable(),
+  provincia: z.string().optional().nullable(),
   comuna: z.string().min(1, "La comuna es obligatoria para tickets."),
   calle: z.string().min(1, "La calle es obligatoria para tickets."),
   numero: z.string().min(1, "El número de dirección es obligatorio para tickets."),

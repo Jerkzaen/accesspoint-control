@@ -1,10 +1,37 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Sucursal, Empresa, Direccion, Comuna, Provincia, Region, Pais, Prisma } from '@prisma/client';
+import { Sucursal, Empresa, Direccion, Comuna, Prisma } from '@prisma/client';
 import { getSucursales, addSucursal, updateSucursal, deleteSucursal, SucursalInput } from '../../actions/sucursalActions';
 import { getEmpresas } from '@/app/actions/empresaActions';
-import { getRegiones, getProvincias, getComunas, getComunaById } from '@/app/actions/geografiaActions';
+import { searchComunas, getComunaById } from '@/app/actions/geografiaActions';
+import Link from "next/link";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Search } from "lucide-react";
 
 type SucursalWithRelations = Prisma.SucursalGetPayload<{
   include: {
@@ -29,17 +56,26 @@ type SucursalWithRelations = Prisma.SucursalGetPayload<{
   };
 }>;
 
+type ComunaWithRelations = Prisma.ComunaGetPayload<{
+  include: {
+    provincia: {
+      include: {
+        region: {
+          include: {
+            pais: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
 interface SucursalesClientPageProps {
   initialSucursales: SucursalWithRelations[];
   initialEmpresas: Empresa[];
-  initialPaises: Pais[];
 }
 
-export const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({
-  initialSucursales,
-  initialEmpresas,
-  initialPaises,
-}) => {
+const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({ initialSucursales, initialEmpresas }) => {
   const [sucursales, setSucursales] = useState<SucursalWithRelations[]>(initialSucursales);
   const [empresas, setEmpresas] = useState<Empresa[]>(initialEmpresas);
   const [newSucursal, setNewSucursal] = useState<SucursalInput>({
@@ -53,57 +89,22 @@ export const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({
   });
   const [editingSucursal, setEditingSucursal] = useState<Sucursal | null>(null);
 
-  const [paises, setPaises] = useState<Pais[]>(initialPaises);
-  const [regiones, setRegiones] = useState<Region[]>([]);
-  const [provincias, setProvincias] = useState<Provincia[]>([]);
-  const [comunas, setComunas] = useState<Comuna[]>([]);
+  const [comunas, setComunas] = useState<ComunaWithRelations[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const [selectedPais, setSelectedPais] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedProvincia, setSelectedProvincia] = useState<string | null>(null);
-  const [selectedComuna, setSelectedComuna] = useState<string | null>(null);
+  const [selectedSucursal, setSelectedSucursal] = useState<SucursalWithRelations | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    // No need to fetch initially, data comes from props
+    // No es necesario cargar sucursales y empresas aquí, ya se pasan como props iniciales
   }, []);
 
-  useEffect(() => {
-    if (selectedPais) {
-      fetchRegiones(selectedPais);
-    } else {
-      setRegiones([]);
-      setSelectedRegion(null);
-    }
-  }, [selectedPais]);
-
-  useEffect(() => {
-    if (selectedRegion) {
-      fetchProvincias(selectedRegion);
-    } else {
-      setProvincias([]);
-      setSelectedProvincia(null);
-    }
-  }, [selectedRegion]);
-
-  useEffect(() => {
-    if (selectedProvincia) {
-      fetchComunas(selectedProvincia);
-    } else {
-      setComunas([]);
-      setSelectedComuna(null);
-    }
-  }, [selectedProvincia]);
-
-  useEffect(() => {
-    setNewSucursal((prev: SucursalInput) => ({ ...prev, direccionComunaId: selectedComuna || '' }));
-  }, [selectedComuna]);
-
-  const fetchSucursales = async () => {
+  const loadSucursales = async () => {
     const fetchedSucursales = await getSucursales();
     setSucursales(fetchedSucursales as SucursalWithRelations[]);
   };
 
-  const fetchEmpresas = async () => {
+  const loadEmpresas = async () => {
     const result = await getEmpresas();
     if (result.success) {
       setEmpresas(result.data);
@@ -112,23 +113,31 @@ export const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({
     }
   };
 
-  // No need for fetchPaises, data comes from props
-
-
-
-  const fetchRegiones = async (paisId: string) => {
-    const fetchedRegiones = await getRegiones(paisId);
-    setRegiones(fetchedRegiones);
+  const handleChange = (field: keyof SucursalInput, value: string) => {
+    setNewSucursal((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  const fetchProvincias = async (regionId: string) => {
-    const fetchedProvincias = await getProvincias(regionId);
-    setProvincias(fetchedProvincias);
+  const handleComunaSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 2) {
+      const results = await searchComunas(query);
+      setComunas(results);
+    } else {
+      setComunas([]);
+    }
   };
 
-  const fetchComunas = async (provinciaId: string) => {
-    const fetchedComunas = await getComunas(provinciaId);
-    setComunas(fetchedComunas);
+  const handleSelectComuna = (comuna: ComunaWithRelations) => {
+    setNewSucursal((prev) => ({
+      ...prev,
+      direccionComunaId: comuna.id, // Store the ID
+    }));
+    setSearchQuery(comuna.nombre); // Display the name in the input
+    setComunas([]); // Clear search results
   };
 
   const handleAddSucursal = async () => {
@@ -142,11 +151,7 @@ export const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({
       direccionComunaId: '',
       empresaId: '',
     });
-    setSelectedPais(null);
-    setSelectedRegion(null);
-    setSelectedProvincia(null);
-    setSelectedComuna(null);
-    fetchSucursales();
+    loadSucursales();
   };
 
   const handleEditClick = async (sucursal: SucursalWithRelations) => {
@@ -164,10 +169,7 @@ export const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({
     if (sucursal.direccion?.comunaId) {
       const comuna = await getComunaById(sucursal.direccion.comunaId);
       if (comuna) {
-        setSelectedPais(comuna.provincia.region.pais.id);
-        setSelectedRegion(comuna.provincia.region.id);
-        setSelectedProvincia(comuna.provincia.id);
-        setSelectedComuna(comuna.id);
+        setSearchQuery(comuna.nombre);
       }
     }
   };
@@ -183,174 +185,200 @@ export const SucursalesClientPage: React.FC<SucursalesClientPageProps> = ({
         direccionCalle: '',
         direccionNumero: '',
         direccionComunaId: '',
-      empresaId: '',
-    });
-      setSelectedPais(null);
-      setSelectedRegion(null);
-      setSelectedProvincia(null);
-      setSelectedComuna(null);
-      fetchSucursales();
+        empresaId: '',
+      });
+      loadSucursales();
     }
   };
 
   const handleDeleteSucursal = async (id: string) => {
     await deleteSucursal(id);
-    fetchSucursales();
+    loadSucursales();
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Gestión de Sucursales</h1>
-
-      <div className="mb-8 p-4 border rounded shadow-sm">
-        <h2 className="text-xl font-semibold mb-2">{editingSucursal ? 'Editar Sucursal' : 'Añadir Nueva Sucursal'}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <input
-            type="text"
-            placeholder="Nombre de la Sucursal"
-            value={newSucursal.nombre}
-            onChange={(e) => setNewSucursal({ ...newSucursal, nombre: e.target.value })}
-            className="p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Teléfono"
-            value={newSucursal.telefono}
-            onChange={(e) => setNewSucursal({ ...newSucursal, telefono: e.target.value })}
-            className="p-2 border rounded"
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={newSucursal.email}
-            onChange={(e) => setNewSucursal({ ...newSucursal, email: e.target.value })}
-            className="p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Calle de la Dirección"
-            value={newSucursal.direccionCalle}
-            onChange={(e) => setNewSucursal({ ...newSucursal, direccionCalle: e.target.value })}
-            className="p-2 border rounded"
-          />
-          <input
-            type="text"
-            placeholder="Número de la Dirección"
-            value={newSucursal.direccionNumero}
-            onChange={(e) => setNewSucursal({ ...newSucursal, direccionNumero: e.target.value })}
-            className="p-2 border rounded"
-          />
-
-          <select
-            value={newSucursal.empresaId || ''}
-            onChange={(e) => setNewSucursal({ ...newSucursal, empresaId: e.target.value })}
-            className="p-2 border rounded"
-          >
-            <option value="">Seleccionar Empresa (Opcional)</option>
-            {empresas.map((empresa) => (
-              <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
-            ))}
-          </select>
-
-          <select
-            value={selectedPais || ''}
-            onChange={(e) => setSelectedPais(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Seleccionar País</option>
-            {paises.map((pais) => (
-              <option key={pais.id} value={pais.id}>{pais.nombre}</option>
-            ))}
-          </select>
-
-          <select
-            value={selectedRegion || ''}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="p-2 border rounded"
-            disabled={!selectedPais}
-          >
-            <option value="">Seleccionar Región</option>
-            {regiones.map((region) => (
-              <option key={region.id} value={region.id}>{region.nombre}</option>
-            ))}
-          </select>
-
-          <select
-            value={selectedProvincia || ''}
-            onChange={(e) => setSelectedProvincia(e.target.value)}
-            className="p-2 border rounded"
-            disabled={!selectedRegion}
-          >
-            <option value="">Seleccionar Provincia</option>
-            {provincias.map((provincia) => (
-              <option key={provincia.id} value={provincia.id}>{provincia.nombre}</option>
-            ))}
-          </select>
-
-          <select
-            value={selectedComuna || ''}
-            onChange={(e) => setSelectedComuna(e.target.value)}
-            className="p-2 border rounded"
-            disabled={!selectedProvincia}
-          >
-            <option value="">Seleccionar Comuna</option>
-            {comunas.map((comuna) => (
-              <option key={comuna.id} value={comuna.id}>{comuna.nombre}</option>
-            ))}
-          </select>
-        </div>
-        {editingSucursal ? (
-          <button
-            onClick={handleUpdateSucursal}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Actualizar Sucursal
-          </button>
-        ) : (
-          <button
-            onClick={handleAddSucursal}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Añadir Sucursal
-          </button>
-        )}
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Listado de Sucursales</h2>
-        <ul className="space-y-2">
-          {sucursales.map((sucursal) => (
-            <li key={sucursal.id} className="p-4 border rounded flex justify-between items-center shadow-sm">
-              <div>
-                <p className="font-medium">{sucursal.nombre}</p>
-                <p>{sucursal.empresa?.nombre || 'N/A'}</p>
-                <p>{sucursal.telefono} | {sucursal.email}</p>
-                <p className="text-sm text-gray-500">
-                  {sucursal.direccion?.calle || 'N/A'} {sucursal.direccion?.numero || 'N/A'},
-                  {sucursal.direccion?.comuna?.nombre || 'N/A'},
-                  {sucursal.direccion?.comuna?.provincia?.nombre || 'N/A'},
-                  {sucursal.direccion?.comuna?.provincia?.region?.nombre || 'N/A'},
-                  {sucursal.direccion?.comuna?.provincia?.region?.pais?.nombre || 'N/A'}
-                </p>
-                <p className="text-sm text-gray-500">ID: {sucursal.id}</p>
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+          <Breadcrumb className="hidden md:flex">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="#">Admin</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="#">Sucursales</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <div className="relative ml-auto flex-1 md:grow-0">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar sucursales..."
+              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
+            />
+          </div>
+        </header>
+        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+          <div className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4">
+            <div className="flex items-center gap-4">
+              <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+                Gestión de Sucursales
+              </h1>
+            </div>
+            <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
+              <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+                <Card x-chunk="dashboard-07-chunk-0">
+                  <CardHeader>
+                    <CardTitle>Añadir Nueva Sucursal</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-3">
+                          <Label htmlFor="nombre">Nombre de la Sucursal</Label>
+                <Input
+                  id="nombre"
+                  placeholder="Nombre de la Sucursal"
+                  value={newSucursal.nombre}
+                  onChange={(e) => handleChange('nombre', e.target.value)}
+                />
               </div>
-              <div>
-                <button
-                  onClick={() => handleEditClick(sucursal)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-600"
+              <div className="grid gap-2">
+                <Label htmlFor="empresa">Empresa Asociada</Label>
+                <select
+                  id="empresa"
+                  value={newSucursal.empresaId}
+                  onChange={(e) => handleChange('empresaId', e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDeleteSucursal(sucursal.id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                >
-                  Eliminar
-                </button>
+                  <option value="">Seleccione una empresa</option>
+                  {empresas.map((empresa) => (
+                    <option key={empresa.id} value={empresa.id}>
+                      {empresa.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </li>
-          ))}
-        </ul>
+              <div className="grid gap-2">
+                <Label htmlFor="direccionCalle">Calle de la Dirección</Label>
+                          <Input
+                            id="direccionCalle"
+                            type="text"
+                            value={newSucursal.direccionCalle}
+                            onChange={(e) =>
+                              setNewSucursal({ ...newSucursal, direccionCalle: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-3">
+                          <Label htmlFor="direccionNumero">Número de la Dirección</Label>
+                          <Input
+                            id="direccionNumero"
+                            value={newSucursal.direccionNumero}
+                            onChange={(e) => handleChange('direccionNumero', e.target.value)}
+                            placeholder="Número de la Dirección"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="comunaSearch">Comuna</Label>
+                        <div className="relative">
+                          <Input
+                            id="comunaSearch"
+                            type="text"
+                            placeholder="Buscar Comuna"
+                            value={searchQuery}
+                            onChange={handleComunaSearchChange}
+                          />
+                          {comunas.length > 0 && searchQuery && (
+                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {comunas.map((comuna: ComunaWithRelations) => (
+                                <li
+                                  key={comuna.id}
+                                  className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                                  onClick={() => handleSelectComuna(comuna)}
+                                >
+                                  {comuna.nombre}, {comuna.provincia.nombre}, {comuna.provincia.region.nombre}, {comuna.provincia.region.pais.nombre}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        {newSucursal.direccionComunaId && (
+                          <p className="text-sm text-gray-600">
+                            Comuna seleccionada: {searchQuery}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="border-t px-6 py-4">
+                    <Button onClick={editingSucursal ? handleUpdateSucursal : handleAddSucursal}>
+                      {editingSucursal ? 'Actualizar Sucursal' : 'Añadir Sucursal'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+                <Card x-chunk="dashboard-07-chunk-1">
+                  <CardHeader>
+                    <CardTitle>Listado de Sucursales</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Teléfono</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Dirección</TableHead>
+                          <TableHead>Empresa</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sucursales.map((sucursal) => (
+                          <TableRow key={sucursal.id}>
+                            <TableCell className="font-medium">{sucursal.nombre}</TableCell>
+                            <TableCell>{sucursal.telefono}</TableCell>
+                            <TableCell>{sucursal.email}</TableCell>
+                            <TableCell>
+                              {sucursal.direccion?.calle} {sucursal.direccion?.numero},
+                              {sucursal.direccion?.comuna?.nombre}
+                            </TableCell>
+                            <TableCell>{sucursal.empresa?.nombre}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditClick(sucursal)}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteSucursal(sucursal.id)}
+                                className="ml-2"
+                              >
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

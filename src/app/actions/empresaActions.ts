@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Empresa, Direccion } from '@prisma/client';
 import { revalidatePath } from "next/cache";
 
-export type EmpresaWithDireccion = Empresa & { direccion: Direccion | null };
+export type EmpresaWithDireccion = Empresa & { direccionComercial: Direccion | null };
 type GetEmpresasResult = { success: true; data: EmpresaWithDireccion[] } | { success: false; error: string };
 
 type EmpresaInput = {
@@ -14,10 +14,7 @@ type EmpresaInput = {
   // telefono?: string | null;
   // email?: string | null;
   direccion?: {
-    pais?: string | null;
-    region?: string | null;
-    provincia?: string | null;
-    comuna?: string | null;
+    comunaId?: string | null;
     calle?: string | null;
     numero?: string | null;
   } | null;
@@ -27,7 +24,7 @@ export async function getEmpresas(): Promise<GetEmpresasResult> {
   try {
     const empresas = await prisma.empresa.findMany({
       orderBy: { nombre: 'asc' },
-      include: { direccion: true },
+      include: { direccionComercial: true },
     });
     const typedEmpresas: EmpresaWithDireccion[] = empresas as EmpresaWithDireccion[];
     return { success: true, data: typedEmpresas };
@@ -39,19 +36,16 @@ export async function getEmpresas(): Promise<GetEmpresasResult> {
 
 export async function addEmpresa(data: EmpresaInput) {
   try {
-    let direccionId: string | undefined;
+    let direccionComercialId: string | undefined;
     if (data.direccion) {
       const newDireccion = await prisma.direccion.create({
-        data: {
-          pais: data.direccion.pais || '',
-          region: data.direccion.region || '',
-          provincia: data.direccion.provincia || '',
-          comuna: data.direccion.comuna || '',
-          calle: data.direccion.calle || '',
-          numero: data.direccion.numero || '',
-        },
-      });
-      direccionId = newDireccion.id;
+          data: {
+            comuna: { connect: { id: data.direccion.comunaId || '' } },
+            calle: data.direccion.calle || '',
+            numero: data.direccion.numero || '',
+          },
+        });
+        direccionComercialId = newDireccion.id;
     }
 
     const newEmpresa = await prisma.empresa.create({
@@ -61,7 +55,7 @@ export async function addEmpresa(data: EmpresaInput) {
         logoUrl: data.logoUrl,
         // telefono: data.telefono,
         // email: data.email,
-        direccion: direccionId ? { connect: { id: direccionId } } : undefined,
+        direccionComercial: direccionComercialId ? { connect: { id: direccionComercialId } } : undefined,
       },
     });
     revalidatePath('/admin/empresas');
@@ -77,41 +71,35 @@ export async function addEmpresa(data: EmpresaInput) {
 
 export async function updateEmpresa(id: string, data: EmpresaInput) {
   try {
-    let direccionId: string | undefined;
+    let direccionComercialId: string | undefined;
     if (data.direccion) {
       // Check if an existing direccion is linked to this empresa
       const existingEmpresa = await prisma.empresa.findUnique({
         where: { id },
-        select: { direccionId: true }
+        select: { direccionComercialId: true }
       });
 
-      if (existingEmpresa?.direccionId) {
+      if (existingEmpresa?.direccionComercialId) {
         // Update existing direccion
         const updatedDireccion = await prisma.direccion.update({
-          where: { id: existingEmpresa.direccionId },
+          where: { id: existingEmpresa.direccionComercialId },
           data: {
-            pais: data.direccion.pais || '',
-            region: data.direccion.region || '',
-            provincia: data.direccion.provincia || '',
-            comuna: data.direccion.comuna || '',
+            comuna: { connect: { id: data.direccion.comunaId || '' } },
             calle: data.direccion.calle || '',
             numero: data.direccion.numero || '',
           },
         });
-        direccionId = updatedDireccion.id;
+        direccionComercialId = updatedDireccion.id;
       } else {
         // Create new direccion if none exists
         const newDireccion = await prisma.direccion.create({
-          data: {
-          pais: data.direccion.pais || '',
-          region: data.direccion.region || '',
-          provincia: data.direccion.provincia || '',
-          comuna: data.direccion.comuna || '',
+        data: {
+          comuna: { connect: { id: data.direccion.comunaId || '' } },
           calle: data.direccion.calle || '',
           numero: data.direccion.numero || '',
-          },
-        });
-        direccionId = newDireccion.id;
+        },
+      });
+      direccionComercialId = newDireccion.id;
       }
     }
 
@@ -123,7 +111,7 @@ export async function updateEmpresa(id: string, data: EmpresaInput) {
         logoUrl: data.logoUrl,
         // telefono: data.telefono,
         // email: data.email,
-        direccion: direccionId ? { connect: { id: direccionId } } : undefined,
+        direccionComercial: direccionComercialId ? { connect: { id: direccionComercialId } } : undefined,
       },
     });
     revalidatePath('/admin/empresas');
@@ -142,7 +130,7 @@ export async function deleteEmpresa(id: string) {
     // First, find the empresa to get its direccionId
     const empresaToDelete = await prisma.empresa.findUnique({
       where: { id },
-      select: { direccionId: true }
+      select: { direccionComercialId: true }
     });
 
     // Delete the empresa
@@ -151,9 +139,9 @@ export async function deleteEmpresa(id: string) {
     });
 
     // If a direccion was linked, delete it as well
-    if (empresaToDelete?.direccionId) {
+    if (empresaToDelete?.direccionComercialId) {
       await prisma.direccion.delete({
-        where: { id: empresaToDelete.direccionId }
+        where: { id: empresaToDelete.direccionComercialId }
       });
     }
 

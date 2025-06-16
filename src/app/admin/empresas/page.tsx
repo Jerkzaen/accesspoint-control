@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Direccion } from '@prisma/client'; // Importar el tipo de Prisma
 import { EmpresaWithDireccion } from '@/app/actions/empresaActions';
 import { getEmpresas, addEmpresa, updateEmpresa, deleteEmpresa } from '@/app/actions/empresaActions';
+import { getComunas, searchComunas, ComunaWithProvinciaAndRegion } from '@/app/actions/comunaActions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -22,6 +23,15 @@ const EmpresasPage = () => {
     comunaId: ''
   });
 
+  const [editingSearchTerm, setEditingSearchTerm] = useState('');
+  const [editingFilteredComunas, setEditingFilteredComunas] = useState<ComunaWithProvinciaAndRegion[]>([]);
+  const [editingSelectedComuna, setEditingSelectedComuna] = useState<ComunaWithProvinciaAndRegion | null>(null);
+
+  const [comunas, setComunas] = useState<ComunaWithProvinciaAndRegion[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredComunas, setFilteredComunas] = useState<ComunaWithProvinciaAndRegion[]>([]);
+  const [selectedComuna, setSelectedComuna] = useState<ComunaWithProvinciaAndRegion | null>(null);
+
   const [editingEmpresaId, setEditingEmpresaId] = useState<string | null>(null);
   const [editingEmpresaName, setEditingEmpresaName] = useState('');
   const [editingEmpresaRut, setEditingEmpresaRut] = useState('');
@@ -39,7 +49,58 @@ const EmpresasPage = () => {
 
   useEffect(() => {
     fetchEmpresas();
+    fetchComunas('');
   }, []);
+
+  const fetchComunas = async (search: string) => {
+    const result = await searchComunas(search);
+    if (result.success) {
+      setComunas(result.data);
+      setFilteredComunas(result.data); // Inicialmente, mostrar todas las comunas
+    } else {
+      toast.error(result.error || "Error al cargar las comunas.");
+    }
+  };
+
+  const handleSearchComuna = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    const result = await searchComunas(term);
+    if (result.success) {
+      setFilteredComunas(result.data);
+    } else {
+      toast.error(result.error || "Error al buscar comunas.");
+    }
+    setSelectedComuna(null); // Reset selected comuna on search
+    setNewEmpresaDireccion(prev => ({ ...prev, comunaId: '' }));
+  };
+
+  const handleSelectComuna = (comuna: ComunaWithProvinciaAndRegion) => {
+    setSelectedComuna(comuna);
+    setSearchTerm(comuna.nombre); // Display selected comuna name in input
+    setNewEmpresaDireccion(prev => ({ ...prev, comunaId: comuna.id }));
+    setFilteredComunas([]); // Hide dropdown after selection
+  };
+
+  const handleEditingSearchComuna = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value;
+    setEditingSearchTerm(term);
+    const result = await searchComunas(term);
+    if (result.success) {
+      setEditingFilteredComunas(result.data);
+    } else {
+      toast.error(result.error || "Error al buscar comunas.");
+    }
+    setEditingSelectedComuna(null); // Reset selected comuna on search
+    setEditingEmpresaDireccion(prev => ({ ...prev, comunaId: '' }));
+  };
+
+  const handleEditingSelectComuna = (comuna: ComunaWithProvinciaAndRegion) => {
+    setEditingSelectedComuna(comuna);
+    setEditingSearchTerm(comuna.nombre); // Display selected comuna name in input
+    setEditingEmpresaDireccion(prev => ({ ...prev, comunaId: comuna.id }));
+    setEditingFilteredComunas([]); // Hide dropdown after selection
+  };
 
   const fetchEmpresas = async () => {
     setLoading(true);
@@ -63,7 +124,7 @@ const EmpresasPage = () => {
       nombre: newEmpresaName.trim(),
       rut: newEmpresaRut.trim() || null,
       logoUrl: newEmpresaLogoUrl.trim() || null,
-      direccion: newEmpresaDireccion.calle || newEmpresaDireccion.numero || newEmpresaDireccion.comunaId ? newEmpresaDireccion : null,
+      direccionComercial: newEmpresaDireccion.calle || newEmpresaDireccion.numero || newEmpresaDireccion.comunaId ? newEmpresaDireccion : null,
     };
     const result = await addEmpresa(data);
     if (result.success) {
@@ -88,10 +149,17 @@ const EmpresasPage = () => {
     // setEditingEmpresaTelefono(empresa.telefono || '');
     // setEditingEmpresaEmail(empresa.email || '');
     setEditingEmpresaDireccion({
-      calle: empresa.direccion?.calle || '',
-      numero: empresa.direccion?.numero || '',
-      comunaId: empresa.direccion?.comunaId || ''
+      calle: empresa.direccionComercial?.calle || '',
+      numero: empresa.direccionComercial?.numero || '',
+      comunaId: empresa.direccionComercial?.comunaId || ''
     });
+    if (empresa.direccionComercial?.comunaId) {
+      const comuna = comunas.find(c => c.id === empresa.direccionComercial?.comunaId);
+      if (comuna) {
+        setEditingSelectedComuna(comuna);
+        setEditingSearchTerm(comuna.nombre);
+      }
+    }
   };
 
   const handleCancelEdit = () => {
@@ -117,7 +185,7 @@ const EmpresasPage = () => {
       nombre: editingEmpresaName.trim(),
       rut: editingEmpresaRut.trim() || null,
       logoUrl: editingEmpresaLogoUrl.trim() || null,
-      direccion: editingEmpresaDireccion.calle || editingEmpresaDireccion.numero || editingEmpresaDireccion.comunaId ? editingEmpresaDireccion : null,
+      direccionComercial: editingEmpresaDireccion.calle || editingEmpresaDireccion.numero || editingEmpresaDireccion.comunaId ? editingEmpresaDireccion : null,
     };
     const result = await updateEmpresa(id, data);
     if (result.success) {
@@ -171,57 +239,62 @@ const EmpresasPage = () => {
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             placeholder="Nombre de la nueva empresa"
             value={newEmpresaName}
-            onChange={(e) => setNewEmpresaName(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaName(e.target.value)}
           />
           <Input
             type="text"
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             placeholder="RUT"
             value={newEmpresaRut}
-            onChange={(e) => setNewEmpresaRut(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaRut(e.target.value)}
           />
           <Input
             type="text"
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             placeholder="URL del Logo"
             value={newEmpresaLogoUrl}
-            onChange={(e) => setNewEmpresaLogoUrl(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaLogoUrl(e.target.value)}
           />
-          {/* <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Teléfono"
-            value={newEmpresaTelefono}
-            onChange={(e) => setNewEmpresaTelefono(e.target.value)}
-          />
-          <Input
-            type="email"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Email"
-            value={newEmpresaEmail}
-            onChange={(e) => setNewEmpresaEmail(e.target.value)}
-          /> */}
 
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="ID de Comuna"
-            value={newEmpresaDireccion.comunaId || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, comunaId: e.target.value })}
-          />
+
+          <div className="relative">
+            <Input
+              type="text"
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              placeholder="Buscar Comuna"
+              value={searchTerm}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchComuna(e)}
+            />
+            {searchTerm.length > 0 && filteredComunas.length > 0 && (
+              <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
+                {filteredComunas.map((comuna) => (
+                  <li
+                    key={comuna.id}
+                    className="p-2 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSelectComuna(comuna)}
+                  >
+                    {comuna.nombre} ({comuna.provincia.nombre}, {comuna.provincia.region.nombre})
+                  </li>
+                ))}
+              </ul>
+            )}
+            {selectedComuna && (
+              <p className="text-sm text-gray-500 mt-1">Seleccionado: {selectedComuna.nombre}</p>
+            )}
+          </div>
           <Input
             type="text"
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             placeholder="Calle"
             value={newEmpresaDireccion.calle || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, calle: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaDireccion({ ...newEmpresaDireccion, calle: e.target.value })}
           />
           <Input
             type="text"
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             placeholder="Número"
             value={newEmpresaDireccion.numero || ''}
-            onChange={(e) => setNewEmpresaDireccion({ ...newEmpresaDireccion, numero: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaDireccion({ ...newEmpresaDireccion, numero: e.target.value })}
           />
         </div>
         <Button
@@ -245,67 +318,64 @@ const EmpresasPage = () => {
                     <Input
                       type="text"
                       value={editingEmpresaName}
-                      onChange={(e) => setEditingEmpresaName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaName(e.target.value)}
                       className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Nombre"
                     />
                     <Input
                       type="text"
                       value={editingEmpresaRut}
-                      onChange={(e) => setEditingEmpresaRut(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaRut(e.target.value)}
                       className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="RUT"
                     />
                     <Input
                       type="text"
                       value={editingEmpresaLogoUrl}
-                      onChange={(e) => setEditingEmpresaLogoUrl(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaLogoUrl(e.target.value)}
                       className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="URL Logo"
                     />
-                    <Input
-                      type="text"
-                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="ID de Comuna"
-                      value={editingEmpresaDireccion.comunaId || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, comunaId: e.target.value })}
-                    />
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                        placeholder="Buscar Comuna"
+                        value={editingSearchTerm}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleEditingSearchComuna(e)}
+                      />
+                      {editingSearchTerm.length > 0 && editingFilteredComunas.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
+                          {editingFilteredComunas.map((comuna) => (
+                            <li
+                              key={comuna.id}
+                              className="p-2 cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleEditingSelectComuna(comuna)}
+                            >
+                              {comuna.nombre} ({comuna.provincia.nombre}, {comuna.provincia.region.nombre})
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {editingSelectedComuna && (
+                        <p className="text-sm text-gray-500 mt-1">Seleccionado: {editingSelectedComuna.nombre}</p>
+                      )}
+                    </div>
                     <Input
                       type="text"
                       className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                       placeholder="Calle"
                       value={editingEmpresaDireccion.calle || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, calle: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, calle: e.target.value })}
                     />
                     <Input
                       type="text"
                       className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
                       placeholder="Número"
                       value={editingEmpresaDireccion.numero || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, numero: e.target.value })}
-                    />
-                    <Input
-                      type="text"
-                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="Comuna"
-                      value={editingEmpresaDireccion.comunaId || ''}
-                      onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, comunaId: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, numero: e.target.value })}
                     />
 
-                <Input
-                  type="text"
-                  className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="Calle"
-                  value={editingEmpresaDireccion.calle || ''}
-                  onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, calle: e.target.value })}
-                />
-                <Input
-                  type="text"
-                  className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="Número"
-                  value={editingEmpresaDireccion.numero || ''}
-                  onChange={(e) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, numero: e.target.value })}
-                />
                 <div className="flex space-x-2 col-span-full justify-end">
                       <Button
                         onClick={() => handleSaveEdit(empresa.id)}
@@ -328,9 +398,9 @@ const EmpresasPage = () => {
                     <span className="text-lg font-medium text-gray-800">{empresa.nombre}</span>
                     {empresa.rut && <span className="text-sm text-gray-600">RUT: {empresa.rut}</span>}
                     {empresa.logoUrl && <span className="text-sm text-gray-600">Logo: <a href={empresa.logoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{empresa.logoUrl}</a></span>}
-                    {empresa.direccion && (
+                    {empresa.direccionComercial && (
                     <div className="text-sm text-gray-600">
-                      <p className="text-sm text-gray-600">Dirección: {empresa.direccion?.calle || 'N/A'} {empresa.direccion?.numero || ''}, Comuna ID: {empresa.direccion?.comunaId || 'N/A'}</p>
+      <p className="text-sm text-gray-600">Dirección: {empresa.direccionComercial?.calle || 'N/A'} {empresa.direccionComercial?.numero || ''}, {comunas.find(c => c.id === empresa.direccionComercial?.comunaId)?.nombre || 'N/A'}</p>
                     </div>
                   )}
                   </div>

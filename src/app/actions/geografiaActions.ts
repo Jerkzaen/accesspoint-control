@@ -9,7 +9,6 @@ export type RegionInput = Omit<Region, 'id' | 'createdAt' | 'updatedAt'>;
 export type ProvinciaInput = Omit<Provincia, 'id' | 'createdAt' | 'updatedAt'>;
 export type ComunaInput = Omit<Comuna, 'id' | 'createdAt' | 'updatedAt'>;
 
-// --- Acciones para País ---
 export async function getPaises(): Promise<Pais[]> {
   try {
     const paises = await prisma.pais.findMany({
@@ -216,5 +215,34 @@ export async function getComunaById(id: string): Promise<(Comuna & { provincia: 
   } catch (error) {
     console.error("Error al obtener comuna por ID:", error);
     return null;
+  }
+}
+
+export async function searchComunas(query: string): Promise<Array<Comuna & { provincia: (Provincia & { region: (Region & { pais: Pais }) }) }>> {
+  try {
+    const comunas = await prisma.comuna.findMany({
+      where: {
+        nombre: {
+          contains: query,
+
+        },
+      },
+      include: {
+        provincia: {
+          include: {
+            region: {
+              include: {
+                pais: true,
+              },
+            },
+          },
+        },
+      },
+      take: 10,
+    });
+    return comunas;
+  } catch (error) {
+    console.error("Error al buscar comunas:", error);
+    return [];
   }
 }
