@@ -4,18 +4,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Descomentar si quieres usar el generador de ERD, pero por ahora déjalo comentado
-// generator erd {
-//   provider = "prisma-erd-generator"
-//   output   = "./ERD.svg"
-// }
-
 datasource db {
   provider = "sqlite" // O tu base de datos preferida: postgresql, mysql, etc.
   url      = env("DATABASE_URL")
 }
 
-// Enums (Los tuyos, tal como los pasaste, pero asegurando que estén definidos antes de usarse)
+// --- ENUMS ---
 enum RoleUsuario {
   ADMIN
   TECNICO
@@ -70,7 +64,7 @@ enum EstadoPrestamoEquipo {
 }
 
 
-// Modelos para NextAuth Prisma Adapter
+// --- MODELOS NEXT-AUTH ---
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -108,12 +102,10 @@ model User {
   emailVerified      DateTime?
   image              String?
   rol                RoleUsuario  @default(TECNICO)
-
   accounts           Account[]
   sessions           Session[]
   ticketsAsignados   Ticket[]     @relation("TecnicoTickets")
   accionesRealizadas AccionTicket[]
-
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
@@ -129,7 +121,7 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// --- Tus modelos de negocio y geografía (revisados) ---
+// --- MODELOS DE NEGOCIO Y GEOGRAFÍA ---
 
 model Pais {
   id        String    @id @default(uuid())
@@ -186,7 +178,7 @@ model Direccion {
   numero              String
   comunaId            String
   comuna              Comuna     @relation(fields: [comunaId], references: [id])
-  empresasComerciales Empresa[]  @relation("EmpresaDireccionComercial") // Asegura el nombre de la relación inversa
+  empresasComerciales Empresa[]  @relation("EmpresaDireccionComercial")
   sucursales          Sucursal[]
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
@@ -198,20 +190,15 @@ model Empresa {
   id                   String            @id @default(uuid())
   nombre               String            @unique
   rut                  String?
-  logoUrl              String? // Añadido: ¡CRÍTICO para tu error!
-  telefono             String? // Añadido
-  email                String? // Añadido
-
-  // Clave foránea para la dirección comercial
-  direccionComercialId String?           @map("direccionId") // Mapeo de columna en la DB
-
-  // Relación con el modelo Direccion para la dirección comercial
+  logoUrl              String?
+  telefono             String?
+  email                String?
+  direccionComercialId String?           @map("direccionId")
   direccionComercial   Direccion?        @relation("EmpresaDireccionComercial", fields: [direccionComercialId], references: [id])
-
   sucursales           Sucursal[]
   equiposInventario    EquipoInventario[]
   contactosEmpresa     ContactoEmpresa[]
-  tickets              Ticket[]          @relation("TicketEmpresa") // Relación con Ticket
+  tickets              Ticket[]          @relation("TicketEmpresa")
 
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
@@ -225,16 +212,15 @@ model ContactoEmpresa {
   email              String             @unique
   telefono           String
   cargo              String?
-
-  empresaId          String? // Permitir que sea opcional si no todos los contactos tienen empresa
+  empresaId          String?
   empresa            Empresa?           @relation(fields: [empresaId], references: [id])
-
   ubicacionId        String?
   ubicacion          Ubicacion?         @relation("UbicacionContactos", fields: [ubicacionId], references: [id])
-
-  ticketsSolicitados Ticket[]           @relation("SolicitanteTickets")
+  
+  // CAMBIO: Renombrado de 'ticketsSolicitados' a 'tickets' para mayor claridad
+  tickets            Ticket[]           @relation("SolicitanteTickets") 
+  
   equiposEnPrestamo  EquipoEnPrestamo[]
-
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -246,14 +232,11 @@ model Sucursal {
   nombre      String
   telefono    String?
   email       String?
-
-  direccionId String      @unique // La dirección es única por sucursal
+  direccionId String      @unique
   direccion   Direccion   @relation(fields: [direccionId], references: [id], onDelete: Cascade)
-
   empresaId   String?
   empresa     Empresa?    @relation(fields: [empresaId], references: [id])
-  ubicaciones Ubicacion[] // Sub-ubicaciones dentro de la sucursal
-
+  ubicaciones Ubicacion[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -269,7 +252,6 @@ model Ubicacion {
   contactos          ContactoEmpresa[] @relation("UbicacionContactos")
   tickets            Ticket[]         @relation("UbicacionTickets")
   equiposInventario  EquipoInventario[] @relation("EquipoUbicacionActual")
-
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -284,26 +266,25 @@ model Ticket {
   tipoIncidente        String
   prioridad            PrioridadTicket    @default(MEDIA)
   estado               EstadoTicket       @default(ABIERTO)
-
   solicitanteNombre    String
   solicitanteTelefono  String?
   solicitanteCorreo    String?
 
-  solicitanteClienteId String?
-  solicitanteCliente   ContactoEmpresa?   @relation("SolicitanteTickets", fields: [solicitanteClienteId], references: [id])
+  // --- CAMBIO PRINCIPAL AQUÍ ---
+  // 1. El campo ahora se llama 'contactoId' en lugar de 'solicitanteClienteId'.
+  // 2. La relación se llama 'contacto' en lugar de 'solicitanteCliente'.
+  // 3. El '?' asegura que el campo es OPCIONAL.
+  contactoId           String?
+  contacto             ContactoEmpresa?   @relation("SolicitanteTickets", fields: [contactoId], references: [id])
 
   empresaId            String?
   empresa              Empresa?           @relation("TicketEmpresa", fields: [empresaId], references: [id])
-
   ubicacionId          String?
   ubicacionReporte     Ubicacion?         @relation("UbicacionTickets", fields: [ubicacionId], references: [id])
-
   tecnicoAsignadoId    String?
   tecnicoAsignado      User?              @relation("TecnicoTickets", fields: [tecnicoAsignadoId], references: [id])
-
   acciones             AccionTicket[]
-  equiposEnPrestamo    EquipoEnPrestamo[] @relation("TicketToEquipoEnPrestamo") // Asegura la relación inversa aquí
-
+  equiposEnPrestamo    EquipoEnPrestamo[] @relation("TicketToEquipoEnPrestamo")
   fechaCreacion        DateTime           @default(now())
   fechaSolucionEstimada DateTime?
   fechaSolucionReal    DateTime?
@@ -320,9 +301,8 @@ model AccionTicket {
   usuarioId   String
   realizadaPor User    @relation(fields: [usuarioId], references: [id])
   categoria   String?
-
-  createdAt   DateTime @default(now()) // Asegurar timestamps para consistencia
-  updatedAt   DateTime @updatedAt      // Asegurar timestamps para consistencia
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("AccionTicket")
 }
@@ -338,20 +318,15 @@ model EquipoInventario {
   estadoEquipo           EstadoEquipoInventario @default(DISPONIBLE)
   fechaAdquisicion       DateTime?
   proveedor              String?
-
   ubicacionActualId      String?
   ubicacionActual        Ubicacion?         @relation("EquipoUbicacionActual", fields: [ubicacionActualId], references: [id])
-
   notasGenerales         String?
   prestamos              EquipoEnPrestamo[]
-
   panelVtsSerie          String?            @map("panel_vts_serie")
   pedalVtsSerie          String?            @map("pedal_vts_serie")
   biarticTipoDispositivo String?            @map("biartic_tipo_dispositivo")
-
-  empresaId              String? // Relaciona el equipo a una empresa
+  empresaId              String?
   empresa                Empresa?           @relation(fields: [empresaId], references: [id])
-
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -362,26 +337,19 @@ model EquipoEnPrestamo {
   id                        String             @id @default(uuid())
   equipoId                  String
   equipo                    EquipoInventario   @relation(fields: [equipoId], references: [id])
-
   prestadoAContactoId       String
   prestadoAContacto         ContactoEmpresa    @relation(fields: [prestadoAContactoId], references: [id])
   personaResponsableEnSitio String
-
   fechaPrestamo             DateTime           @default(now())
   fechaDevolucionEstimada   DateTime
   fechaDevolucionReal       DateTime?
-
   estadoPrestamo            EstadoPrestamoEquipo @default(PRESTADO)
-
   ticketId                  String?
-  ticketAsociado            Ticket?            @relation("TicketToEquipoEnPrestamo", fields: [ticketId], references: [id]) // Renombrado a ticketAsociado
-
+  ticketAsociado            Ticket?            @relation("TicketToEquipoEnPrestamo", fields: [ticketId], references: [id])
   notasPrestamo             String?
   notasDevolucion           String?
-
-  entregadoPorUsuarioId     String? // Asume que es el ID de un User
-  recibidoPorUsuarioId      String? // Asume que es el ID de un User
-
+  entregadoPorUsuarioId     String?
+  recibidoPorUsuarioId      String?
   createdAt                 DateTime           @default(now())
   updatedAt                 DateTime           @updatedAt
 }
