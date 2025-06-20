@@ -24,17 +24,16 @@ export async function GET(request) {
 
   const userRole = session.user.rol;
   const userId = session.user.id;
-  
+
   let where = {};
   let roleFilter = {};
 
   // Filtros basados en rol
   if (userRole === RoleUsuario.CLIENTE) {
-    // Permitir que los clientes vean tickets donde son el solicitante asignado
-    // O donde su email coincide con el solicitanteCorreo (para tickets de carga masiva)
     const userEmail = session.user.email;
     roleFilter.OR = [
-      { solicitanteClienteId: userId },
+      // <-- CAMBIO CLAVE: Renombrado de 'solicitanteClienteId' a 'contactoId'
+      { contactoId: userId },
       { solicitanteCorreo: userEmail }
     ];
   } else if (userRole === RoleUsuario.TECNICO) {
@@ -54,35 +53,29 @@ export async function GET(request) {
 
   // Combinar filtros usando AND
   let conditions = [];
-
   if (Object.keys(roleFilter).length > 0) {
     conditions.push(roleFilter);
   }
-
   if (Object.keys(searchFilter).length > 0) {
     conditions.push(searchFilter);
   }
-
   if (estado && estado !== 'Todos') {
     conditions.push({ estado: estado });
   }
-
   if (prioridad && prioridad !== 'Todas') {
     conditions.push({ prioridad: prioridad });
   }
-
   if (conditions.length > 0) {
     where.AND = conditions;
   }
-
-  console.log("Prisma where clause:", JSON.stringify(where, null, 2));
 
   try {
     const tickets = await prisma.ticket.findMany({
       where,
       include: {
         empresa: true,
-        solicitanteCliente: true,
+        // <-- CAMBIO CLAVE: Renombrado de 'solicitanteCliente' a 'contacto'
+        contacto: true,
         tecnicoAsignado: true,
         ubicacionReporte: true,
       },
