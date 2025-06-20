@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // O tu base de datos preferida: postgresql, mysql, etc.
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -78,8 +78,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -124,11 +123,11 @@ model VerificationToken {
 // --- MODELOS DE NEGOCIO Y GEOGRAFÍA ---
 
 model Pais {
-  id        String    @id @default(uuid())
-  nombre    String    @unique
+  id        String   @id @default(uuid())
+  nombre    String   @unique
   regiones  Region[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("paises")
 }
@@ -173,15 +172,15 @@ model Comuna {
 }
 
 model Direccion {
-  id                  String     @id @default(uuid())
+  id                  String   @id @default(uuid())
   calle               String
   numero              String
   comunaId            String
-  comuna              Comuna     @relation(fields: [comunaId], references: [id])
-  empresasComerciales Empresa[]  @relation("EmpresaDireccionComercial")
+  comuna              Comuna   @relation(fields: [comunaId], references: [id])
+  empresasComerciales Empresa[] @relation("EmpresaDireccionComercial")
   sucursales          Sucursal[]
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@map("direcciones")
 }
@@ -199,7 +198,6 @@ model Empresa {
   equiposInventario    EquipoInventario[]
   contactosEmpresa     ContactoEmpresa[]
   tickets              Ticket[]          @relation("TicketEmpresa")
-
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -216,10 +214,7 @@ model ContactoEmpresa {
   empresa            Empresa?           @relation(fields: [empresaId], references: [id])
   ubicacionId        String?
   ubicacion          Ubicacion?         @relation("UbicacionContactos", fields: [ubicacionId], references: [id])
-  
-  // CAMBIO: Renombrado de 'ticketsSolicitados' a 'tickets' para mayor claridad
-  tickets            Ticket[]           @relation("SolicitanteTickets") 
-  
+  tickets            Ticket[]           @relation("SolicitanteTickets")
   equiposEnPrestamo  EquipoEnPrestamo[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -227,6 +222,7 @@ model ContactoEmpresa {
   @@map("contactos_empresas")
 }
 
+// --- MODELO SUCURSAL CORREGIDO ---
 model Sucursal {
   id          String      @id @default(uuid())
   nombre      String
@@ -237,80 +233,81 @@ model Sucursal {
   empresaId   String?
   empresa     Empresa?    @relation(fields: [empresaId], references: [id])
   ubicaciones Ubicacion[]
+  tickets     Ticket[] // Relación directa con Ticket
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   @@map("sucursales")
 }
 
+// --- MODELO UBICACION SIN RELACIÓN A TICKET ---
 model Ubicacion {
-  id                 String           @id @default(uuid())
-  nombreReferencial  String?
-  sucursalId         String
-  sucursal           Sucursal         @relation(fields: [sucursalId], references: [id])
-  notas              String?
-  contactos          ContactoEmpresa[] @relation("UbicacionContactos")
-  tickets            Ticket[]         @relation("UbicacionTickets")
-  equiposInventario  EquipoInventario[] @relation("EquipoUbicacionActual")
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                String             @id @default(uuid())
+  nombreReferencial String?
+  sucursalId        String
+  sucursal          Sucursal           @relation(fields: [sucursalId], references: [id])
+  notas             String?
+  contactos         ContactoEmpresa[]  @relation("UbicacionContactos")
+  equiposInventario EquipoInventario[] @relation("EquipoUbicacionActual")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@map("ubicaciones")
 }
 
+// --- MODELO TICKET CORREGIDO ---
 model Ticket {
-  id                   String             @id @default(uuid())
-  numeroCaso           Int                @unique
-  titulo               String
-  descripcionDetallada String?
-  tipoIncidente        String
-  prioridad            PrioridadTicket    @default(MEDIA)
-  estado               EstadoTicket       @default(ABIERTO)
-  solicitanteNombre    String
-  solicitanteTelefono  String?
-  solicitanteCorreo    String?
+  id                    String             @id @default(uuid())
+  numeroCaso            Int                @unique
+  titulo                String
+  descripcionDetallada  String?
+  tipoIncidente         String
+  prioridad             PrioridadTicket    @default(MEDIA)
+  estado                EstadoTicket       @default(ABIERTO)
+  solicitanteNombre     String
+  solicitanteTelefono   String?
+  solicitanteCorreo     String?
+  contactoId            String?
+  contacto              ContactoEmpresa?   @relation("SolicitanteTickets", fields: [contactoId], references: [id])
+  empresaId             String?
+  empresa               Empresa?           @relation("TicketEmpresa", fields: [empresaId], references: [id])
+  
+  // --- CAMBIO ESTRUCTURAL: RELACIÓN DIRECTA CON SUCURSAL ---
+  sucursalId            String?
+  sucursal              Sucursal?          @relation(fields: [sucursalId], references: [id])
 
-  // --- CAMBIO PRINCIPAL AQUÍ ---
-  // 1. El campo ahora se llama 'contactoId' en lugar de 'solicitanteClienteId'.
-  // 2. La relación se llama 'contacto' en lugar de 'solicitanteCliente'.
-  // 3. El '?' asegura que el campo es OPCIONAL.
-  contactoId           String?
-  contacto             ContactoEmpresa?   @relation("SolicitanteTickets", fields: [contactoId], references: [id])
-
-  empresaId            String?
-  empresa              Empresa?           @relation("TicketEmpresa", fields: [empresaId], references: [id])
-  ubicacionId          String?
-  ubicacionReporte     Ubicacion?         @relation("UbicacionTickets", fields: [ubicacionId], references: [id])
-  tecnicoAsignadoId    String?
-  tecnicoAsignado      User?              @relation("TecnicoTickets", fields: [tecnicoAsignadoId], references: [id])
-  acciones             AccionTicket[]
-  equiposEnPrestamo    EquipoEnPrestamo[] @relation("TicketToEquipoEnPrestamo")
-  fechaCreacion        DateTime           @default(now())
+  tecnicoAsignadoId     String?
+  tecnicoAsignado       User?              @relation("TecnicoTickets", fields: [tecnicoAsignadoId], references: [id])
+  acciones              AccionTicket[]
+  equiposEnPrestamo     EquipoEnPrestamo[] @relation("TicketToEquipoEnPrestamo")
+  fechaCreacion         DateTime           @default(now())
   fechaSolucionEstimada DateTime?
-  fechaSolucionReal    DateTime?
-  updatedAt            DateTime           @updatedAt
-  equipoAfectado       String?
+  fechaSolucionReal     DateTime?
+  updatedAt             DateTime           @updatedAt
+  equipoAfectado        String?
 }
 
+// --- OTROS MODELOS (sin cambios) ---
 model AccionTicket {
-  id          String   @id @default(uuid())
-  ticketId    String
-  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  descripcion String
-  fechaAccion DateTime @default(now())
-  usuarioId   String
-  realizadaPor User    @relation(fields: [usuarioId], references: [id])
-  categoria   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  ticketId     String
+  ticket       Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  descripcion  String
+  fechaAccion  DateTime @default(now())
+  usuarioId    String
+  realizadaPor User     @relation(fields: [usuarioId], references: [id])
+  categoria    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("AccionTicket")
 }
 
 model EquipoInventario {
-  id                     String             @id @default(uuid())
+  id                     String               @id @default(uuid())
   nombreDescriptivo      String
-  identificadorUnico     String             @unique
+  identificadorUnico     String               @unique
   tipoEquipo             TipoEquipoInventario
   marca                  String?
   modelo                 String?
@@ -319,37 +316,37 @@ model EquipoInventario {
   fechaAdquisicion       DateTime?
   proveedor              String?
   ubicacionActualId      String?
-  ubicacionActual        Ubicacion?         @relation("EquipoUbicacionActual", fields: [ubicacionActualId], references: [id])
+  ubicacionActual        Ubicacion?           @relation("EquipoUbicacionActual", fields: [ubicacionActualId], references: [id])
   notasGenerales         String?
   prestamos              EquipoEnPrestamo[]
-  panelVtsSerie          String?            @map("panel_vts_serie")
-  pedalVtsSerie          String?            @map("pedal_vts_serie")
-  biarticTipoDispositivo String?            @map("biartic_tipo_dispositivo")
+  panelVtsSerie          String?              @map("panel_vts_serie")
+  pedalVtsSerie          String?              @map("pedal_vts_serie")
+  biarticTipoDispositivo String?              @map("biartic_tipo_dispositivo")
   empresaId              String?
-  empresa                Empresa?           @relation(fields: [empresaId], references: [id])
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  empresa                Empresa?             @relation(fields: [empresaId], references: [id])
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
 
   @@map("equipos_inventario")
 }
 
 model EquipoEnPrestamo {
-  id                        String             @id @default(uuid())
+  id                        String           @id @default(uuid())
   equipoId                  String
-  equipo                    EquipoInventario   @relation(fields: [equipoId], references: [id])
+  equipo                    EquipoInventario @relation(fields: [equipoId], references: [id])
   prestadoAContactoId       String
-  prestadoAContacto         ContactoEmpresa    @relation(fields: [prestadoAContactoId], references: [id])
+  prestadoAContacto         ContactoEmpresa  @relation(fields: [prestadoAContactoId], references: [id])
   personaResponsableEnSitio String
-  fechaPrestamo             DateTime           @default(now())
+  fechaPrestamo             DateTime         @default(now())
   fechaDevolucionEstimada   DateTime
   fechaDevolucionReal       DateTime?
   estadoPrestamo            EstadoPrestamoEquipo @default(PRESTADO)
   ticketId                  String?
-  ticketAsociado            Ticket?            @relation("TicketToEquipoEnPrestamo", fields: [ticketId], references: [id])
+  ticketAsociado            Ticket?          @relation("TicketToEquipoEnPrestamo", fields: [ticketId], references: [id])
   notasPrestamo             String?
   notasDevolucion           String?
   entregadoPorUsuarioId     String?
   recibidoPorUsuarioId      String?
-  createdAt                 DateTime           @default(now())
-  updatedAt                 DateTime           @updatedAt
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
 }

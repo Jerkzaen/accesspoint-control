@@ -5,9 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { RoleUsuario } from "@prisma/client";
 
-// Asegurarse de que la ruta es siempre dinámica
 export const dynamic = 'force-dynamic';
-// Forzar que no se use caché para los fetch
 export const fetchCache = 'force-no-store';
 
 export async function GET(request) {
@@ -28,11 +26,9 @@ export async function GET(request) {
   let where = {};
   let roleFilter = {};
 
-  // Filtros basados en rol
   if (userRole === RoleUsuario.CLIENTE) {
     const userEmail = session.user.email;
     roleFilter.OR = [
-      // <-- CAMBIO CLAVE: Renombrado de 'solicitanteClienteId' a 'contactoId'
       { contactoId: userId },
       { solicitanteCorreo: userEmail }
     ];
@@ -40,7 +36,6 @@ export async function GET(request) {
     roleFilter.tecnicoAsignadoId = userId;
   }
 
-  // Filtros de búsqueda
   let searchFilter = {};
   if (searchText) {
     searchFilter.OR = [
@@ -51,7 +46,6 @@ export async function GET(request) {
     ];
   }
 
-  // Combinar filtros usando AND
   let conditions = [];
   if (Object.keys(roleFilter).length > 0) {
     conditions.push(roleFilter);
@@ -74,10 +68,12 @@ export async function GET(request) {
       where,
       include: {
         empresa: true,
-        // <-- CAMBIO CLAVE: Renombrado de 'solicitanteCliente' a 'contacto'
         contacto: true,
         tecnicoAsignado: true,
-        ubicacionReporte: true,
+        // --- CAMBIO CLAVE ---
+        // Se reemplaza la relación obsoleta 'ubicacionReporte'
+        // por la nueva relación directa 'sucursal'.
+        sucursal: true,
       },
       orderBy: {
         fechaCreacion: 'desc',

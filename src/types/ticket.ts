@@ -1,36 +1,38 @@
 // src/types/ticket.ts
 
-import { EstadoTicket, PrioridadTicket } from '@prisma/client'; // Importar los enums de Prisma
+import { EstadoTicket, PrioridadTicket } from '@prisma/client';
 
-// TIPO MOVIDO AQUÍ para romper la dependencia circular
 export type CreationFlowStatus = 'idle' | 'form' | 'loading' | 'success' | 'error';
 
-export interface EmpresaClienteRelacion {
+// Relaciones que se incluyen en las consultas de Ticket
+export interface EmpresaRelacion {
   id: string;
   nombre: string;
 }
 
-export interface UbicacionRelacion {
+// --- CAMBIO CLAVE ---
+// Nueva interfaz para la relación con Sucursal.
+export interface SucursalRelacion {
   id: string;
-  nombreReferencial?: string | null;
-
+  nombre: string;
 }
 
-export interface UsuarioBasico { // Para el técnico y el usuario que realiza la acción
+export interface UsuarioBasico {
   id: string;
-  name?: string | null; 
+  name?: string | null;
   email?: string | null;
 }
 
 export interface ActionEntry {
   id: string;
-  fechaAccion: Date; 
+  fechaAccion: Date;
   descripcion: string;
-  realizadaPor?: UsuarioBasico | null; 
+  realizadaPor?: UsuarioBasico | null;
   usuarioId?: string;
   categoria?: string | null;
 }
 
+// --- Interfaz Ticket Actualizada ---
 export interface Ticket {
   id: string;
   numeroCaso: number;
@@ -39,25 +41,27 @@ export interface Ticket {
   tipoIncidente: string;
   prioridad: PrioridadTicket;
   estado: EstadoTicket;
-  
-  solicitanteNombre: string; 
+  solicitanteNombre: string;
   solicitanteTelefono?: string | null;
   solicitanteCorreo?: string | null;
-  solicitanteClienteId?: string | null; 
-
-  empresaCliente?: EmpresaClienteRelacion | null; 
-  ubicacion?: UbicacionRelacion | null; 
+  
+  // Relaciones
+  empresa?: EmpresaRelacion | null;
+  sucursal?: SucursalRelacion | null; // Se usa la nueva relación
+  contacto?: any; // Mantener como any o definir una interfaz específica
   tecnicoAsignado?: UsuarioBasico | null;
+  acciones?: ActionEntry[] | null;
 
-  empresaClienteId?: string | null;
-  ubicacionId?: string | null;
+  // IDs de las relaciones
+  empresaId?: string | null;
+  sucursalId?: string | null; // Se usa el nuevo campo de ID
+  contactoId?: string | null;
   tecnicoAsignadoId?: string | null;
 
-  acciones?: ActionEntry[] | null; 
-
-  fechaCreacion: Date; 
+  // Timestamps y otros campos
+  fechaCreacion: Date;
   fechaSolucionEstimada?: Date | null;
-  fechaSolucionReal?: Date | null; 
-  updatedAt: Date; 
-  equipoAfectado?: string | null; // Nuevo campo para el equipo afectado
+  fechaSolucionReal?: Date | null;
+  updatedAt: Date;
+  equipoAfectado?: string | null;
 }
