@@ -70,13 +70,13 @@ export async function GET(request) {
         empresa: true,
         contacto: true,
         tecnicoAsignado: true,
-        // --- CAMBIO CLAVE ---
-        // Se reemplaza la relación obsoleta 'ubicacionReporte'
-        // por la nueva relación directa 'sucursal'.
         sucursal: true,
       },
+      // --- CAMBIO UX: ORDENAMIENTO ---
+      // Se ordena por número de caso en lugar de fecha de creación
+      // para asegurar que el último ticket creado siempre sea el primero.
       orderBy: {
-        fechaCreacion: 'desc',
+        numeroCaso: 'desc',
       },
     });
 

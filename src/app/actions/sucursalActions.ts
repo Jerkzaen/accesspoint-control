@@ -14,6 +14,62 @@ export type SucursalInput = {
   empresaId: string;
 };
 
+// --- NUEVO TIPO DE ENTRADA PARA EL FORMULARIO EN LÍNEA ---
+export type CreateSucursalFromFormData = {
+  nombre: string;
+  calle: string;
+  numero: string;
+  comunaId: string;
+  empresaId: string; // La empresa a la que pertenece
+};
+
+// --- NUEVA SERVER ACTION ---
+export async function createSucursalFromForm(data: CreateSucursalFromFormData) {
+  try {
+    // Usamos una transacción para asegurar que todo se cree correctamente.
+    const newSucursal = await prisma.$transaction(async (tx) => {
+      // 1. Crear la dirección
+      const newDireccion = await tx.direccion.create({
+        data: {
+          calle: data.calle,
+          numero: data.numero,
+          comunaId: data.comunaId,
+        },
+      });
+
+      // 2. Crear la sucursal, vinculándola a la dirección y empresa
+      const createdSucursal = await tx.sucursal.create({
+        data: {
+          nombre: data.nombre,
+          empresaId: data.empresaId,
+          direccionId: newDireccion.id,
+        },
+        include: {
+            empresa: true,
+            direccion: {
+                include: {
+                    comuna: true
+                }
+            }
+        }
+      });
+
+      return createdSucursal;
+    });
+
+    revalidatePath("/admin/sucursales"); // Revalidar por si acaso
+    return { success: true, data: newSucursal };
+  } catch (error) {
+    console.error("Error al crear sucursal desde formulario:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return { success: false, error: "Ya existe una sucursal con datos similares." };
+      }
+    }
+    return { success: false, error: "No se pudo crear la sucursal." };
+  }
+}
+
 export async function getSucursales(): Promise<Prisma.SucursalGetPayload<{
   include: {
     empresa: true;
@@ -87,9 +143,6 @@ export async function addSucursal(data: SucursalInput) {
       },
     });
 
-
-
-
     revalidatePath("/admin/sucursales");
     return { success: true, data: newSucursal };
   } catch (error) {
@@ -130,7 +183,6 @@ export async function updateSucursal(id: string, data: Partial<SucursalInput>) {
 
 export async function deleteSucursal(id: string) {
   try {
-    // Primero, encuentra la sucursal para obtener el ID de la dirección asociada
     const sucursalToDelete = await prisma.sucursal.findUnique({
       where: { id },
       select: { direccionId: true, empresaId: true },
@@ -140,7 +192,6 @@ export async function deleteSucursal(id: string) {
       return { success: false, error: "Sucursal o dirección asociada no encontrada." };
     }
 
-    // Desconectar la sucursal de la empresa antes de eliminarla
     if (sucursalToDelete.empresaId) {
       await prisma.empresa.update({
         where: { id: sucursalToDelete.empresaId },
@@ -152,12 +203,10 @@ export async function deleteSucursal(id: string) {
       });
     }
 
-    // Elimina la sucursal
     await prisma.sucursal.delete({
       where: { id },
     });
 
-    // Luego, elimina la dirección asociada
     await prisma.direccion.delete({
       where: { id: sucursalToDelete.direccionId },
     });
