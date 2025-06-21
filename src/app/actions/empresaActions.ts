@@ -1,199 +1,112 @@
-'use server';
+"use server"
 
 import { prisma } from "@/lib/prisma";
-import type { Empresa as PrismaEmpresa, Direccion as PrismaDireccion, Prisma } from '@prisma/client';
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
+import type { Empresa, Direccion } from "@prisma/client";
+import type { ComunaConProvinciaYRegion } from './geografiaActions';
 
-// Corregido: Asegura que direccionComercialId es explícitamente string | null
-// También asegúrate de que todos los campos del modelo PrismaEmpresa se manejen correctamente.
-export type EmpresaWithDireccion = PrismaEmpresa & { 
-  direccionComercial: PrismaDireccion | null;
+// Nota: El schema de Zod y los tipos de formulario se movieron a page.tsx
+// para cumplir con la regla de "use server".
+
+export type EmpresaConDetalles = Empresa & {
+    direccionComercial: (Direccion & {
+        comuna: ComunaConProvinciaYRegion | null;
+    }) | null;
+    _count: {
+        sucursales: number;
+        tickets: number;
+    };
 };
 
-export type EmpresaInput = {
-  nombre: string;
-  rut?: string | null;
-  logoUrl?: string | null; 
-  telefono?: string | null;
-  email?: string | null;
-  direccion?: {
-    calle?: string | null;
-    numero?: string | null;
-    comunaId?: string | null;
-  } | null;
-};
-
-type GetEmpresasResult = { success: true; data: EmpresaWithDireccion[] } | { success: false; error: string };
-
-
-export async function getEmpresas(): Promise<GetEmpresasResult> {
-  try {
-    const empresas = await prisma.empresa.findMany({
-      orderBy: { nombre: 'asc' },
-      include: { direccionComercial: true }, 
-    });
-    const typedEmpresas: EmpresaWithDireccion[] = empresas.map(emp => ({
-      ...emp,
-      direccionComercial: emp.direccionComercial, // Asegura que la relación se mantenga
-    })) as EmpresaWithDireccion[]; 
-    return { success: true, data: typedEmpresas };
-  } catch (error: any) {
-    console.error("Error al obtener empresas:", error);
-    return { success: false, error: "Error al obtener empresas." };
-  }
-}
-
-export async function addEmpresa(data: EmpresaInput) {
-  try {
-    let direccionComercialId: string | undefined;
-
-    if (data.direccion && (data.direccion.calle || data.direccion.numero || data.direccion.comunaId)) {
-      const existingDireccion = await prisma.direccion.findFirst({
-        where: {
-          calle: data.direccion.calle || '',
-          numero: data.direccion.numero || '',
-          comunaId: data.direccion.comunaId || undefined,
-        },
-      });
-
-      if (existingDireccion) {
-        direccionComercialId = existingDireccion.id;
-      } else {
-        const newDireccion = await prisma.direccion.create({
-            data: {
-              comuna: { connect: { id: data.direccion.comunaId || '' } },
-              calle: data.direccion.calle || '',
-              numero: data.direccion.numero || '',
-            },
-          });
-          direccionComercialId = newDireccion.id;
-      }
-    }
-
-    const newEmpresa = await prisma.empresa.create({
-      data: {
-        nombre: data.nombre,
-        rut: data.rut,
-        logoUrl: data.logoUrl,
-        telefono: data.telefono,
-        email: data.email,
-        direccionComercial: direccionComercialId ? { connect: { id: direccionComercialId } } : undefined,
-      },
-      include: { 
-        direccionComercial: true
-      }
-    });
-
-    revalidatePath('/admin/empresas');
-    return { success: true, data: newEmpresa as EmpresaWithDireccion }; 
-  } catch (error: any) {
-    console.error("Error al añadir empresa:", error);
-    if (error.code === 'P2002' && error.meta?.target?.includes('nombre')) {
-      return { success: false, error: "Ya existe una empresa con ese nombre." };
-    }
-    return { success: false, error: "Error al añadir empresa." };
-  }
-}
-
-export async function updateEmpresa(id: string, data: EmpresaInput) {
-  try {
-    let direccionComercialId: string | undefined;
-    // Corregido: Obtener todos los campos necesarios para que el tipo coincida con EmpresaWithDireccion
-    let existingEmpresa = await prisma.empresa.findUnique({
-      where: { id },
-      include: { direccionComercial: true } // Incluye la relación completa
-    }) as EmpresaWithDireccion | null; // Casting para asegurar el tipo
-
-    // Si la empresa no se encuentra, manejar el error
-    if (!existingEmpresa) {
-        return { success: false, error: "Empresa no encontrada para actualizar." };
-    }
-
-
-    if (data.direccion && (data.direccion.calle || data.direccion.numero || data.direccion.comunaId)) {
-      if (existingEmpresa.direccionComercialId) { // Usa existingEmpresa.direccionComercialId directamente
-        const updatedDireccion = await prisma.direccion.update({
-          where: { id: existingEmpresa.direccionComercialId },
-          data: {
-            comuna: { connect: { id: data.direccion.comunaId || '' } },
-            calle: data.direccion.calle || '',
-            numero: data.direccion.numero || '',
-          },
+export async function createEmpresa(data: any): Promise<{ success: boolean, message: string }> {
+    // La validación ahora se hace en el lado del servidor ANTES de llamar a esta acción,
+    // pero podríamos añadir una capa extra aquí si fuera necesario.
+    const { nombre, rut, telefono, calle, numero, comunaId } = data;
+    try {
+        await prisma.$transaction(async (tx) => {
+            let direccionId: string | undefined = undefined;
+            if (calle && numero && comunaId) {
+                const nuevaDireccion = await tx.direccion.create({ data: { calle, numero, comunaId } });
+                direccionId = nuevaDireccion.id;
+            }
+            await tx.empresa.create({
+                data: { nombre, rut, telefono, direccionComercialId: direccionId },
+            });
         });
-        direccionComercialId = updatedDireccion.id;
-      } else {
-        const newDireccion = await prisma.direccion.create({
-        data: {
-          comuna: { connect: { id: data.direccion.comunaId || '' } },
-          calle: data.direccion.calle || '',
-          numero: data.direccion.numero || '',
-        },
-      });
-      direccionComercialId = newDireccion.id;
-      }
-    } else if (existingEmpresa.direccionComercialId && !data.direccion) {
-      await prisma.empresa.update({
-        where: { id },
-        data: {
-          direccionComercial: { disconnect: true }
-        }
-      });
-      await prisma.direccion.delete({
-        where: { id: existingEmpresa.direccionComercialId }
-      });
-      direccionComercialId = undefined; 
-    } else if (!existingEmpresa.direccionComercialId && !data.direccion) {
-        direccionComercialId = undefined;
+        revalidatePath('/admin/empresas');
+        return { success: true, message: 'Empresa creada con éxito.' };
+    } catch (error: any) {
+        if (error.code === 'P2002') return { success: false, message: 'El RUT o nombre de empresa ya existe.' };
+        return { success: false, message: 'Ocurrió un error en el servidor.' };
     }
-
-
-    const updatedEmpresa = await prisma.empresa.update({
-      where: { id },
-      data: {
-        nombre: data.nombre,
-        rut: data.rut,
-        logoUrl: data.logoUrl,
-        telefono: data.telefono,
-        email: data.email,
-        direccionComercial: direccionComercialId ? { connect: { id: direccionComercialId } } : undefined,
-      },
-      include: { 
-        direccionComercial: true
-      }
-    });
-
-    revalidatePath('/admin/empresas');
-    return { success: true, data: updatedEmpresa as EmpresaWithDireccion };
-  } catch (error: any) {
-    console.error("Error al actualizar empresa:", error);
-    if (error.code === 'P2002' && error.meta?.target?.includes('nombre')) {
-      return { success: false, error: "Ya existe una empresa con ese nombre." };
-    }
-    return { success: false, error: "Error al actualizar empresa." };
-  }
 }
 
-export async function deleteEmpresa(id: string) {
-  try {
-    const empresaToDelete = await prisma.empresa.findUnique({
-      where: { id },
-      select: { direccionComercialId: true }
-    });
-
-    await prisma.empresa.delete({
-      where: { id },
-    });
-
-    if (empresaToDelete?.direccionComercialId) {
-      await prisma.direccion.delete({
-        where: { id: empresaToDelete.direccionComercialId }
-      });
+export async function updateEmpresa(id: string, data: any): Promise<{ success: boolean, message: string }> {
+    const { nombre, rut, telefono, calle, numero, comunaId } = data;
+    try {
+        await prisma.$transaction(async (tx) => {
+            const empresaActual = await tx.empresa.findUnique({ where: { id } });
+            let direccionId = empresaActual?.direccionComercialId;
+            if (calle && numero && comunaId) {
+                const direccionData = { calle, numero, comunaId };
+                if (direccionId) {
+                    await tx.direccion.update({ where: { id: direccionId }, data: direccionData });
+                } else {
+                    const nuevaDireccion = await tx.direccion.create({ data: direccionData });
+                    direccionId = nuevaDireccion.id;
+                }
+            } else if (direccionId) {
+                await tx.empresa.update({ where: { id }, data: { direccionComercialId: null } });
+                await tx.direccion.delete({ where: { id: direccionId } });
+                direccionId = null;
+            }
+            await tx.empresa.update({
+                where: { id },
+                data: { nombre, rut, telefono, direccionComercialId: direccionId },
+            });
+        });
+        revalidatePath('/admin/empresas');
+        return { success: true, message: 'Empresa actualizada con éxito.' };
+    } catch (error: any) {
+        if (error.code === 'P2002') return { success: false, message: 'El RUT o nombre de empresa ya está en uso.' };
+        return { success: false, message: 'Ocurrió un error en el servidor al actualizar.' };
     }
+}
 
-    revalidatePath('/admin/empresas');
-    return { success: true };
-  } catch (error) {
-    console.error("Error al eliminar empresa:", error);
-    return { success: false, error: "Error al eliminar empresa." };
-  }
+export async function deleteEmpresa(id: string): Promise<{ success: boolean, message: string }> {
+    try {
+        const empresaToDelete = await prisma.empresa.findUnique({
+            where: { id },
+            select: { direccionComercialId: true, _count: { select: { sucursales: true, tickets: true } } }
+        });
+        if (!empresaToDelete) return { success: false, message: "La empresa no existe." };
+        if (empresaToDelete._count.sucursales > 0 || empresaToDelete._count.tickets > 0) {
+            return { success: false, message: "No se puede eliminar: la empresa tiene sucursales o tickets asociados." };
+        }
+        await prisma.$transaction(async (tx) => {
+            await tx.empresa.delete({ where: { id } });
+            if (empresaToDelete.direccionComercialId) {
+                await tx.direccion.delete({ where: { id: empresaToDelete.direccionComercialId } });
+            }
+        });
+        revalidatePath('/admin/empresas');
+        return { success: true, message: "Empresa eliminada con éxito." };
+    } catch (error: any) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+            return { success: false, message: "No se puede eliminar: la empresa tiene registros asociados." };
+        }
+        return { success: false, message: "Error al eliminar la empresa." };
+    }
+}
+
+export async function getEmpresas(): Promise<EmpresaConDetalles[]> {
+    const empresas = await prisma.empresa.findMany({
+        orderBy: { nombre: 'asc' },
+        include: {
+            _count: { select: { sucursales: true, tickets: true } },
+            direccionComercial: { include: { comuna: true } },
+        },
+    });
+    return empresas as unknown as EmpresaConDetalles[];
 }
