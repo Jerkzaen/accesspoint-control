@@ -1,430 +1,339 @@
-'use client';
+// RUTA: src/app/actions/empresaActions.ts
+'use server';
 
-import React, { useState, useEffect } from 'react';
-// Importa los tipos directamente de @prisma/client si es necesario, 
-// o si confías en que tus migraciones los tienen.
-import type { Direccion as PrismaDireccion } from '@prisma/client'; 
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
-// Importa tu tipo EmpresaWithDireccion desde empresaActions.ts
-import { EmpresaWithDireccion, getEmpresas, addEmpresa, updateEmpresa, deleteEmpresa } from '@/app/actions/empresaActions';
-// Importa los tipos de comuna desde comunaActions.ts
-import { getComunas, searchComunas, ComunaWithProvinciaAndRegion } from '@/app/actions/comunaActions';
+// CORRECCIÓN CLAVE AQUÍ:
+// 1. Importar el namespace 'Prisma' para tipos de operación (ej. Prisma.DireccionUpdateInput),
+//    y para Prisma.TransactionClient.
+// 2. Importar PrismaClientKnownRequestError directamente, ya que es una CLASE que se usa en runtime (con 'instanceof').
+import { Prisma, PrismaClientKnownRequestError } from '@prisma/client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
-import { PencilIcon, Trash2Icon, SaveIcon, XCircleIcon, PlusCircleIcon } from 'lucide-react';
+// Para obtener los TIPOS de los modelos de Prisma, usamos Prisma.ModelNameGetPayload<{}>.
+// Esto es la forma más segura y explícita de obtener los tipos de los modelos
+// con sus relaciones incluidas si las especificas.
+type PrismaEmpresaType = Prisma.EmpresaGetPayload<{}>;
+type PrismaDireccionType = Prisma.DireccionGetPayload<{}>;
+type PrismaComunaType = Prisma.ComunaGetPayload<{}>;
 
-const EmpresasPage = () => {
-  const [empresas, setEmpresas] = useState<EmpresaWithDireccion[]>([]);
-  const [newEmpresaName, setNewEmpresaName] = useState('');
-  const [newEmpresaRut, setNewEmpresaRut] = useState('');
-  const [newEmpresaLogoUrl, setNewEmpresaLogoUrl] = useState('');
-  // Usa PrismaDireccion para el tipo de newEmpresaDireccion
-  const [newEmpresaDireccion, setNewEmpresaDireccion] = useState<Partial<PrismaDireccion>>({
-    calle: '',
-    numero: '',
-    comunaId: ''
-  });
-
-  const [editingSearchTerm, setEditingSearchTerm] = useState('');
-  const [editingFilteredComunas, setEditingFilteredComunas] = useState<ComunaWithProvinciaAndRegion[]>([]);
-  const [editingSelectedComuna, setEditingSelectedComuna] = useState<ComunaWithProvinciaAndRegion | null>(null);
-
-  const [comunas, setComunas] = useState<ComunaWithProvinciaAndRegion[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredComunas, setFilteredComunas] = useState<ComunaWithProvinciaAndRegion[]>([]);
-  const [selectedComuna, setSelectedComuna] = useState<ComunaWithProvinciaAndRegion | null>(null);
-
-  const [editingEmpresaId, setEditingEmpresaId] = useState<string | null>(null);
-  const [editingEmpresaName, setEditingEmpresaName] = useState('');
-  const [editingEmpresaRut, setEditingEmpresaRut] = useState('');
-  const [editingEmpresaLogoUrl, setEditingEmpresaLogoUrl] = useState('');
-  // Usa PrismaDireccion para el tipo de editingEmpresaDireccion
-  const [editingEmpresaDireccion, setEditingEmpresaDireccion] = useState<Partial<PrismaDireccion>>({
-    calle: '',
-    numero: '',
-    comunaId: ''
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchEmpresas();
-    fetchComunas('');
-  }, []);
-
-  const fetchComunas = async (search: string) => {
-    const result = await searchComunas(search);
-    if (result.success) {
-      setComunas(result.data);
-      setFilteredComunas(result.data); // Inicialmente, mostrar todas las comunas
-    } else {
-      toast.error(result.error || "Error al cargar las comunas.");
-    }
-  };
-
-  const handleSearchComuna = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    if (term.length > 0) {
-      const result = await searchComunas(term);
-      if (result.success) {
-        setFilteredComunas(result.data);
-      } else {
-        toast.error(result.error || "Error al buscar comunas.");
-      }
-    } else {
-      setFilteredComunas(comunas);
-    }
-    setSelectedComuna(null);
-    setNewEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: '' })); // Tipado para 'prev'
-  };
-
-  const handleSelectComuna = (comuna: ComunaWithProvinciaAndRegion) => {
-    setSelectedComuna(comuna);
-    setSearchTerm(comuna.nombre);
-    setNewEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: comuna.id })); // Tipado para 'prev'
-    setFilteredComunas([]);
-  };
-
-  const handleEditingSearchComuna = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
-    setEditingSearchTerm(term);
-    if (term.length > 0) {
-      const result = await searchComunas(term);
-      if (result.success) {
-        setEditingFilteredComunas(result.data);
-      } else {
-        toast.error(result.error || "Error al buscar comunas.");
-      }
-    } else {
-      setEditingFilteredComunas(comunas); // Mostrar todas si el campo está vacío
-    }
-    setEditingSelectedComuna(null);
-    setEditingEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: '' })); // Tipado para 'prev'
-  };
-
-  const handleEditingSelectComuna = (comuna: ComunaWithProvinciaAndRegion) => {
-    setEditingSelectedComuna(comuna);
-    setEditingSearchTerm(comuna.nombre);
-    setEditingEmpresaDireccion((prev: Partial<PrismaDireccion>) => ({ ...prev, comunaId: comuna.id })); // Tipado para 'prev'
-    setEditingFilteredComunas([]);
-  };
-
-  const fetchEmpresas = async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getEmpresas();
-    if (result.success) {
-      setEmpresas(result.data || []);
-    } else {
-      setError(result.error || "Error al cargar las empresas.");
-      toast.error(result.error || "Error al cargar las empresas.");
-    }
-    setLoading(false);
-  };
-
-  const handleAddEmpresa = async () => {
-    if (newEmpresaName.trim() === '') {
-      toast.error("El nombre de la empresa no puede estar vacío.");
-      return;
-    }
-    const data = {
-      nombre: newEmpresaName.trim(),
-      rut: newEmpresaRut.trim() || null,
-      logoUrl: newEmpresaLogoUrl.trim() || null,
-      direccion: newEmpresaDireccion.calle || newEmpresaDireccion.numero || newEmpresaDireccion.comunaId ? newEmpresaDireccion : null,
-    };
-    const result = await addEmpresa(data);
-    if (result.success) {
-      setNewEmpresaName('');
-      setNewEmpresaRut('');
-      setNewEmpresaLogoUrl('');
-      setNewEmpresaDireccion({});
-      toast.success("Empresa agregada exitosamente.");
-      fetchEmpresas();
-    } else {
-      toast.error(result.error || "Error al agregar la empresa.");
-    }
-  };
-
-  const handleEditClick = (empresa: EmpresaWithDireccion) => {
-    setEditingEmpresaId(empresa.id);
-    setEditingEmpresaName(empresa.nombre);
-    setEditingEmpresaRut(empresa.rut || '');
-    setEditingEmpresaLogoUrl(empresa.logoUrl || '');
-    setEditingEmpresaDireccion({
-      calle: empresa.direccionComercial?.calle || '',
-      numero: empresa.direccionComercial?.numero || '',
-      comunaId: empresa.direccionComercial?.comunaId || ''
-    });
-    if (empresa.direccionComercial?.comunaId) {
-      const comuna = comunas.find(c => c.id === empresa.direccionComercial?.comunaId);
-      if (comuna) {
-        setEditingSelectedComuna(comuna);
-        setEditingSearchTerm(comuna.nombre);
-      }
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingEmpresaId(null);
-    setEditingEmpresaName('');
-    setEditingEmpresaRut('');
-    setEditingEmpresaLogoUrl('');
-    setEditingEmpresaDireccion({});
-  };
-
-  const handleSaveEdit = async (id: string) => {
-    if (editingEmpresaName.trim() === '') {
-      toast.error("El nombre de la empresa no puede estar vacío.");
-      return;
-    }
-    const data = {
-      nombre: editingEmpresaName.trim(),
-      rut: editingEmpresaRut.trim() || null,
-      logoUrl: editingEmpresaLogoUrl.trim() || null,
-      direccion: editingEmpresaDireccion.calle || editingEmpresaDireccion.numero || editingEmpresaDireccion.comunaId ? editingEmpresaDireccion : null,
-    };
-    const result = await updateEmpresa(id, data);
-    if (result.success) {
-      toast.success("Empresa actualizada exitosamente.");
-      setEditingEmpresaId(null);
-      setEditingEmpresaName('');
-      setEditingEmpresaRut('');
-      setEditingEmpresaLogoUrl('');
-      setEditingEmpresaDireccion({});
-      fetchEmpresas();
-    } else {
-      toast.error(result.error || "Error al actualizar la empresa.");
-    }
-  };
-
-  const handleDeleteEmpresa = async (id: string) => {
-    if (confirm("¿Estás seguro de que quieres eliminar esta empresa? Esta acción no se puede deshacer.")) {
-      const result = await deleteEmpresa(id);
-      if (result.success) {
-        toast.success("Empresa eliminada exitosamente.");
-        fetchEmpresas();
-      } else {
-        toast.error(result.error || "Error al eliminar la empresa.");
-      }
-    }
-  };
-
-  if (loading) {
-    return <div className="container mx-auto p-4 text-center">Cargando empresas...</div>;
-  }
-
-  if (error) {
-    return <div className="container mx-auto p-4 text-red-500 text-center">Error: {error}</div>;
-  }
-
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Empresas</h1>
-
-      <div className="mb-8 p-6 border border-gray-200 rounded-xl shadow-lg bg-white">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-700">Agregar Nueva Empresa</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Nombre de la nueva empresa"
-            value={newEmpresaName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaName(e.target.value)}
-          />
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="RUT"
-            value={newEmpresaRut}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaRut(e.target.value)}
-          />
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="URL del Logo"
-            value={newEmpresaLogoUrl}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaLogoUrl(e.target.value)}
-          />
-
-
-          <div className="relative">
-            <Input
-              type="text"
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-              placeholder="Buscar Comuna"
-              value={searchTerm}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchComuna(e)}
-            />
-            {searchTerm.length > 0 && filteredComunas.length > 0 && (
-              <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
-                {filteredComunas.map((comuna) => (
-                  <li
-                    key={comuna.id}
-                    className="p-2 cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSelectComuna(comuna)}
-                  >
-                    {comuna.nombre} ({comuna.provincia.nombre}, {comuna.provincia.region.nombre})
-                  </li>
-                ))}
-              </ul>
-            )}
-            {selectedComuna && (
-              <p className="text-sm text-gray-500 mt-1">Seleccionado: {selectedComuna.nombre}</p>
-            )}
-          </div>
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Calle"
-            value={newEmpresaDireccion.calle || ''}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaDireccion({ ...newEmpresaDireccion, calle: e.target.value })}
-          />
-          <Input
-            type="text"
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-            placeholder="Número"
-            value={newEmpresaDireccion.numero || ''}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmpresaDireccion({ ...newEmpresaDireccion, numero: e.target.value })}
-          />
-        </div>
-        <Button
-          onClick={handleAddEmpresa}
-          className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 w-full"
-        >
-          <PlusCircleIcon className="h-5 w-5 mr-2" /> Agregar Empresa
-        </Button>
-      </div>
-
-      <div className="p-6 border border-gray-200 rounded-xl shadow-lg bg-white">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-700">Listado de Empresas</h2>
-        {empresas.length === 0 ? (
-          <p className="text-gray-600">No hay empresas registradas.</p>
-        ) : (
-          <ul className="space-y-3">
-            {empresas.map((empresa) => (
-              <li key={empresa.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center shadow-sm">
-                {editingEmpresaId === empresa.id ? (
-                  <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
-                    <Input
-                      type="text"
-                      value={editingEmpresaName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaName(e.target.value)}
-                      className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Nombre"
-                    />
-                    <Input
-                      type="text"
-                      value={editingEmpresaRut}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaRut(e.target.value)}
-                      className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="RUT"
-                    />
-                    <Input
-                      type="text"
-                      value={editingEmpresaLogoUrl}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaLogoUrl(e.target.value)}
-                      className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="URL Logo"
-                    />
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                        placeholder="Buscar Comuna"
-                        value={editingSearchTerm}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleEditingSearchComuna(e)}
-                      />
-                      {editingSearchTerm.length > 0 && editingFilteredComunas.length > 0 && (
-                        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
-                          {editingFilteredComunas.map((comuna) => (
-                            <li
-                              key={comuna.id}
-                              className="p-2 cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleEditingSelectComuna(comuna)}
-                            >
-                              {comuna.nombre} ({comuna.provincia.nombre}, {comuna.provincia.region.nombre})
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {editingSelectedComuna && (
-                        <p className="text-sm text-gray-500 mt-1">Seleccionado: {editingSelectedComuna.nombre}</p>
-                      )}
-                    </div>
-                    <Input
-                      type="text"
-                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="Calle"
-                      value={editingEmpresaDireccion.calle || ''}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, calle: e.target.value })}
-                    />
-                    <Input
-                      type="text"
-                      className="p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="Número"
-                      value={editingEmpresaDireccion.numero || ''}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingEmpresaDireccion({ ...editingEmpresaDireccion, numero: e.target.value })}
-                    />
-
-                <div className="flex space-x-2 col-span-full justify-end">
-                      <Button
-                        onClick={() => handleSaveEdit(empresa.id)}
-                        className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200"
-                        size="sm"
-                      >
-                        <SaveIcon className="h-4 w-4" /> Guardar
-                      </Button>
-                      <Button
-                        onClick={handleCancelEdit}
-                        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200"
-                        size="sm"
-                      >
-                        <XCircleIcon className="h-4 w-4" /> Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-start">
-                    <span className="text-lg font-medium text-gray-800">{empresa.nombre}</span>
-                    {empresa.rut && <span className="text-sm text-gray-600">RUT: {empresa.rut}</span>}
-                    {empresa.logoUrl && <span className="text-sm text-gray-600">Logo: <a href={empresa.logoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{empresa.logoUrl}</a></span>}
-                    {empresa.direccionComercial && (
-                    <div className="text-sm text-gray-600">
-      <p className="text-sm text-gray-600">Dirección: {empresa.direccionComercial?.calle || 'N/A'} {empresa.direccionComercial?.numero || ''}, {comunas.find(c => c.id === empresa.direccionComercial?.comunaId)?.nombre || 'N/A'}</p>
-                    </div>
-                  )}
-                  </div>
-                )}
-                <div className="flex space-x-2 mt-3 md:mt-0">
-                  {editingEmpresaId !== empresa.id && (
-                    <Button
-                      onClick={() => handleEditClick(empresa)}
-                      className="px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-200"
-                      size="sm"
-                    >
-                      <PencilIcon className="h-4 w-4" /> Editar
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => handleDeleteEmpresa(empresa.id)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-200"
-                    size="sm"
-                  >
-                    <Trash2Icon className="h-4 w-4" /> Eliminar
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
+// Tipo para la Empresa con su relación de Dirección Comercial,
+// AHORA INCLUYE LA COMUNA ANIDADA.
+// Usamos los tipos auxiliares definidos arriba.
+export type EmpresaWithDireccion = PrismaEmpresaType & { 
+  direccionComercial: (PrismaDireccionType & { comuna?: PrismaComunaType | null }) | null;
 };
 
-export default EmpresasPage;
+// Tipo de entrada para la creación/actualización de Empresa.
+// Los campos de 'data' en Prisma son opcionales para la actualización,
+// por eso los definimos como 'string | null | undefined'.
+export type EmpresaInput = {
+  nombre: string;
+  rut?: string | null;
+  logoUrl?: string | null; 
+  telefono?: string | null;
+  email?: string | null;
+  // Permitimos que los campos de dirección sean string | null en el input del frontend
+  direccion?: {
+    calle?: string | null; 
+    numero?: string | null; 
+    comunaId?: string | null; 
+  } | null; // El objeto completo puede ser null si se quiere eliminar la dirección
+};
+
+// Resultado de la operación de obtener empresas
+type GetEmpresasResult = { success: true; data: EmpresaWithDireccion[] } | { success: false; error: string };
+
+/**
+ * Obtiene todas las empresas con sus direcciones comerciales asociadas,
+ * incluyendo la información de la comuna de esa dirección.
+ * @returns Un objeto con éxito y los datos de las empresas, o un error.
+ */
+export async function getEmpresas(): Promise<GetEmpresasResult> {
+  try {
+    const empresas = await prisma.empresa.findMany({
+      orderBy: { nombre: 'asc' },
+      include: { 
+        direccionComercial: { // Incluimos la relación de dirección comercial
+          include: {
+            comuna: true // Y dentro de ella, incluimos la comuna
+          }
+        } 
+      }, 
+    });
+    // Realizamos un casting seguro porque sabemos que Prisma incluirá la comuna
+    const typedEmpresas: EmpresaWithDireccion[] = empresas as EmpresaWithDireccion[]; 
+    return { success: true, data: typedEmpresas };
+  } catch (error: any) {
+    console.error("Error al obtener empresas:", error);
+    return { success: false, error: "Error al obtener empresas." };
+  }
+}
+
+/**
+ * Añade una nueva empresa, manejando la creación o vinculación de su dirección comercial.
+ * @param data Los datos de la nueva empresa, incluyendo opcionalmente la dirección.
+ * @returns Un objeto con éxito y los datos de la empresa creada, o un error.
+ */
+export async function addEmpresa(data: EmpresaInput) {
+  try {
+    let newDireccionId: string | undefined;
+
+    // Si se proporciona información de dirección y al menos un campo relevante
+    if (data.direccion && (data.direccion.calle !== undefined || data.direccion.numero !== undefined || data.direccion.comunaId !== undefined)) {
+      // Antes de crear, verificamos si la comunaId es válida y requerida.
+      if (!data.direccion.comunaId) {
+        return { success: false, error: "La Comuna es requerida para la dirección comercial si se proporcionan otros detalles de dirección." };
+      }
+      // Acceder al modelo de Prisma directamente a través de 'prisma.comuna'.
+      const comunaExists = await prisma.comuna.findUnique({
+        where: { id: data.direccion.comunaId },
+        select: { id: true }
+      });
+      if (!comunaExists) {
+        return { success: false, error: `La Comuna con ID ${data.direccion.comunaId} no existe.` };
+      }
+
+      const createdDireccion = await prisma.direccion.create({
+          data: {
+            // Acceder al modelo de Prisma directamente para 'connect'.
+            comuna: { connect: { id: data.direccion.comunaId } }, // ComunaId ya validada
+            // Aseguramos que 'calle' y 'numero' sean siempre string.
+            // Si el valor del input es null o undefined, se convierte a '' (string vacío).
+            calle: data.direccion.calle ?? '', 
+            numero: data.direccion.numero ?? '', 
+          },
+        });
+        newDireccionId = createdDireccion.id;
+    }
+
+    const newEmpresa = await prisma.empresa.create({
+      data: {
+        nombre: data.nombre,
+        rut: data.rut,
+        logoUrl: data.logoUrl,
+        telefono: data.telefono,
+        email: data.email,
+        // Conecta la dirección recién creada (si existe)
+        direccionComercial: newDireccionId ? { connect: { id: newDireccionId } } : undefined,
+      },
+      include: { 
+        direccionComercial: { // Incluimos la relación de dirección comercial
+          include: {
+            comuna: true // Y dentro de ella, incluimos la comuna para la respuesta
+          }
+        }
+      }
+    });
+
+    revalidatePath('/admin/empresas'); // Revalida la ruta para actualizar la UI
+    return { success: true, data: newEmpresa as EmpresaWithDireccion }; 
+  } catch (error: any) {
+    console.error("Error al añadir empresa:", error);
+    // Usamos 'instanceof PrismaClientKnownRequestError' directamente
+    if (error instanceof PrismaClientKnownRequestError) {
+      // Aseguramos que 'meta' y 'target' existan y sea un array antes de usar 'includes'
+      if (error.code === 'P2002' && Array.isArray(error.meta?.target) && error.meta.target.includes('nombre')) {
+        return { success: false, error: "Ya existe una empresa con ese nombre." };
+      }
+       if (error.code === 'P2003') { // Foreign key constraint violation
+        return { success: false, error: "Error de datos: Comuna o ID de relación inválido." };
+      }
+    }
+    return { success: false, error: "Error al añadir empresa." };
+  }
+}
+
+/**
+ * Actualiza una empresa existente, manejando su dirección comercial.
+ * @param id El ID de la empresa a actualizar.
+ * @param data Los datos a actualizar de la empresa, incluyendo opcionalmente la dirección.
+ * @returns Un objeto con éxito y los datos de la empresa actualizada, o un error.
+ */
+export async function updateEmpresa(id: string, data: EmpresaInput) {
+  try {
+    let updatedDireccionId: string | undefined | null;
+    
+    // Obtiene la empresa existente para verificar su dirección actual
+    const existingEmpresa = await prisma.empresa.findUnique({
+      where: { id },
+      include: { direccionComercial: true } // Necesitamos la dirección completa para lógica de eliminación/actualización
+    });
+
+    if (!existingEmpresa) {
+      return { success: false, error: "Empresa no encontrada para actualizar." };
+    }
+
+    // Determinar si se enviaron datos de dirección o si se quiere eliminar la dirección existente
+    const hasNewDireccionData = data.direccion && (data.direccion.calle !== undefined || data.direccion.numero !== undefined || data.direccion.comunaId !== undefined);
+    
+    if (hasNewDireccionData) {
+        // Validar que la comunaId sea válida si se proporciona
+        if (!data.direccion?.comunaId) { // Si se proporcionan otros campos de dirección pero no la comunaId
+            return { success: false, error: "La Comuna es requerida para la dirección comercial si se proporcionan otros detalles de dirección." };
+        }
+        const comunaExists = await prisma.comuna.findUnique({
+            where: { id: data.direccion.comunaId },
+            select: { id: true }
+        });
+        if (!comunaExists) {
+            return { success: false, error: `La Comuna con ID ${data.direccion.comunaId} no existe.` };
+        }
+
+      if (existingEmpresa.direccionComercialId) {
+        // Si ya tiene una dirección, la actualiza
+        // Usamos Prisma.DireccionUpdateInput para tipar el objeto 'data' para el update de Prisma
+        const updateDireccionData: Prisma.DireccionUpdateInput = {};
+
+        // Solo actualizamos si el campo fue explícitamente provisto (no undefined)
+        // Convertimos null a string vacío si es necesario, ya que calle y numero son requeridos en el schema
+        if (data.direccion.calle !== undefined) {
+          updateDireccionData.calle = data.direccion.calle === null ? '' : data.direccion.calle;
+        }
+        if (data.direccion.numero !== undefined) {
+          updateDireccionData.numero = data.direccion.numero === null ? '' : data.direccion.numero;
+        }
+        if (data.direccion.comunaId !== undefined) { // Aunque ya sabemos que no será undefined aquí por la validación anterior
+            updateDireccionData.comuna = { connect: { id: data.direccion.comunaId } };
+        }
+        
+        const updatedDireccion = await prisma.direccion.update({
+          where: { id: existingEmpresa.direccionComercialId },
+          data: updateDireccionData,
+        });
+        updatedDireccionId = updatedDireccion.id;
+      } else {
+        // Si no tenía dirección, crea una nueva. Se asume que data.direccion.comunaId no es null aquí.
+        const createdDireccion = await prisma.direccion.create({
+          data: {
+            comuna: { connect: { id: data.direccion.comunaId } }, // ComunaId ya validada
+            // Aseguramos que 'calle' y 'numero' sean siempre string.
+            calle: data.direccion.calle ?? '', 
+            numero: data.direccion.numero ?? '', 
+          },
+        });
+        updatedDireccionId = createdDireccion.id;
+      }
+    } else if (existingEmpresa.direccionComercialId && data.direccion === null) {
+      // Si se envía data.direccion explícitamente como null, se interpreta como eliminación de la dirección
+      await prisma.empresa.update({
+        where: { id },
+        data: {
+          direccionComercial: { disconnect: true }
+        }
+      });
+      await prisma.direccion.delete({
+        where: { id: existingEmpresa.direccionComercialId }
+      });
+      updatedDireccionId = null; // Establecer a null para indicar que ya no tiene dirección
+    } else {
+      // Si no hay nueva data.direccion (undefined) y la empresa tenía una, mantenerla.
+      // Si no hay nueva data.direccion (undefined) y la empresa no tenía una, mantener null.
+      updatedDireccionId = existingEmpresa.direccionComercialId; 
+    }
+
+    // Usamos Prisma.EmpresaUpdateInput para tipar el objeto 'data' para el update de Prisma
+    const updateEmpresaData: Prisma.EmpresaUpdateInput = {
+        nombre: data.nombre !== undefined ? data.nombre : existingEmpresa.nombre,
+        rut: data.rut !== undefined ? data.rut : existingEmpresa.rut,
+        logoUrl: data.logoUrl !== undefined ? data.logoUrl : existingEmpresa.logoUrl,
+        telefono: data.telefono !== undefined ? data.telefono : existingEmpresa.telefono,
+        email: data.email !== undefined ? data.email : existingEmpresa.email,       
+        // Conecta o desconecta la dirección basada en updatedDireccionId
+        direccionComercial: updatedDireccionId ? { connect: { id: updatedDireccionId } } : (updatedDireccionId === null ? { disconnect: true } : undefined),
+    };
+
+    const updatedEmpresa = await prisma.empresa.update({
+      where: { id },
+      data: updateEmpresaData,
+      include: { 
+        direccionComercial: { // Incluimos la relación de dirección comercial
+          include: {
+            comuna: true // Y dentro de ella, incluimos la comuna para la respuesta
+          }
+        }
+      }
+    });
+
+    revalidatePath('/admin/empresas'); // Revalida la ruta para actualizar la UI
+    return { success: true, data: updatedEmpresa as EmpresaWithDireccion };
+  } catch (error: any) {
+    console.error("Error al actualizar empresa:", error);
+    // Usamos 'instanceof PrismaClientKnownRequestError' directamente
+    if (error instanceof PrismaClientKnownRequestError) {
+      // Aseguramos que 'meta' y 'target' existan y sea un array antes de usar 'includes'
+      if (error.code === 'P2002' && Array.isArray(error.meta?.target) && error.meta.target.includes('nombre')) {
+        return { success: false, error: "Ya existe una empresa con ese nombre." };
+      }
+      if (error.code === 'P2003') { // Foreign key constraint violation
+        return { success: false, error: "Error de datos: Comuna o ID de relación inválido." };
+      }
+    }
+    return { success: false, error: "Error desconocido al actualizar empresa." };
+  }
+}
+
+/**
+ * Elimina una empresa por su ID, y también elimina su dirección comercial asociada si existe.
+ * @param id El ID de la empresa a eliminar.
+ * @returns Un objeto con éxito o un error.
+ */
+export async function deleteEmpresa(id: string) {
+  try {
+    // Obtiene la dirección comercialId antes de eliminar la empresa
+    const empresaToDelete = await prisma.empresa.findUnique({
+      where: { id },
+      select: { direccionComercialId: true }
+    });
+
+    // Iniciar una transacción para asegurar atomicidad
+    // Tipamos 'tx' explícitamente usando el tipo del namespace Prisma.
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Primero, buscar y desconectar cualquier sucursal vinculada a esta empresa
+      // Esto es crucial para evitar errores de restricción de clave externa si la empresa tiene sucursales.
+      await tx.sucursal.updateMany({
+        where: { empresaId: id },
+        data: { empresaId: null } // Desvincula las sucursales de la empresa
+      });
+
+      // Luego, buscar y desconectar cualquier contacto de empresa vinculado
+      await tx.contactoEmpresa.updateMany({
+        where: { empresaId: id },
+        data: { empresaId: null } // Desvincula los contactos de la empresa
+      });
+
+      // Finalmente, buscar y desconectar cualquier ticket vinculado
+      await tx.ticket.updateMany({
+        where: { empresaId: id },
+        data: { empresaId: null } // Desvincula los tickets de la empresa
+      });
+
+      // Ahora sí, eliminar la empresa
+      await tx.empresa.delete({
+        where: { id },
+      });
+
+      // Si la empresa tenía una dirección comercial, se elimina también ese registro de dirección
+      if (empresaToDelete?.direccionComercialId) {
+        await tx.direccion.delete({
+          where: { id: empresaToDelete.direccionComercialId }
+        });
+      }
+    });
+
+    revalidatePath('/admin/empresas'); // Revalida la ruta para actualizar la UI
+    return { success: true };
+  } catch (error: any) { // Captura el error para proporcionar un mensaje específico
+    console.error("Error al eliminar empresa:", error);
+    // Usamos 'instanceof PrismaClientKnownRequestError' directamente
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2003') { // Falla de llave foránea genérica (si la desconexión anterior no fue suficiente)
+        return { success: false, error: "Error al eliminar: Hay registros relacionados (sucursales, contactos o tickets) que impiden la eliminación. Intente desvincularlos manualmente si el problema persiste." };
+      }
+      if (error.code === 'P2025') { // Record not found
+        return { success: false, error: "La empresa que intentas eliminar no fue encontrada." };
+      }
+    }
+    return { success: false, error: "Error desconocido al eliminar empresa." };
+  }
+}
