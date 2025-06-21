@@ -108,8 +108,33 @@ export async function createNewTicketAction(
   };
 
   try {
+    // Verificar si empresaId existe
+    const empresaExists = await prisma.empresa.findUnique({
+      where: { id: formInput.empresaId },
+    });
+    if (!empresaExists) {
+      return { success: false, error: `La Empresa con ID ${formInput.empresaId} no existe.` };
+    }
+
+    // Verificar si sucursalId existe
+    const sucursalExists = await prisma.sucursal.findUnique({
+      where: { id: formInput.sucursalId },
+    });
+    if (!sucursalExists) {
+      return { success: false, error: `La Sucursal con ID ${formInput.sucursalId} no existe.` };
+    }
+
+    // Verificar si tecnicoAsignadoId existe (usuario)
+    const tecnicoExists = await prisma.user.findUnique({
+      where: { id: tecnicoLogueadoId },
+    });
+
+    if (!tecnicoExists) {
+      return { success: false, error: `El Técnico Asignado con ID ${tecnicoLogueadoId} no existe.` };
+    }
+
     // --- CAMBIO CLAVE: Se añade el tipo explícito a 'tx' ---
-    const newTicket = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const createdTicket = await tx.ticket.create({
         data: ticketDataToSave,
       });
@@ -119,28 +144,35 @@ export async function createNewTicketAction(
           data: {
             ticketId: createdTicket.id,
             descripcion: formInput.accionInicial.trim(),
+            fechaAccion: new Date(),
             usuarioId: tecnicoLogueadoId,
           },
         });
       }
-      return createdTicket;
-    });
 
-    revalidatePath("/tickets/dashboard"); 
-    
-    return { 
-      success: true, 
-      message: `Ticket #${newTicket.numeroCaso} creado exitosamente.`,
-      ticketId: newTicket.id,
-      ticket: newTicket as unknown as Ticket
-    };
+      revalidatePath("/tickets/dashboard"); 
+      
+      return { 
+        success: true, 
+        message: `Ticket #${createdTicket.numeroCaso} creado exitosamente.`,
+        ticketId: createdTicket.id,
+        ticket: createdTicket as unknown as Ticket
+      };
+    });
+    return result;
   } catch (error: any) {
     console.error("Error al crear ticket en Prisma:", error);
     let errorMessage = "Error al crear el ticket.";
-    if (error.code === 'P2002' && error.meta?.target?.includes('numeroCaso')) {
-        errorMessage = "El número de caso ya existe. Por favor, intente con otro.";
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2003') {
+        console.error('Foreign key constraint violated:', error.message);
+        console.error('Data that caused the error:', ticketDataToSave);
+        errorMessage = `Error de validación: La empresa o sucursal seleccionada no es válida. Datos enviados: ${JSON.stringify(ticketDataToSave)}`;
+      } else if (error.code === 'P2002' && Array.isArray(error.meta?.target) && error.meta?.target.includes('numeroCaso')) {
+        errorMessage = "El número de caso ya existe. Por favor, intente con otro."
+      }
     } else {
-        errorMessage = "No se pudo crear el ticket. Revise los datos e intente de nuevo.";
+        errorMessage = "No se pudo crear el ticket. Revise los datos e intente de nuevo."
     }
     return { error: errorMessage, success: false };
   }

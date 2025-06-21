@@ -26,7 +26,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } } // id del Ticket
 ) {
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const actions = await prisma.accionTicket.findMany({
@@ -60,7 +60,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } } // id del Ticket
 ) {
-  const { id } = params;
+  const { id } = await params;
   
   const session = await getServerSession(authOptions);
   const currentUser = session?.user as SessionUser | undefined;
