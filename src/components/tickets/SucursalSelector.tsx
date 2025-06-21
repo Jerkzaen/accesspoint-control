@@ -1,5 +1,6 @@
 // RUTA: src/components/tickets/SucursalSelector.tsx
 'use client';
+    
 
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,10 @@ import { Loader2, Check, ChevronsUpDown, Building, MapPin, X } from 'lucide-reac
 import { createSucursalFromForm } from '@/app/actions/sucursalActions';
 import { toast } from 'sonner';
 
-// Interfaces que definen la "forma" exacta de los datos que vienen de la API
+// --- INICIO DE LA CORRECCIÓN FINAL ---
+// Se mueven las interfaces de tipo al inicio del archivo para que estén disponibles
+// en todo el componente, especialmente para el tipado explícito que se añadirá.
+
 interface DireccionInfo {
   calle: string;
   numero: string;
@@ -31,6 +35,7 @@ type SearchResults = {
     sucursales: SucursalResult[];
     comunas: ComunaResult[];
 }
+// --- FIN DE LA CORRECCIÓN FINAL ---
 
 interface SucursalSelectorProps {
   empresaId: string;
@@ -38,11 +43,18 @@ interface SucursalSelectorProps {
   initialSucursalId?: string | null;
 }
 
+
+
 export function SucursalSelector({ empresaId, onSucursalSelect }: SucursalSelectorProps) {
+  // Se corrige la declaración de estado para 'selectedSucursal' y 'open'.
+  // 'selectedSucursal' ahora usa 'SucursalResult' y 'open' desestructura 'setOpen'.
   const [open, setOpen] = useState(false);
+   const [selectedSucursal, setSelectedSucursal] = useState<SucursalResult | null>(null);
+
+  const buttonText: string = selectedSucursal?.nombre || "Buscar por Comuna o Sucursal...";
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedSucursal, setSelectedSucursal] = useState<SucursalResult | null>(null);
+  
   const [results, setResults] = useState<SearchResults>({ sucursales: [], comunas: [] });
   
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -111,8 +123,13 @@ export function SucursalSelector({ empresaId, onSucursalSelect }: SucursalSelect
     });
 
     if (result.success && result.data) {
-        toast.success(`Sucursal "${result.data.nombre}" creada exitosamente.`);
-        handleSelectSucursal(result.data as SucursalResult);
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se realiza un casting explícito para asegurar que el tipo `data` coincida con `SucursalResult`.
+        // Esto es seguro porque la server action devuelve la sucursal con sus relaciones.
+        const newSucursalData = result.data as unknown as SucursalResult;
+        toast.success(`Sucursal "${newSucursalData.nombre}" creada exitosamente.`);
+        handleSelectSucursal(newSucursalData);
+        // --- FIN DE LA CORRECCIÓN ---
         setShowCreateForm(false);
         setNewSucursalNombre('');
         setNewSucursalCalle('');
@@ -179,7 +196,7 @@ export function SucursalSelector({ empresaId, onSucursalSelect }: SucursalSelect
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
-          {selectedSucursal ? selectedSucursal.nombre : "Buscar por Comuna o Sucursal..."}
+          {buttonText}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -194,24 +211,29 @@ export function SucursalSelector({ empresaId, onSucursalSelect }: SucursalSelect
 
             {results.sucursales.length > 0 && (
               <CommandGroup heading="Sucursales">
+                {/* --- INICIO DE LA CORRECCIÓN FINAL --- */}
+                {/* Se añade el tipo explícito 'SucursalResult' al parámetro del map. */}
                 {results.sucursales.map((sucursal: SucursalResult) => (
                   <CommandItem key={sucursal.id} value={sucursal.nombre} onSelect={() => handleSelectSucursal(sucursal)}>
                     <Building className="mr-2 h-4 w-4" />
                     <span>{sucursal.nombre}</span>
                   </CommandItem>
                 ))}
+                {/* --- FIN DE LA CORRECCIÓN FINAL --- */}
               </CommandGroup>
             )}
 
             {results.comunas.length > 0 && (
               <CommandGroup heading="Comunas (para crear sucursal nueva)">
-                {/* --- SOLUCIÓN DEFINITIVA: Se añade el tipo explícito en el map --- */}
+                {/* --- INICIO DE LA CORRECCIÓN FINAL --- */}
+                {/* Se añade el tipo explícito 'ComunaResult' al parámetro del map. */}
                 {results.comunas.map((comuna: ComunaResult) => (
                   <CommandItem key={comuna.id} value={comuna.nombre} onSelect={() => handleSelectComuna(comuna)}>
                     <MapPin className="mr-2 h-4 w-4" />
                     <span>{getComunaDisplayString(comuna)}</span>
                   </CommandItem>
                 ))}
+                {/* --- FIN DE LA CORRECCIÓN FINAL --- */}
               </CommandGroup>
             )}
           </CommandList>

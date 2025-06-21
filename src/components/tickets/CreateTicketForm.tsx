@@ -12,9 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle } from "lucide-react";
 import { FormSubmitButton } from "@/components/ui/FormSubmitButton";
-import { PrioridadTicket } from "@prisma/client";
+//
+// ELIMINADO: Ya no se importa el enum directamente de Prisma
+// import { PrioridadTicket } from "@prisma/client";
+//
 import { Button } from "@/components/ui/button";
-import { SucursalSelector } from "./SucursalSelector"; // Importamos el nuevo componente
+import { SucursalSelector } from "./SucursalSelector";
 
 const getLocalDateTimeString = () => {
   const now = new Date();
@@ -36,13 +39,21 @@ interface CreateTicketFormProps {
   stashedData: FormData | null;
 }
 
-// Esquema de Validación Zod Actualizado
+// --- INICIO DE LA CORRECCIÓN ---
+
+// 1. Se define un array de strings constante en lugar de importar el enum.
+//    Esto es seguro para los componentes de cliente.
+const prioridadesTicket = ["BAJA", "MEDIA", "ALTA", "URGENTE"] as const;
+
+// 2. El esquema Zod se actualiza para usar z.enum() con el array de strings.
 const ticketFormSchema = z.object({
   fechaCreacion: z.string().min(1, "La fecha es obligatoria."),
   empresaId: z.string().min(1, "Debes seleccionar una empresa."),
-  sucursalId: z.string().min(1, "Debes seleccionar una sucursal."), // Nuevo campo obligatorio
+  sucursalId: z.string().min(1, "Debes seleccionar una sucursal."),
   tipoIncidente: z.string().min(1, "El tipo de incidente es obligatorio."),
-  prioridad: z.nativeEnum(PrioridadTicket, { message: "Prioridad inválida." }),
+  prioridad: z.enum(prioridadesTicket, {
+    errorMap: () => ({ message: "Prioridad inválida." }),
+  }),
   solicitanteNombre: z.string().min(1, "El nombre del solicitante es obligatorio."),
   solicitanteTelefono: z.string().optional(),
   solicitanteCorreo: z.string().email("Formato de correo inválido.").optional().or(z.literal('')),
@@ -51,6 +62,8 @@ const ticketFormSchema = z.object({
   accionInicial: z.string().optional(),
   fechaSolucionEstimada: z.string().optional().or(z.literal('')),
 });
+
+// --- FIN DE LA CORRECCIÓN ---
 
 type TicketFormInput = z.infer<typeof ticketFormSchema>;
 
@@ -70,7 +83,7 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
     formState: { errors },
     control,
     setValue,
-    watch, // Hook para observar cambios en los campos del formulario
+    watch,
   } = useForm<TicketFormInput>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: {
@@ -78,11 +91,11 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
       empresaId: stashedData?.get('empresaId')?.toString() || '',
       sucursalId: stashedData?.get('sucursalId')?.toString() || '',
       tipoIncidente: "Software",
-      prioridad: PrioridadTicket.MEDIA,
+      // 3. El valor por defecto ahora es un string, no un enum.
+      prioridad: "MEDIA",
     }
   });
   
-  // Observamos el valor de 'empresaId' para mostrar/ocultar el selector de sucursal
   const selectedEmpresaId = watch('empresaId');
 
   const onFormSubmit = async (data: TicketFormInput) => {
@@ -99,7 +112,7 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
   return (
     <Card className="overflow-hidden shadow-none border-none bg-transparent flex flex-col h-full">
       <CardHeader className="flex-shrink-0">
-        <CardTitle>Crear Nuevo Ticket</CardTitle>
+        <CardTitle>Crear Nuevo Ticket #{nextNroCaso}</CardTitle>
         <CardDescription>Ingresa la información detallada del problema.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow overflow-y-auto p-4 sm:p-6">
@@ -123,7 +136,6 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
               {errors.fechaCreacion && <p className="text-destructive text-xs mt-1">{errors.fechaCreacion.message}</p>}
             </div>
             
-            {/* --- CAMBIO DE LÓGICA: SELECTOR DE EMPRESA --- */}
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="empresaId">Empresa Cliente</Label>
               <Controller control={control} name="empresaId" render={({ field }) => (
@@ -135,7 +147,6 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
               {errors.empresaId && <p className="text-destructive text-xs mt-1">{errors.empresaId.message}</p>}
             </div>
 
-            {/* --- CAMBIO DE LÓGICA: SELECTOR DE SUCURSAL (CONDICIONAL) --- */}
             {selectedEmpresaId && (
               <div className="md:col-span-2 space-y-1.5">
                 <Label htmlFor="sucursalId">Sucursal / Ubicación</Label>
@@ -169,11 +180,9 @@ export const CreateTicketForm = React.forwardRef<HTMLFormElement, CreateTicketFo
               <Controller control={control} name="prioridad" render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger id="prioridad"><SelectValue /></SelectTrigger>
+                    {/* 4. El select ahora itera sobre el array de strings */}
                     <SelectContent>
-                        <SelectItem value={PrioridadTicket.BAJA}>BAJA</SelectItem>
-                        <SelectItem value={PrioridadTicket.MEDIA}>MEDIA</SelectItem>
-                        <SelectItem value={PrioridadTicket.ALTA}>ALTA</SelectItem>
-                        <SelectItem value={PrioridadTicket.URGENTE}>URGENTE</SelectItem>
+                        {prioridadesTicket.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                     </SelectContent>
                   </Select>
               )} />
