@@ -1,220 +1,87 @@
 "use server";
-import { prisma } from "@/lib/prisma";
 
-import { Sucursal, Prisma } from "@prisma/client";
+import { SucursalService, SucursalCreateInput, SucursalUpdateInput, SucursalWithRelations } from "@/services/sucursalService";
 import { revalidatePath } from "next/cache";
 
-export type SucursalInput = {
-  nombre: string;
-  telefono: string;
-  email: string;
-  direccionCalle: string;
-  direccionNumero: string;
-  direccionComunaId: string;
-  empresaId: string;
-};
-
-// --- NUEVO TIPO DE ENTRADA PARA EL FORMULARIO EN LÍNEA ---
-export type CreateSucursalFromFormData = {
-  nombre: string;
-  calle: string;
-  numero: string;
-  comunaId: string;
-  empresaId: string; // La empresa a la que pertenece
-};
-
-// --- NUEVA SERVER ACTION ---
-export async function createSucursalFromForm(data: CreateSucursalFromFormData) {
+/**
+ * Obtiene todas las sucursales.
+ * @returns Un objeto con el resultado de la operación (éxito/error) y los datos de las sucursales.
+ */
+export async function getSucursalesAction(): Promise<{ success: boolean; data?: SucursalWithRelations[]; error?: string; }> {
   try {
-    // Usamos una transacción para asegurar que todo se cree correctamente.
-    const newSucursal = await prisma.$transaction(async (tx) => {
-      // 1. Crear la dirección
-      const newDireccion = await tx.direccion.create({
-        data: {
-          calle: data.calle,
-          numero: data.numero,
-          comunaId: data.comunaId,
-        },
-      });
+    const sucursales = await SucursalService.getSucursales(true); // Incluimos relaciones para la UI
+    return { success: true, data: sucursales };
+  } catch (error: any) {
+    console.error("Error en getSucursalesAction:", error);
+    return { success: false, error: error.message || "Error desconocido al obtener sucursales." };
+  }
+}
 
-      // 2. Crear la sucursal, vinculándola a la dirección y empresa
-      const createdSucursal = await tx.sucursal.create({
-        data: {
-          nombre: data.nombre,
-          empresaId: data.empresaId,
-          direccionId: newDireccion.id,
-        },
-        include: {
-            empresa: true,
-            direccion: {
-                include: {
-                    comuna: true
-                }
-            }
-        }
-      });
+/**
+ * Obtiene una sucursal por su ID.
+ * @param id El ID de la sucursal.
+ * @returns Un objeto con el resultado de la operación y los datos de la sucursal.
+ */
+export async function getSucursalByIdAction(id: string): Promise<{ success: boolean; data?: SucursalWithRelations | null; error?: string; }> {
+  try {
+    const sucursal = await SucursalService.getSucursalById(id);
+    return { success: true, data: sucursal };
+  } catch (error: any) {
+    console.error(`Error en getSucursalByIdAction para ID ${id}:`, error);
+    return { success: false, error: error.message || "Error desconocido al obtener la sucursal." };
+  }
+}
 
-      return createdSucursal;
-    });
-
-    revalidatePath("/admin/sucursales"); // Revalidar por si acaso
+/**
+ * Crea una nueva sucursal.
+ * @param data Los datos de la nueva sucursal.
+ * @returns Un objeto con el resultado de la operación (éxito/error) y los datos de la sucursal creada.
+ */
+export async function createSucursalAction(data: SucursalCreateInput): Promise<{ success: boolean; data?: SucursalWithRelations; error?: string; }> {
+  try {
+    const newSucursal = await SucursalService.createSucursal(data);
+    revalidatePath("/admin/sucursales"); // Revalida la ruta para mostrar los cambios
     return { success: true, data: newSucursal };
-  } catch (error) {
-    console.error("Error al crear sucursal desde formulario:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return { success: false, error: "Ya existe una sucursal con datos similares." };
-      }
-    }
-    return { success: false, error: "No se pudo crear la sucursal." };
+  } catch (error: any) {
+    console.error("Error en createSucursalAction:", error);
+    return { success: false, error: error.message || "Error desconocido al crear la sucursal." };
   }
 }
 
-export async function getSucursales(): Promise<Prisma.SucursalGetPayload<{
-  include: {
-    empresa: true;
-    direccion: {
-      include: {
-        comuna: {
-          include: {
-            provincia: {
-              include: {
-                region: {
-                  include: {
-                    pais: true;
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-  };
-}>[]> {
+/**
+ * Actualiza una sucursal existente.
+ * @param id El ID de la sucursal a actualizar.
+ * @param data Los datos a actualizar (parciales).
+ * @returns Un objeto con el resultado de la operación (éxito/error) y los datos de la sucursal actualizada.
+ */
+export async function updateSucursalAction(id: string, data: Partial<SucursalUpdateInput>): Promise<{ success: boolean; data?: SucursalWithRelations; error?: string; }> {
   try {
-    const sucursales = await prisma.sucursal.findMany({
-      include: {
-        empresa: true,
-        direccion: {
-          include: {
-            comuna: {
-              include: {
-                provincia: {
-                  include: {
-                    region: {
-                      include: {
-                        pais: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        nombre: "asc",
-      },
-    });
-    return sucursales;
-  } catch (error) {
-    console.error("Error al obtener sucursales:", error);
-    return [];
-  }
-}
-
-export async function addSucursal(data: SucursalInput) {
-  try {
-    const newSucursal = await prisma.sucursal.create({
-      data: {
-        nombre: data.nombre,
-        telefono: data.telefono,
-        email: data.email,
-        direccion: {
-          create: {
-            calle: data.direccionCalle,
-            numero: data.direccionNumero,
-            comuna: { connect: { id: data.direccionComunaId } },
-          },
-        },
-        empresa: { connect: { id: data.empresaId } },
-      },
-    });
-
-    revalidatePath("/admin/sucursales");
-    return { success: true, data: newSucursal };
-  } catch (error) {
-    console.error("Error al añadir sucursal:", error);
-    return { success: false, error: "Error al añadir sucursal." };
-  }
-}
-
-export async function updateSucursal(id: string, data: Partial<SucursalInput>) {
-  try {
-
-
-    const updatedSucursal = await prisma.sucursal.update({
-      where: { id },
-      data: {
-        nombre: data.nombre,
-        telefono: data.telefono,
-        email: data.email,
-        direccion: {
-          update: {
-            calle: data.direccionCalle,
-            numero: data.direccionNumero,
-            comuna: data.direccionComunaId ? { connect: { id: data.direccionComunaId } } : undefined,
-          },
-        },
-        empresa: data.empresaId ? { connect: { id: data.empresaId } } : undefined,
-      },
-    });
-
-
-    revalidatePath("/admin/sucursales");
+    // Asegurarse de pasar el ID dentro del objeto de datos al servicio
+    const updatedSucursal = await SucursalService.updateSucursal({ id, ...data });
+    revalidatePath("/admin/sucursales"); // Revalida la ruta para mostrar los cambios
     return { success: true, data: updatedSucursal };
-  } catch (error) {
-    console.error("Error al actualizar sucursal:", error);
-    return { success: false, error: "Error al actualizar sucursal." };
+  } catch (error: any) {
+    console.error(`Error en updateSucursalAction para ID ${id}:`, error);
+    return { success: false, error: error.message || "Error desconocido al actualizar la sucursal." };
   }
 }
 
-export async function deleteSucursal(id: string) {
+/**
+ * Elimina una sucursal.
+ * @param id El ID de la sucursal a eliminar.
+ * @returns Un objeto con el resultado de la operación (éxito/error).
+ */
+export async function deleteSucursalAction(id: string): Promise<{ success: boolean; message?: string; error?: string; }> {
   try {
-    const sucursalToDelete = await prisma.sucursal.findUnique({
-      where: { id },
-      select: { direccionId: true, empresaId: true },
-    });
-
-    if (!sucursalToDelete || !sucursalToDelete.direccionId) {
-      return { success: false, error: "Sucursal o dirección asociada no encontrada." };
+    const result = await SucursalService.deleteSucursal(id);
+    if (result.success) {
+      revalidatePath("/admin/sucursales"); // Revalida la ruta
+      return { success: true, message: result.message };
+    } else {
+      return { success: false, error: result.message };
     }
-
-    if (sucursalToDelete.empresaId) {
-      await prisma.empresa.update({
-        where: { id: sucursalToDelete.empresaId },
-        data: {
-          sucursales: {
-            disconnect: { id: id },
-          },
-        },
-      });
-    }
-
-    await prisma.sucursal.delete({
-      where: { id },
-    });
-
-    await prisma.direccion.delete({
-      where: { id: sucursalToDelete.direccionId },
-    });
-
-    revalidatePath("/admin/sucursales");
-    return { success: true };
-  } catch (error) {
-    console.error("Error al eliminar sucursal o su dirección asociada:", error);
-    return { success: false, error: "Error al eliminar sucursal o su dirección asociada." };
+  } catch (error: any) {
+    console.error(`Error en deleteSucursalAction para ID ${id}:`, error);
+    return { success: false, error: error.message || "Error desconocido al eliminar la sucursal." };
   }
 }

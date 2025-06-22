@@ -1,179 +1,132 @@
-// RUTA: src/app/actions/ticketActions.ts
-'use server';
+"use server";
 
-import { prisma } from "@/lib/prisma";
+import { TicketService, TicketCreateInput, TicketUpdateInput, TicketWithRelations, AccionTicketCreateInput } from "@/services/ticketService";
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import type { AccionTicket, EquipoEnPrestamo, EquipoInventario } from "@prisma/client";
 
-// --- CAMBIO CLAVE: Importación de tipos y Prisma ---
-// Se importa 'Prisma' para tipar la transacción y los enums como tipos.
-import { Prisma, type PrioridadTicket, type EstadoTicket, type RoleUsuario } from "@prisma/client";
-import type { Ticket } from '@/types/ticket';
-
-interface SessionUser {
-  id: string;
-  rol?: RoleUsuario;
-}
-
-// Interfaz que representa los datos que ahora vienen del formulario
-interface TicketFormInputFields {
-  nroCaso: number;
-  fechaCreacion: string;
-  empresaId: string;
-  sucursalId: string;
-  tipoIncidente: string;
-  prioridad: string;
-  solicitanteNombre: string;
-  solicitanteTelefono?: string;
-  solicitanteCorreo?: string;
-  titulo: string;
-  descripcionDetallada?: string;
-  accionInicial?: string;
-  fechaSolucionEstimada?: string | null;
-}
-
-interface ActionState {
-  error?: string;
-  success?: boolean;
-  message?: string;
-  ticketId?: string;
-  ticket?: Ticket;
-}
-
-export async function loadLastTicketNro(): Promise<number> {
+/**
+ * Obtiene todos los tickets.
+ * @returns Un objeto con el resultado de la operación (éxito/error) y los datos de los tickets.
+ */
+export async function getTicketsAction(): Promise<{ success: boolean; data?: TicketWithRelations[]; error?: string; }> {
   try {
-    const lastTicket = await prisma.ticket.findFirst({
-      orderBy: { numeroCaso: "desc" },
-      select: { numeroCaso: true },
-    });
-    return lastTicket?.numeroCaso || 0;
-  } catch (error) {
-    console.error("Error al cargar numeroCaso del último ticket:", error);
-    return 0;
-  }
-}
-
-export async function createNewTicketAction(
-  previousState: ActionState,
-  formdata: FormData
-): Promise<ActionState> {
-  const session = await getServerSession(authOptions);
-  const currentUser = session?.user as SessionUser | undefined;
-
-  if (!currentUser?.id) {
-    return { error: "Usuario no autenticado. No se puede crear el ticket.", success: false };
-  }
-  
-  const tecnicoLogueadoId = currentUser.id;
-  
-  const formInput: TicketFormInputFields = {
-    nroCaso: parseInt(formdata.get("nroCaso")?.toString() || "0"),
-    fechaCreacion: formdata.get("fechaCreacion")?.toString() || '',
-    empresaId: formdata.get("empresaId")?.toString() || '',
-    sucursalId: formdata.get("sucursalId")?.toString() || '',
-    tipoIncidente: formdata.get("tipoIncidente")?.toString() || '',
-    prioridad: formdata.get("prioridad")?.toString() || "MEDIA",
-    solicitanteNombre: formdata.get("solicitanteNombre")?.toString() || '',
-    solicitanteTelefono: formdata.get("solicitanteTelefono")?.toString(),
-    solicitanteCorreo: formdata.get("solicitanteCorreo")?.toString(),
-    titulo: formdata.get("titulo")?.toString() || '',
-    descripcionDetallada: formdata.get("descripcionDetallada")?.toString(),
-    accionInicial: formdata.get("accionInicial")?.toString(),
-    fechaSolucionEstimada: formdata.get("fechaSolucionEstimada")?.toString() || null,
-  };
-
-  if (!formInput.empresaId || !formInput.sucursalId || !formInput.titulo) {
-      return { error: "Faltan campos obligatorios: Empresa, Sucursal y Título son requeridos.", success: false };
-  }
-
-  const fechaCreacionDate = new Date(formInput.fechaCreacion);
-  const fechaSolucionEstimadaDate = formInput.fechaSolucionEstimada ? new Date(formInput.fechaSolucionEstimada) : null;
-
-  const ticketDataToSave = {
-    numeroCaso: formInput.nroCaso,
-    titulo: formInput.titulo,
-    descripcionDetallada: formInput.descripcionDetallada?.trim(),
-    tipoIncidente: formInput.tipoIncidente,
-    prioridad: formInput.prioridad as PrioridadTicket,
-    estado: 'ABIERTO' as EstadoTicket,
-    solicitanteNombre: formInput.solicitanteNombre,
-    solicitanteTelefono: formInput.solicitanteTelefono,
-    solicitanteCorreo: formInput.solicitanteCorreo,
-    empresaId: formInput.empresaId, 
-    sucursalId: formInput.sucursalId,
-    tecnicoAsignadoId: tecnicoLogueadoId,
-    fechaCreacion: fechaCreacionDate,
-    fechaSolucionEstimada: fechaSolucionEstimadaDate,
-  };
-
-  try {
-    // Verificar si empresaId existe
-    const empresaExists = await prisma.empresa.findUnique({
-      where: { id: formInput.empresaId },
-    });
-    if (!empresaExists) {
-      return { success: false, error: `La Empresa con ID ${formInput.empresaId} no existe.` };
-    }
-
-    // Verificar si sucursalId existe
-    const sucursalExists = await prisma.sucursal.findUnique({
-      where: { id: formInput.sucursalId },
-    });
-    if (!sucursalExists) {
-      return { success: false, error: `La Sucursal con ID ${formInput.sucursalId} no existe.` };
-    }
-
-    // Verificar si tecnicoAsignadoId existe (usuario)
-    const tecnicoExists = await prisma.user.findUnique({
-      where: { id: tecnicoLogueadoId },
-    });
-
-    if (!tecnicoExists) {
-      return { success: false, error: `El Técnico Asignado con ID ${tecnicoLogueadoId} no existe.` };
-    }
-
-    // --- CAMBIO CLAVE: Se añade el tipo explícito a 'tx' ---
-    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const createdTicket = await tx.ticket.create({
-        data: ticketDataToSave,
-      });
-
-      if (formInput.accionInicial?.trim()) {
-        await tx.accionTicket.create({
-          data: {
-            ticketId: createdTicket.id,
-            descripcion: formInput.accionInicial.trim(),
-            fechaAccion: new Date(),
-            usuarioId: tecnicoLogueadoId,
-          },
-        });
-      }
-
-      revalidatePath("/tickets/dashboard"); 
-      
-      return { 
-        success: true, 
-        message: `Ticket #${createdTicket.numeroCaso} creado exitosamente.`,
-        ticketId: createdTicket.id,
-        ticket: createdTicket as unknown as Ticket
-      };
-    });
-    return result;
+    const tickets = await TicketService.getTickets(true); // Incluimos relaciones
+    return { success: true, data: tickets };
   } catch (error: any) {
-    console.error("Error al crear ticket en Prisma:", error);
-    let errorMessage = "Error al crear el ticket.";
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2003') {
-        console.error('Foreign key constraint violated:', error.message);
-        console.error('Data that caused the error:', ticketDataToSave);
-        errorMessage = `Error de validación: La empresa o sucursal seleccionada no es válida. Datos enviados: ${JSON.stringify(ticketDataToSave)}`;
-      } else if (error.code === 'P2002' && Array.isArray(error.meta?.target) && error.meta?.target.includes('numeroCaso')) {
-        errorMessage = "El número de caso ya existe. Por favor, intente con otro."
-      }
-    } else {
-        errorMessage = "No se pudo crear el ticket. Revise los datos e intente de nuevo."
-    }
-    return { error: errorMessage, success: false };
+    console.error("Error en getTicketsAction:", error);
+    return { success: false, error: error.message || "Error desconocido al obtener tickets." };
   }
 }
+
+/**
+ * Obtiene un ticket por su ID.
+ * @param id El ID del ticket.
+ * @returns Un objeto con el resultado de la operación y los datos del ticket.
+ */
+export async function getTicketByIdAction(id: string): Promise<{ success: boolean; data?: TicketWithRelations | null; error?: string; }> {
+  try {
+    const ticket = await TicketService.getTicketById(id);
+    return { success: true, data: ticket };
+  } catch (error: any) {
+    console.error(`Error en getTicketByIdAction para ID ${id}:`, error);
+    return { success: false, error: error.message || "Error desconocido al obtener el ticket." };
+  }
+}
+
+/**
+ * Crea un nuevo ticket.
+ * @param data Los datos de la nueva ticket.
+ * @returns Un objeto con el resultado de la operación (éxito/error) y los datos del ticket creado.
+ */
+export async function createTicketAction(data: TicketCreateInput): Promise<{ success: boolean; data?: TicketWithRelations; error?: string; }> {
+  try {
+    const newTicket = await TicketService.createTicket(data);
+    revalidatePath("/tickets/dashboard"); // Revalida la ruta para mostrar los cambios
+    return { success: true, data: newTicket };
+  } catch (error: any) {
+    console.error("Error en createTicketAction:", error);
+    return { success: false, error: error.message || "Error desconocido al crear el ticket." };
+  }
+}
+
+/**
+ * Actualiza un ticket existente.
+ * @param data Los datos a actualizar (parciales), incluyendo el ID del ticket.
+ * @returns Un objeto con el resultado de la operación (éxito/error) y los datos del ticket actualizado.
+ */
+export async function updateTicketAction(data: TicketUpdateInput): Promise<{ success: boolean; data?: TicketWithRelations; error?: string; }> {
+  try {
+    const updatedTicket = await TicketService.updateTicket(data);
+    revalidatePath("/tickets/dashboard"); // Revalida la ruta
+    revalidatePath(`/tickets/dashboard/${data.id}`); // Si hay una página de detalle de ticket
+    return { success: true, data: updatedTicket };
+  } catch (error: any) {
+    console.error(`Error en updateTicketAction para ID ${data.id}:`, error);
+    return { success: false, error: error.message || "Error desconocido al actualizar el ticket." };
+  }
+}
+
+/**
+ * Elimina un ticket.
+ * @param id El ID del ticket a eliminar.
+ * @returns Un objeto con el resultado de la operación (éxito/error).
+ */
+export async function deleteTicketAction(id: string): Promise<{ success: boolean; message?: string; error?: string; }> {
+  try {
+    const result = await TicketService.deleteTicket(id);
+    if (result.success) {
+      revalidatePath("/tickets/dashboard");
+      return { success: true, message: result.message };
+    } else {
+      return { success: false, error: result.message };
+    }
+  } catch (error: any) {
+    console.error(`Error en deleteTicketAction para ID ${id}:`, error);
+    return { success: false, error: error.message || "Error desconocido al eliminar el ticket." };
+  }
+}
+
+/**
+ * Añade una acción a un ticket.
+ * @param data Los datos de la acción a añadir.
+ * @returns Un objeto con el resultado de la operación y la acción creada.
+ */
+export async function addAccionToTicketAction(data: AccionTicketCreateInput): Promise<{ success: boolean; data?: AccionTicket; error?: string; }> {
+  try {
+    const newAccion = await TicketService.addAccionToTicket(data);
+    revalidatePath(`/tickets/dashboard/${data.ticketId}`); // Revalida la página del ticket
+    return { success: true, data: newAccion };
+  } catch (error: any) {
+    console.error("Error en addAccionToTicketAction:", error);
+    return { success: false, error: error.message || "Error al añadir acción al ticket." };
+  }
+}
+
+/**
+ * Obtiene los equipos de inventario.
+ * @returns Un array de objetos EquipoInventario.
+ */
+export async function getEquiposInventarioAction(): Promise<{ success: boolean; data?: EquipoInventario[]; error?: string; }> {
+  try {
+    const equipos = await TicketService.getEquiposInventario();
+    return { success: true, data: equipos };
+  } catch (error: any) {
+    console.error("Error en getEquiposInventarioAction:", error);
+    return { success: false, error: error.message || "Error al obtener equipos de inventario." };
+  }
+}
+
+/**
+ * Obtiene los equipos en préstamo.
+ * @returns Un array de objetos EquipoEnPrestamo.
+ */
+export async function getEquiposEnPrestamoAction(): Promise<{ success: boolean; data?: EquipoEnPrestamo[]; error?: string; }> {
+  try {
+    const prestamos = await TicketService.getEquiposEnPrestamo();
+    return { success: true, data: prestamos };
+  } catch (error: any) {
+    console.error("Error en getEquiposEnPrestamoAction:", error);
+    return { success: false, error: error.message || "Error al obtener equipos en préstamo." };
+  }
+}
+

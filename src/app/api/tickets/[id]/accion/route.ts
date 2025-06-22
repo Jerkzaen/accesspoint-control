@@ -1,99 +1,51 @@
-// RUTA: src/app/api/tickets/[id]/accion/route.ts
+// src/app/api/tickets/[id]/accion/route.ts
 
-import { NextResponse, NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { RoleUsuario } from "@prisma/client";
+import { NextResponse } from "next/server";
+import { TicketService } from "@/services/ticketService"; // Importar el nuevo servicio
+import { Prisma } from "@prisma/client";
 
-// Interfaz para el tipo de usuario esperado en la sesión
-interface SessionUser {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  rol?: RoleUsuario;
-}
-
-interface NewActionPayload {
-  descripcion: string;
-}
-
-export const dynamic = 'force-dynamic';
-
-// Obtiene todas las acciones para un ticket específico.
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } } // id del Ticket
-) {
-  const { id } = await params;
-  
+/**
+ * POST handler para añadir una nueva acción a un ticket.
+ * @param request La solicitud Next.js.
+ * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
+ * @returns Una respuesta JSON con la acción creada o un mensaje de error.
+ */
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const actions = await prisma.accionTicket.findMany({
-      where: { ticketId: id },
-      include: {
-        realizadaPor: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          }
-        }
-      },
-      // --- CAMBIO UX: ORDENAMIENTO DE LA BITÁCORA ---
-      // Se ordena por fecha de la acción en orden descendente,
-      // para mostrar la acción más reciente primero.
-      orderBy: { fechaAccion: 'desc' }, 
-    });
-    return NextResponse.json(actions);
-  } catch (error: any) {
-    console.error(`Error en GET /api/tickets/${id}/accion:`, error);
+    const { id: ticketId } = params;
+    const data = await request.json(); // Los datos de la acción
+    
+    // Asumimos que data incluye descripcion, usuarioId, categoria
+    // y que ticketId se toma de los params de la ruta
+    const accionData = { ...data, ticketId }; 
+
+    const newAccion = await TicketService.addAccionToTicket(accionData);
+    return NextResponse.json(newAccion, { status: 201 });
+  } catch (error) {
+    console.error(`Error en POST /api/tickets/${params.id}/accion:`, error);
     return NextResponse.json(
-      { message: "Error interno del servidor al obtener acciones." },
+      { message: "Error al añadir acción al ticket", error: error instanceof Error ? error.message : "Error desconocido" },
       { status: 500 }
     );
   }
 }
 
-// Agrega una nueva acción a un ticket.
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } } // id del Ticket
-) {
-  const { id } = await params;
-  
-  const session = await getServerSession(authOptions);
-  const currentUser = session?.user as SessionUser | undefined;
-
-  if (!currentUser?.id) {
-    return NextResponse.json({ message: "Usuario no autenticado." }, { status: 401 });
-  }
-
+/**
+ * GET handler para obtener todas las acciones de un ticket específico.
+ * @param request La solicitud Next.js.
+ * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
+ * @returns Una respuesta JSON con las acciones del ticket o un mensaje de error.
+ */
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const body = await request.json();
-    const { descripcion } = body as NewActionPayload;
-
-    if (!descripcion || typeof descripcion !== 'string' || descripcion.trim() === '') {
-      return NextResponse.json({ message: "La descripción de la acción es obligatoria." }, { status: 400 });
-    }
-
-    await prisma.accionTicket.create({
-      data: {
-        ticketId: id,
-        descripcion: descripcion.trim(),
-        usuarioId: currentUser.id,
-      },
-    });
-
-    return NextResponse.json({ message: "Acción agregada con éxito." }, { status: 201 });
-
-  } catch (error: any) {
-    console.error(`Error en POST /api/tickets/${id}/accion:`, error);
-    let errorMessage = "Error al agregar la acción al ticket.";
-    if (error.code === 'P2003') {
-        errorMessage = `El ticket con ID ${id} no existe.`;
-        return NextResponse.json({ message: errorMessage }, { status: 404 });
-    }
-    return NextResponse.json({ message: "Error interno del servidor.", error: error.message }, { status: 500 });
+    const { id: ticketId } = params;
+    const acciones = await TicketService.getAccionesByTicketId(ticketId);
+    return NextResponse.json(acciones);
+  } catch (error) {
+    console.error(`Error en GET /api/tickets/${params.id}/accion:`, error);
+    return NextResponse.json(
+      { message: "Error al obtener acciones del ticket", error: error instanceof Error ? error.message : "Error desconocido" },
+      { status: 500 }
+    );
   }
 }

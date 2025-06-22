@@ -1,58 +1,35 @@
-import { Comuna, Provincia, Region } from '@prisma/client';
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
+import { GeografiaService, ComunaConProvinciaYRegion } from '@/services/geografiaService';
 
-export type ComunaWithProvinciaAndRegion = Comuna & {
-  provincia: Provincia & {
-    region: Region;
-  };
-};
+/**
+ * Define el tipo de resultado para las funciones que obtienen comunas.
+ */
+type GetComunasResult = { success: true; data: ComunaConProvinciaYRegion[] } | { success: false; message: string };
 
-type GetComunasResult = { success: true; data: ComunaWithProvinciaAndRegion[] } | { success: false; message: string };
-
-export async function getComunas(search: string): Promise<GetComunasResult> {
+/**
+ * Obtiene una lista de comunas, opcionalmente filtradas por un término de búsqueda.
+ * Delega la lógica al `GeografiaService`.
+ * @param search Término de búsqueda opcional para filtrar por nombre de comuna.
+ * @returns Un objeto con el resultado de la operación y los datos de las comunas.
+ */
+export async function getComunas(search: string = ''): Promise<GetComunasResult> {
   try {
-    const comunas = await prisma.comuna.findMany({
-        where: search
-          ? {
-              nombre: {
-                contains: search,
-                // CAMBIO: Se elimina 'mode: insensitive' porque no es reconocido por el tipo de filtro actual
-                // Para SQLite, 'contains' (LIKE) suele ser insensible a mayúsculas/minúsculas por defecto.
-              },
-            }
-          : undefined,
-        select: {
-          id: true,
-          nombre: true,
-          provinciaId: true,
-          createdAt: true,
-          updatedAt: true,
-          provincia: {
-            select: {
-              id: true,
-              nombre: true,
-              regionId: true,
-              createdAt: true,
-              updatedAt: true,
-              region: true,
-            },
-          },
-        },
-
-      orderBy: {
-        nombre: 'asc',
-      },
-    });
-    return { success: true, data: comunas as ComunaWithProvinciaAndRegion[] };
+    // searchComunas del servicio ya retorna ComunaConProvinciaYRegion[] con la estructura anidada completa
+    const comunas = await GeografiaService.searchComunas(search); 
+    return { success: true, data: comunas };
   } catch (error: any) {
-    console.error("Error fetching comunas:", error);
+    console.error("Error fetching comunas (comunaActions):", error);
     return { success: false, message: error.message || "Failed to fetch comunas." };
   }
 }
 
+/**
+ * Busca comunas por un término de búsqueda.
+ * Esta función es un alias de `getComunas` para mantener compatibilidad si es necesario.
+ * @param search Término de búsqueda para filtrar por nombre de comuna.
+ * @returns Un objeto con el resultado de la operación y los datos de las comunas.
+ */
 export async function searchComunas(search: string): Promise<GetComunasResult> {
   return getComunas(search);
 }
-

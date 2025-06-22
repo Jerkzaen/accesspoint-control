@@ -105,6 +105,9 @@ model User {
   sessions           Session[]
   ticketsAsignados   Ticket[]     @relation("TecnicoTickets")
   accionesRealadas AccionTicket[]
+  // 👇 AGREGADO: Relación inversa para los tickets creados por este usuario
+  ticketsCreados     Ticket[]     @relation("CreadorTickets")
+  // 👆 FIN AGREGADO
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
@@ -136,7 +139,7 @@ model Region {
   id         String    @id @default(uuid())
   nombre     String
   paisId     String
-  pais       Pais      @relation(fields: [paisId], references: [id], onDelete: Cascade)
+  pais       Pais      @relation(fields: [paisId], references: [id], onDelete: Restrict)
   provincias Provincia[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -149,7 +152,7 @@ model Provincia {
   id        String   @id @default(uuid())
   nombre    String
   regionId  String
-  region    Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  region    Region   @relation(fields: [regionId], references: [id], onDelete: Restrict)
   comunas   Comuna[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,7 +165,7 @@ model Comuna {
   id          String    @id @default(uuid())
   nombre      String
   provinciaId String
-  provincia   Provincia @relation(fields: [provinciaId], references: [id], onDelete: Cascade)
+  provincia   Provincia @relation(fields: [provinciaId], references: [id], onDelete: Restrict)
   direcciones Direccion[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -180,7 +183,9 @@ model Empresa {
   telefono          String?
   email             String?            
   
-  direccion         Direccion?         @relation("EmpresaToDireccion") 
+  direccionPrincipalId String?
+  direccionPrincipal Direccion? @relation("EmpresaDireccionPrincipal", fields: [direccionPrincipalId], references: [id], onDelete: SetNull) 
+
   sucursales        Sucursal[]
   contactos         ContactoEmpresa[]
   equiposInventario EquipoInventario[]
@@ -192,18 +197,16 @@ model Empresa {
   @@map("empresas")
 }
 
-// --- MODELO DIRECCION (AJUSTADO: calle, numero y comunaId ahora son String - REQUERIDOS) ---
+// --- MODELO DIRECCION (AJUSTADO: se elimina la relación directa y única con Empresa) ---
 model Direccion {
   id        String   @id @default(uuid())
-  calle     String   // CAMBIO CRÍTICO: Ahora es REQUERIDO
-  numero    String   // CAMBIO CRÍTICO: Ahora es REQUERIDO
+  calle     String
+  numero    String
   depto     String?
-  comunaId  String   // CAMBIO CRÍTICO: Ahora es REQUERIDO (como estaba originalmente)
-  comuna    Comuna   @relation(fields: [comunaId], references: [id], onDelete: Cascade) // Relación obligatoria
+  comunaId  String
+  comuna    Comuna   @relation(fields: [comunaId], references: [id], onDelete: Restrict)
   
-  empresaId String   @unique 
-  empresa   Empresa  @relation("EmpresaToDireccion", fields: [empresaId], references: [id], onDelete: Cascade) 
-
+  empresasPrincipales Empresa[] @relation("EmpresaDireccionPrincipal")
   sucursales Sucursal[]
   
   createdAt DateTime @default(now())
@@ -237,9 +240,9 @@ model Sucursal {
   telefono    String?
   email       String?
   direccionId String      @unique
-  direccion   Direccion   @relation(fields: [direccionId], references: [id], onDelete: Cascade)
+  direccion   Direccion   @relation(fields: [direccionId], references: [id], onDelete: Restrict) 
   empresaId   String?
-  empresa     Empresa?    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa     Empresa?    @relation(fields: [empresaId], references: [id], onDelete: Restrict) 
   ubicaciones Ubicacion[]
   tickets     Ticket[] 
   createdAt   DateTime    @default(now())
@@ -251,7 +254,7 @@ model Ubicacion {
   id                String             @id @default(uuid())
   nombreReferencial String?
   sucursalId        String
-  sucursal          Sucursal           @relation(fields: [sucursalId], references: [id], onDelete: Cascade)
+  sucursal          Sucursal           @relation(fields: [sucursalId], references: [id], onDelete: Restrict) 
   notas             String?
   contactos         ContactoEmpresa[]  @relation("UbicacionContactos")
   equiposInventario EquipoInventario[] @relation("EquipoUbicacionActual")
@@ -280,6 +283,10 @@ model Ticket {
   sucursal              Sucursal?          @relation(fields: [sucursalId], references: [id])
   tecnicoAsignadoId     String?
   tecnicoAsignado       User?              @relation("TecnicoTickets", fields: [tecnicoAsignadoId], references: [id])
+  // 👇 AGREGADO: Campo y relación para el usuario creador del ticket
+  creadoPorUsuarioId    String // Asumo que el creador es siempre requerido
+  creadoPorUsuario      User               @relation("CreadorTickets", fields: [creadoPorUsuarioId], references: [id]) // Añadimos el nombre de la relación
+  // 👆 FIN AGREGADO
   acciones              AccionTicket[]
   equiposEnPrestamo     EquipoEnPrestamo[] @relation("TicketToEquipoEnPrestamo")
   fechaCreacion         DateTime           @default(now())
