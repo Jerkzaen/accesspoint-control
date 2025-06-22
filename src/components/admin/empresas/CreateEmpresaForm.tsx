@@ -27,49 +27,70 @@ interface CreateEmpresaFormProps {
 export function CreateEmpresaForm({ onSuccess, empresaToEdit, comunas, onCancel }: CreateEmpresaFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  // Helper para normalizar valores de dirección a string vacío o string
+  const normalizeDireccionInput = (
+    direccion?: EmpresaConDetalles['direccion'] | null
+  ) => {
+    if (!direccion) {
+      return {
+        calle: "",
+        numero: "",
+        comunaId: "", // ComunaId debe ser string vacío si no hay dirección.
+      };
+    }
+    return {
+      calle: direccion.calle, // Debería ser string por el tipo EmpresaConDetalles
+      numero: direccion.numero, // Debería ser string por el tipo EmpresaConDetalles
+      comunaId: direccion.comuna.id, // Debería ser string por el tipo EmpresaConDetalles
+    };
+  };
+
   const form = useForm<EmpresaInput>({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
       nombre: empresaToEdit?.nombre || "",
       rut: empresaToEdit?.rut || "",
-      telefono: empresaToEdit?.telefono || "",
-      email: empresaToEdit?.email || "", 
-      direccion: empresaToEdit?.direccion ? { 
-        calle: empresaToEdit.direccion.calle || "",
-        numero: empresaToEdit.direccion.numero || "",
-        comunaId: empresaToEdit.direccion.comuna.id, 
-      } : undefined, 
+      telefono: empresaToEdit?.telefono || null, 
+      email: empresaToEdit?.email || null,     
+      logoUrl: empresaToEdit?.logoUrl || null, 
+      direccion: normalizeDireccionInput(empresaToEdit?.direccion),
     },
+    mode: 'onBlur', 
+    reValidateMode: 'onChange', 
   });
 
   React.useEffect(() => {
     form.reset({
       nombre: empresaToEdit?.nombre || "",
       rut: empresaToEdit?.rut || "",
-      telefono: empresaToEdit?.telefono || "",
-      email: empresaToEdit?.email || "",
-      direccion: empresaToEdit?.direccion ? {
-        calle: empresaToEdit.direccion.calle || "",
-        numero: empresaToEdit.direccion.numero || "",
-        comunaId: empresaToEdit.direccion.comuna.id,
-      } : undefined,
+      telefono: empresaToEdit?.telefono || null,
+      email: empresaToEdit?.email || null,
+      logoUrl: empresaToEdit?.logoUrl || null,
+      direccion: normalizeDireccionInput(empresaToEdit?.direccion),
     });
-  }, [empresaToEdit, form]); 
+  }, [empresaToEdit, form.reset]); 
 
   const onSubmit = async (values: EmpresaInput) => {
     setIsSubmitting(true);
     let result;
 
-    const formattedValues = {
+    // Los valores de 'values' ya están validados por Zod.
+    // Solo necesitamos asegurarnos de que los campos opcionales/nulos sean `null` en lugar de `''`.
+    // Y que el objeto 'direccion' solo se envíe si sus campos obligatorios están rellenos.
+    const formattedValues: EmpresaInput = {
         ...values,
-        email: values.email === '' ? null : values.email, 
-        direccion: values.direccion && (values.direccion.calle !== '' || values.direccion.numero !== '' || (values.direccion.comunaId !== null && values.direccion.comunaId !== undefined && values.direccion.comunaId !== ''))
-            ? {
-                calle: values.direccion.calle === '' ? null : values.direccion.calle,
-                numero: values.direccion.numero === '' ? null : values.direccion.numero,
-                comunaId: values.direccion.comunaId === '' ? null : values.direccion.comunaId, 
+        email: values.email || null, 
+        telefono: values.telefono || null, 
+        logoUrl: values.logoUrl || null, 
+        // CAMBIO CRÍTICO: Si el objeto 'direccion' no tiene todos los campos requeridos,
+        // lo enviamos como 'undefined' para que Prisma no intente crear/actualizar una Direccion inválida.
+        direccion: (values.direccion && values.direccion.calle && values.direccion.numero && values.direccion.comunaId)
+            ? { // Si todos los campos requeridos de direccion están presentes, los enviamos.
+                calle: values.direccion.calle,
+                numero: values.direccion.numero,
+                comunaId: values.direccion.comunaId,
             } 
-            : undefined, 
+            : undefined, // Si falta algún campo requerido en direccion, se envía undefined
     };
 
     if (empresaToEdit) {
@@ -113,6 +134,15 @@ export function CreateEmpresaForm({ onSuccess, empresaToEdit, comunas, onCancel 
                 <FormField control={form.control} name="telefono" render={({ field }) => ( <FormItem> <FormLabel>Teléfono</FormLabel> <FormControl><Input placeholder="+56 9..." {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl><Input placeholder="contacto@empresa.cl" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
             </div>
+            <FormField control={form.control} name="logoUrl" render={({ field }) => (
+              <FormItem>
+                <FormLabel>URL del Logo (SVG/Imagen)</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://ejemplo.com/logo.svg" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={form.control} name="direccion.calle" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Calle</FormLabel> <FormControl><Input placeholder="Av. Siempre Viva" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
                 <FormField control={form.control} name="direccion.numero" render={({ field }) => ( <FormItem> <FormLabel>Número</FormLabel> <FormControl><Input placeholder="742" {...field} value={field.value ?? ''} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -125,9 +155,11 @@ export function CreateEmpresaForm({ onSuccess, empresaToEdit, comunas, onCancel 
                   <FormLabel>Comuna</FormLabel>
                   <FormControl>
                      <ComunaSelector 
-                        initialComuna={empresaToEdit?.direccion?.comuna} 
+                        initialComuna={empresaToEdit?.direccion?.comuna || null} 
                         onSelect={(comuna) => {
-                            field.onChange(comuna ? comuna.id : null);
+                            // CAMBIO CLAVE: Si no hay comuna, field.onChange recibe null.
+                            // Esto se alinea con Zod. El error de validación de Zod se mostrará si la comuna es obligatoria.
+                            field.onChange(comuna ? comuna.id : null); 
                         }}
                      />
                   </FormControl>

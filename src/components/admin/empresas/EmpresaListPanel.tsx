@@ -100,7 +100,13 @@ export const EmpresaListPanel: React.FC<EmpresaListPanelProps> = ({
                                 <CardHeader className="flex flex-row items-start justify-between pb-3">
                                     <div className="flex items-center space-x-3">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={`https://avatar.vercel.sh/${empresa.rut}.png?text=${empresa.nombre.substring(0,2)}`} alt={empresa.nombre} />
+                                            {/* CAMBIO: Usamos logoUrl si existe, de lo contrario, el avatar de iniciales */}
+                                            {empresa.logoUrl ? (
+                                                <AvatarImage src={empresa.logoUrl} alt={`${empresa.nombre} logo`} />
+                                            ) : (
+                                                <AvatarImage src={`https://avatar.vercel.sh/${empresa.rut}.png?text=${empresa.nombre.substring(0,2)}`} alt={empresa.nombre} />
+                                            )}
+                                            {/* El fallback sigue siendo útil si la imagen no carga o no hay logoUrl */}
                                             <AvatarFallback>{empresa.nombre.substring(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <div>

@@ -178,7 +178,7 @@ model Empresa {
   rut               String             @unique
   logoUrl           String?
   telefono          String?
-  email             String?            // CAMBIO CRÍTICO: Eliminado @unique para permitir múltiples nulls/vacíos
+  email             String?            
   
   direccion         Direccion?         @relation("EmpresaToDireccion") 
   sucursales        Sucursal[]
@@ -192,14 +192,14 @@ model Empresa {
   @@map("empresas")
 }
 
-// --- MODELO DIRECCION ---
+// --- MODELO DIRECCION (AJUSTADO: calle, numero y comunaId ahora son String - REQUERIDOS) ---
 model Direccion {
   id        String   @id @default(uuid())
-  calle     String?  
-  numero    String?  
+  calle     String   // CAMBIO CRÍTICO: Ahora es REQUERIDO
+  numero    String   // CAMBIO CRÍTICO: Ahora es REQUERIDO
   depto     String?
-  comunaId  String
-  comuna    Comuna   @relation(fields: [comunaId], references: [id], onDelete: Cascade)
+  comunaId  String   // CAMBIO CRÍTICO: Ahora es REQUERIDO (como estaba originalmente)
+  comuna    Comuna   @relation(fields: [comunaId], references: [id], onDelete: Cascade) // Relación obligatoria
   
   empresaId String   @unique 
   empresa   Empresa  @relation("EmpresaToDireccion", fields: [empresaId], references: [id], onDelete: Cascade) 

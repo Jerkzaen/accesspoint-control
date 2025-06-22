@@ -7,13 +7,14 @@ import { z } from "zod";
 import { empresaSchema, type EmpresaInput } from "@/lib/validators/empresaValidator";
 
 // Definición de tipo para EmpresaConDetalles (EXPORTADO CORRECTAMENTE)
-// Incluye todos los detalles de las relaciones que se fetchan
+// Incluye todos los detalles de las relaciones que se fetchan, y ahora logoUrl
 export type EmpresaConDetalles = Awaited<ReturnType<typeof prisma.empresa.findMany>>[number] & {
-  direccion?: {
+  logoUrl: string | null; 
+  direccion?: { // Direccion sigue siendo opcional para Empresa
     id: string; 
-    calle: string | null; // CAMBIO: Puede ser null en el tipo
-    numero: string | null; // CAMBIO: Puede ser null en el tipo
-    depto: string | null; // Añadir si existe en el schema y se quiere incluir
+    calle: string; // CAMBIO: Ahora string, ya no string | null
+    numero: string; // CAMBIO: Ahora string, ya no string | null
+    depto: string | null; 
     comuna: {
       id: string;
       nombre: string;
@@ -26,7 +27,7 @@ export type EmpresaConDetalles = Awaited<ReturnType<typeof prisma.empresa.findMa
         };
       };
     };
-  } | null; // La dirección completa puede ser null
+  } | null; 
   _count: {
     sucursales: number;
   };
@@ -39,7 +40,7 @@ export async function getEmpresasConDetalles() {
       include: {
         direccion: {
           include: {
-            comuna: {
+            comuna: { 
               include: {
                 provincia: {
                   include: {
@@ -68,48 +69,43 @@ export async function getEmpresasConDetalles() {
 // Lógica de creación de empresa
 export async function createEmpresa(values: EmpresaInput) {
     try {
-        const validatedData = empresaSchema.parse(values);
-        const { nombre, rut, telefono, email, direccion } = validatedData;
-    
-        // Convertir string vacíos a null para campos opcionales/nulos de Prisma
+        const validatedData = empresaSchema.parse(values); // Zod ya valida que si 'direccion' existe, sus campos son 'string'
+        const { nombre, rut, telefono, email, logoUrl, direccion } = validatedData;
+
         const emailToSave = email === '' ? null : email;
         const telefonoToSave = telefono === '' ? null : telefono;
+        const logoUrlToSave = logoUrl === '' ? null : logoUrl;
 
-        // Comprobar si hay datos de dirección válidos para crearla
-        // Un campo de dirección se considera válido si al menos 'calle', 'numero' o 'comunaId' tienen un valor.
-        const hasDireccionData = direccion && (
-            (direccion.calle !== undefined && direccion.calle !== '') || 
-            (direccion.numero !== undefined && direccion.numero !== '') || 
-            (direccion.comunaId !== null && direccion.comunaId !== undefined && direccion.comunaId !== '')
-        );
-
+        // Si el objeto 'direccion' está presente en los datos validados, lo usamos.
+        // Si no está presente (undefined), Prisma creará la Empresa sin Direccion.
         let newEmpresa;
 
-        if (hasDireccionData) {
-            // Si hay datos de dirección, crear la Dirección y conectar a la Empresa
+        if (direccion) { // Si direccion NO es undefined (porque Zod la validó como objeto válido)
             newEmpresa = await prisma.empresa.create({
                 data: {
                     nombre,
                     rut,
                     telefono: telefonoToSave,
                     email: emailToSave,
+                    logoUrl: logoUrlToSave,
                     direccion: {
                         create: {
-                            calle: direccion.calle === '' ? null : direccion.calle, // Guardar '' como null
-                            numero: direccion.numero === '' ? null : direccion.numero, // Guardar '' como null
-                            comunaId: direccion.comunaId || '', // Si es null/undefined/vacío, usar '' para Prisma. (comunaId en schema es String, no String?)
+                            calle: direccion.calle, // Garantizado como String por Zod
+                            numero: direccion.numero, // Garantizado como String por Zod
+                            comunaId: direccion.comunaId, // Garantizado como String por Zod
                         }
                     }
                 },
             });
         } else {
-            // Crear la Empresa sin Dirección
+            // Si el objeto 'direccion' no fue proporcionado o no pasó la validación de Zod como objeto completo
             newEmpresa = await prisma.empresa.create({
                 data: {
                     nombre,
                     rut,
                     telefono: telefonoToSave,
                     email: emailToSave,
+                    logoUrl: logoUrlToSave,
                 },
             });
         }
@@ -131,35 +127,31 @@ export async function createEmpresa(values: EmpresaInput) {
 // Lógica de actualización de empresa
 export async function updateEmpresa(id: string, values: EmpresaInput) {
     try {
-        const validatedData = empresaSchema.parse(values);
-        const { nombre, rut, telefono, email, direccion } = validatedData;
+        const validatedData = empresaSchema.parse(values); // Zod ya valida
+        const { nombre, rut, telefono, email, logoUrl, direccion } = validatedData;
 
-        // Convertir string vacíos a null para campos opcionales/nulos de Prisma
         const emailToSave = email === '' ? null : email;
         const telefonoToSave = telefono === '' ? null : telefono;
+        const logoUrlToSave = logoUrl === '' ? null : logoUrl;
 
-        // Comprobar si hay datos de dirección válidos en el formulario
-        const hasDireccionDataInForm = direccion && (
-            (direccion.calle !== undefined && direccion.calle !== '') || 
-            (direccion.numero !== undefined && direccion.numero !== '') || 
-            (direccion.comunaId !== null && direccion.comunaId !== undefined && direccion.comunaId !== '')
-        );
+        // Si el objeto 'direccion' está presente en los datos validados, lo usamos.
+        const hasDireccionObjectInForm = direccion !== undefined; 
 
         // Obtener la empresa con su dirección actual para saber si ya tiene una
         const existingEmpresaWithAddress = await prisma.empresa.findUnique({
             where: { id },
-            select: { id: true, direccion: { select: { id: true } } } // Solo necesitamos el ID de la dirección si existe
+            select: { id: true, direccion: { select: { id: true } } } 
         });
 
         const currentDireccionId = existingEmpresaWithAddress?.direccion?.id;
 
         // Lógica de actualización de la dirección
-        if (hasDireccionDataInForm) {
-            // Hay datos de dirección en el formulario
+        if (hasDireccionObjectInForm) {
+            // Si el objeto 'direccion' está presente (y válido por Zod)
             const direccionDataForDb = {
-                calle: direccion.calle === '' ? null : direccion.calle,
-                numero: direccion.numero === '' ? null : direccion.numero,
-                comunaId: direccion.comunaId || '', // ComunaId no puede ser null en create/update de Direccion
+                calle: direccion.calle, // Garantizado como String por Zod
+                numero: direccion.numero, // Garantizado como String por Zod
+                comunaId: direccion.comunaId, // Garantizado como String por Zod
             };
 
             if (currentDireccionId) {
@@ -174,14 +166,14 @@ export async function updateEmpresa(id: string, values: EmpresaInput) {
                     data: {
                         ...direccionDataForDb,
                         empresa: {
-                            connect: { id: id } // Conectar la nueva dirección a esta empresa
+                            connect: { id: id } 
                         }
                     }
                 });
             }
         } else if (currentDireccionId) {
-            // NO hay datos de dirección en el formulario, pero la empresa SÍ tenía una dirección.
-            // Esto significa que el usuario la "borró" del formulario, así que la eliminamos de la DB.
+            // Si el objeto 'direccion' NO está presente en el formulario (se borró)
+            // Y la empresa SÍ tenía una dirección, la eliminamos de la DB.
             await prisma.direccion.delete({
                 where: { id: currentDireccionId },
             });
@@ -195,7 +187,7 @@ export async function updateEmpresa(id: string, values: EmpresaInput) {
             rut,
             telefono: telefonoToSave,
             email: emailToSave,
-            // La relación de dirección ya se manejó explícitamente arriba, no se incluye aquí
+            logoUrl: logoUrlToSave,
           },
         });
         
@@ -216,11 +208,6 @@ export async function updateEmpresa(id: string, values: EmpresaInput) {
 // Lógica de eliminación de empresa
 export async function deleteEmpresa(id: string) {
     try {
-        // Antes de eliminar la empresa, eliminamos explícitamente su dirección asociada si existe
-        // Esto es necesario para relaciones 1:1 donde 'Direccion' tiene 'empresaId @unique' y 'onDelete: Cascade' desde Direccion
-        // Si Direccion tiene 'onDelete: Cascade' en su relation 'empresa', al eliminar la empresa, también se elimina la dirección
-        // PERO para mayor seguridad y evitar problemas, podemos intentar eliminarla explícitamente primero.
-        // Ojo: Si el schema ya tiene CASCADE en Direccion, esto podría ser redundante.
         const empresaToDelete = await prisma.empresa.findUnique({
             where: { id },
             select: { direccion: { select: { id: true } } }

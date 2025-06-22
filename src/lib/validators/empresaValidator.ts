@@ -4,17 +4,18 @@ import { z } from 'zod';
 export const empresaSchema = z.object({
   nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
   rut: z.string().min(8, "El RUT es obligatorio y debe ser válido."),
-  // CAMBIO CLAVE: Usamos .nullable().optional() para permitir string, null o undefined
   telefono: z.string().nullable().optional(), 
-  // CAMBIO CLAVE: Usamos .nullable().optional() para permitir string, null o undefined
   email: z.string().email("Debe ser un email válido.").nullable().optional(), 
-  // La dirección es opcional como objeto. Si está presente, sus campos son validados.
+  logoUrl: z.string().url("Debe ser una URL válida.").nullable().optional(), 
+  // La dirección es opcional como objeto.
+  // Pero si el objeto 'direccion' se proporciona, sus campos internos son REQUERIDOS y NO NULOS.
   direccion: z.object({
-      calle: z.string().nullable().optional(), // Ahora puede ser string, null o undefined
-      numero: z.string().nullable().optional(), // Ahora puede ser string, null o undefined
-      // ComunaId: Puede ser string (UUID), null o undefined.
-      comunaId: z.string().uuid("Debe ser un ID de comuna válido.").nullable().optional(), 
-  }).optional(), // El objeto completo de dirección es opcional
+      // CAMBIO CRÍTICO: calle y numero ahora son z.string().min(1) - REQUERIDOS y NO NULOS
+      calle: z.string().min(1, "La calle es obligatoria si se proporciona dirección."), 
+      numero: z.string().min(1, "El número es obligatorio si se proporciona dirección."), 
+      // CAMBIO CRÍTICO: comunaId es z.string().uuid() - REQUERIDO y NO NULO
+      comunaId: z.string().uuid("Debe ser un ID de comuna válido si se proporciona dirección."), 
+  }).optional(), // El objeto completo de dirección SIGUE SIENDO OPCIONAL
 });
 
 export type EmpresaInput = z.infer<typeof empresaSchema>;
