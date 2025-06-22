@@ -1,24 +1,21 @@
+// RUTA: src/lib/validators/empresaValidator.ts
 import { z } from 'zod';
 
-// Este es el único schema que necesitaremos. Es simple y claro.
-// Define los campos que vienen directamente del formulario.
 export const empresaSchema = z.object({
   nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
-  // Hacemos el RUT obligatorio como en tu schema de Prisma
-  rut: z.string().min(8, "El RUT es obligatorio y debe ser válido."), 
-  telefono: z.string().optional().nullable(),
-  email: z.string().email("Debe ser un email válido.").optional().nullable().or(z.literal('')),
-  
-  // Anidamos la dirección para que coincida con la estructura del formulario.
-  // Todos los campos de dirección son obligatorios si el objeto 'direccion' existe.
+  rut: z.string().min(8, "El RUT es obligatorio y debe ser válido."),
+  // CAMBIO CLAVE: Usamos .nullable().optional() para permitir string, null o undefined
+  telefono: z.string().nullable().optional(), 
+  // CAMBIO CLAVE: Usamos .nullable().optional() para permitir string, null o undefined
+  email: z.string().email("Debe ser un email válido.").nullable().optional(), 
+  // La dirección es opcional como objeto. Si está presente, sus campos son validados.
   direccion: z.object({
-    calle: z.string().min(1, "La calle es obligatoria."),
-    numero: z.string().min(1, "El número es obligatorio."),
-    depto: z.string().optional().nullable(),
-    comunaId: z.string().min(1, "Debe seleccionar una comuna."),
-  })
+      calle: z.string().nullable().optional(), // Ahora puede ser string, null o undefined
+      numero: z.string().nullable().optional(), // Ahora puede ser string, null o undefined
+      // ComunaId: Puede ser string (UUID), null o undefined.
+      comunaId: z.string().uuid("Debe ser un ID de comuna válido.").nullable().optional(), 
+  }).optional(), // El objeto completo de dirección es opcional
 });
 
-// Exportamos el tipo inferido para usarlo en el resto de la aplicación.
 export type EmpresaInput = z.infer<typeof empresaSchema>;
 

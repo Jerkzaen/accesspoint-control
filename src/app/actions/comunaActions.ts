@@ -9,19 +9,17 @@ export type ComunaWithProvinciaAndRegion = Comuna & {
   };
 };
 
-type GetComunasResult = { success: true; data: ComunaWithProvinciaAndRegion[] } | { success: false; error: string };
+type GetComunasResult = { success: true; data: ComunaWithProvinciaAndRegion[] } | { success: false; message: string };
 
-export async function getComunas(search: string): Promise<{ success: true; data: ComunaWithProvinciaAndRegion[] } | { success: false; error: string }> {
+export async function getComunas(search: string): Promise<GetComunasResult> {
   try {
-    console.log('getComunas called with search:', search);
-    console.log('Is prisma defined?', !!prisma);
-    console.log('Is prisma.comuna defined?', !!prisma.comuna);
-
     const comunas = await prisma.comuna.findMany({
         where: search
           ? {
               nombre: {
                 contains: search,
+                // CAMBIO: Se elimina 'mode: insensitive' porque no es reconocido por el tipo de filtro actual
+                // Para SQLite, 'contains' (LIKE) suele ser insensible a mayúsculas/minúsculas por defecto.
               },
             }
           : undefined,
@@ -48,12 +46,13 @@ export async function getComunas(search: string): Promise<{ success: true; data:
       },
     });
     return { success: true, data: comunas as ComunaWithProvinciaAndRegion[] };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching comunas:", error);
-    return { success: false, error: "Failed to fetch comunas." };
+    return { success: false, message: error.message || "Failed to fetch comunas." };
   }
 }
 
-export async function searchComunas(search: string): Promise<{ success: true; data: ComunaWithProvinciaAndRegion[] } | { success: false; error: string }> {
+export async function searchComunas(search: string): Promise<GetComunasResult> {
   return getComunas(search);
 }
+

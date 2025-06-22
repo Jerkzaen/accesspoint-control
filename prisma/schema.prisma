@@ -104,7 +104,7 @@ model User {
   accounts           Account[]
   sessions           Session[]
   ticketsAsignados   Ticket[]     @relation("TecnicoTickets")
-  accionesRealizadas AccionTicket[]
+  accionesRealadas AccionTicket[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
@@ -171,16 +171,16 @@ model Comuna {
   @@map("comunas")
 }
 
-// --- MODELO EMPRESA REFACTORIZADO ---
+// --- MODELO EMPRESA ---
 model Empresa {
   id                String             @id @default(uuid())
   nombre            String
   rut               String             @unique
   logoUrl           String?
   telefono          String?
-  email             String?            @unique
+  email             String?            // CAMBIO CRÍTICO: Eliminado @unique para permitir múltiples nulls/vacíos
   
-  direccion         Direccion?         @relation("EmpresaToDireccion")
+  direccion         Direccion?         @relation("EmpresaToDireccion") 
   sucursales        Sucursal[]
   contactos         ContactoEmpresa[]
   equiposInventario EquipoInventario[]
@@ -192,17 +192,17 @@ model Empresa {
   @@map("empresas")
 }
 
-// --- MODELO DIRECCION REFACTORIZADO ---
+// --- MODELO DIRECCION ---
 model Direccion {
   id        String   @id @default(uuid())
-  calle     String
-  numero    String
+  calle     String?  
+  numero    String?  
   depto     String?
   comunaId  String
   comuna    Comuna   @relation(fields: [comunaId], references: [id], onDelete: Cascade)
   
   empresaId String   @unique 
-  empresa   Empresa  @relation("EmpresaToDireccion", fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa   Empresa  @relation("EmpresaToDireccion", fields: [empresaId], references: [id], onDelete: Cascade) 
 
   sucursales Sucursal[]
   
@@ -244,7 +244,6 @@ model Sucursal {
   tickets     Ticket[] 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
   @@map("sucursales")
 }
 
@@ -258,15 +257,12 @@ model Ubicacion {
   equiposInventario EquipoInventario[] @relation("EquipoUbicacionActual")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-
   @@map("ubicaciones")
 }
 
-// --- MODELO TICKET CORREGIDO ---
+// --- MODELO TICKET ---
 model Ticket {
   id                    String             @id @default(uuid())
-  // CORRECCIÓN: Se elimina @default(autoincrement()) porque SQLite no lo soporta en campos no-ID.
-  // La generación de este número deberá ser manejada por la lógica de la aplicación.
   numeroCaso            Int                @unique
   titulo                String
   descripcionDetallada  String?
@@ -304,7 +300,6 @@ model AccionTicket {
   categoria    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
   @@map("AccionTicket")
 }
 
@@ -330,7 +325,6 @@ model EquipoInventario {
   empresa                Empresa?             @relation(fields: [empresaId], references: [id])
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
-
   @@map("equipos_inventario")
 }
 
