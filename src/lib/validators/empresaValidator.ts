@@ -1,22 +1,24 @@
 import { z } from 'zod';
-import { ComunaConProvinciaYRegion } from '@/app/actions/geografiaActions';
 
-// Esquema de validación con Zod para una empresa.
-// Se define aquí para poder ser importado de forma segura tanto en el cliente como en el servidor.
+// Este es el único schema que necesitaremos. Es simple y claro.
+// Define los campos que vienen directamente del formulario.
 export const empresaSchema = z.object({
-    nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
-    rut: z.string().optional().nullable(),
-    telefono: z.string().optional().nullable(),
-    direccion: z.object({
-        calle: z.string().optional().nullable(),
-        numero: z.string().optional().nullable(),
-        comunaId: z.string().uuid({ message: "La comuna seleccionada no es válida." }).nullable().optional(),
-    }),
+  nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
+  // Hacemos el RUT obligatorio como en tu schema de Prisma
+  rut: z.string().min(8, "El RUT es obligatorio y debe ser válido."), 
+  telefono: z.string().optional().nullable(),
+  email: z.string().email("Debe ser un email válido.").optional().nullable().or(z.literal('')),
+  
+  // Anidamos la dirección para que coincida con la estructura del formulario.
+  // Todos los campos de dirección son obligatorios si el objeto 'direccion' existe.
+  direccion: z.object({
+    calle: z.string().min(1, "La calle es obligatoria."),
+    numero: z.string().min(1, "El número es obligatorio."),
+    depto: z.string().optional().nullable(),
+    comunaId: z.string().min(1, "Debe seleccionar una comuna."),
+  })
 });
 
-// Se exporta el tipo inferido para no tener que declararlo en varios lugares.
-export type EmpresaInput = z.infer<typeof empresaSchema> & {
-  direccion?: {
-    comuna?: ComunaConProvinciaYRegion | null;
-  };
-};
+// Exportamos el tipo inferido para usarlo en el resto de la aplicación.
+export type EmpresaInput = z.infer<typeof empresaSchema>;
+

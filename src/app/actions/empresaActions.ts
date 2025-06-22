@@ -1,112 +1,122 @@
-"use server"
+"use server";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
-import type { Empresa, Direccion } from "@prisma/client";
-import type { ComunaConProvinciaYRegion } from './geografiaActions';
+import { z } from "zod";
+// CORRECCIÓN: Se importa el validador correcto desde tu archivo original.
+import { empresaSchema } from "@/lib/validators/empresaValidator";
 
-// Nota: El schema de Zod y los tipos de formulario se movieron a page.tsx
-// para cumplir con la regla de "use server".
-
-export type EmpresaConDetalles = Empresa & {
-    direccionComercial: (Direccion & {
-        comuna: ComunaConProvinciaYRegion | null;
-    }) | null;
-    _count: {
-        sucursales: number;
-        tickets: number;
-    };
-};
-
-export async function createEmpresa(data: any): Promise<{ success: boolean, message: string }> {
-    // La validación ahora se hace en el lado del servidor ANTES de llamar a esta acción,
-    // pero podríamos añadir una capa extra aquí si fuera necesario.
-    const { nombre, rut, telefono, calle, numero, comunaId } = data;
-    try {
-        await prisma.$transaction(async (tx) => {
-            let direccionId: string | undefined = undefined;
-            if (calle && numero && comunaId) {
-                const nuevaDireccion = await tx.direccion.create({ data: { calle, numero, comunaId } });
-                direccionId = nuevaDireccion.id;
-            }
-            await tx.empresa.create({
-                data: { nombre, rut, telefono, direccionComercialId: direccionId },
-            });
-        });
-        revalidatePath('/admin/empresas');
-        return { success: true, message: 'Empresa creada con éxito.' };
-    } catch (error: any) {
-        if (error.code === 'P2002') return { success: false, message: 'El RUT o nombre de empresa ya existe.' };
-        return { success: false, message: 'Ocurrió un error en el servidor.' };
-    }
-}
-
-export async function updateEmpresa(id: string, data: any): Promise<{ success: boolean, message: string }> {
-    const { nombre, rut, telefono, calle, numero, comunaId } = data;
-    try {
-        await prisma.$transaction(async (tx) => {
-            const empresaActual = await tx.empresa.findUnique({ where: { id } });
-            let direccionId = empresaActual?.direccionComercialId;
-            if (calle && numero && comunaId) {
-                const direccionData = { calle, numero, comunaId };
-                if (direccionId) {
-                    await tx.direccion.update({ where: { id: direccionId }, data: direccionData });
-                } else {
-                    const nuevaDireccion = await tx.direccion.create({ data: direccionData });
-                    direccionId = nuevaDireccion.id;
-                }
-            } else if (direccionId) {
-                await tx.empresa.update({ where: { id }, data: { direccionComercialId: null } });
-                await tx.direccion.delete({ where: { id: direccionId } });
-                direccionId = null;
-            }
-            await tx.empresa.update({
-                where: { id },
-                data: { nombre, rut, telefono, direccionComercialId: direccionId },
-            });
-        });
-        revalidatePath('/admin/empresas');
-        return { success: true, message: 'Empresa actualizada con éxito.' };
-    } catch (error: any) {
-        if (error.code === 'P2002') return { success: false, message: 'El RUT o nombre de empresa ya está en uso.' };
-        return { success: false, message: 'Ocurrió un error en el servidor al actualizar.' };
-    }
-}
-
-export async function deleteEmpresa(id: string): Promise<{ success: boolean, message: string }> {
-    try {
-        const empresaToDelete = await prisma.empresa.findUnique({
-            where: { id },
-            select: { direccionComercialId: true, _count: { select: { sucursales: true, tickets: true } } }
-        });
-        if (!empresaToDelete) return { success: false, message: "La empresa no existe." };
-        if (empresaToDelete._count.sucursales > 0 || empresaToDelete._count.tickets > 0) {
-            return { success: false, message: "No se puede eliminar: la empresa tiene sucursales o tickets asociados." };
-        }
-        await prisma.$transaction(async (tx) => {
-            await tx.empresa.delete({ where: { id } });
-            if (empresaToDelete.direccionComercialId) {
-                await tx.direccion.delete({ where: { id: empresaToDelete.direccionComercialId } });
-            }
-        });
-        revalidatePath('/admin/empresas');
-        return { success: true, message: "Empresa eliminada con éxito." };
-    } catch (error: any) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-            return { success: false, message: "No se puede eliminar: la empresa tiene registros asociados." };
-        }
-        return { success: false, message: "Error al eliminar la empresa." };
-    }
-}
-
-export async function getEmpresas(): Promise<EmpresaConDetalles[]> {
+// Función para obtener todas las empresas con sus detalles para la nueva interfaz
+export async function getEmpresasConDetalles() {
+  try {
     const empresas = await prisma.empresa.findMany({
-        orderBy: { nombre: 'asc' },
-        include: {
-            _count: { select: { sucursales: true, tickets: true } },
-            direccionComercial: { include: { comuna: true } },
+      include: {
+        direccion: {
+          include: {
+            comuna: true,
+          },
         },
+        _count: {
+          select: { sucursales: true },
+        },
+      },
+      orderBy: {
+        nombre: 'asc',
+      },
     });
-    return empresas as unknown as EmpresaConDetalles[];
+    return { success: true, data: empresas };
+  } catch (error) {
+    console.error('Error al obtener las empresas con detalles:', error);
+    return { success: false, error: 'No se pudieron obtener las empresas.' };
+  }
+}
+
+// CORRECCIÓN: Lógica de creación refactorizada para el nuevo schema
+export async function createEmpresa(values: z.infer<typeof empresaSchema>) {
+    try {
+        const validatedData = empresaSchema.parse(values);
+        const { nombre, rut, telefono, email, direccion } = validatedData;
+    
+        const newEmpresa = await prisma.empresa.create({
+            data: {
+                nombre,
+                rut,
+                telefono,
+                email,
+                // Prisma ahora puede crear la dirección de forma anidada gracias al nuevo schema
+                direccion: (direccion && direccion.calle && direccion.numero && direccion.comunaId) ? {
+                  create: {
+                    calle: direccion.calle,
+                    numero: direccion.numero,
+                    comunaId: direccion.comunaId,
+                  }
+                } : undefined,
+            },
+        });
+        
+        revalidatePath('/admin/empresas');
+        return { success: true, data: newEmpresa, message: "Empresa creada con éxito." };
+      } catch (error) {
+        console.error(error);
+        if (error instanceof z.ZodError) {
+            return { success: false, error: "Datos de formulario no válidos." };
+        }
+        return { success: false, error: "Error al crear la empresa." };
+      }
+}
+
+// CORRECCIÓN: Lógica de actualización refactorizada
+export async function updateEmpresa(id: string, values: z.infer<typeof empresaSchema>) {
+    try {
+        const validatedData = empresaSchema.parse(values);
+        const { nombre, rut, telefono, email, direccion } = validatedData;
+    
+        const updatedEmpresa = await prisma.empresa.update({
+          where: { id },
+          data: {
+            nombre,
+            rut,
+            telefono,
+            email,
+            direccion: (direccion && direccion.calle && direccion.numero && direccion.comunaId) ? {
+              // 'upsert' maneja la creación o actualización de la dirección de forma segura
+              upsert: {
+                create: {
+                  calle: direccion.calle,
+                  numero: direccion.numero,
+                  comunaId: direccion.comunaId,
+                },
+                update: {
+                  calle: direccion.calle,
+                  numero: direccion.numero,
+                  comunaId: direccion.comunaId,
+                }
+              }
+            } : undefined,
+          },
+        });
+        
+        revalidatePath('/admin/empresas');
+        return { success: true, data: updatedEmpresa, message: "Empresa actualizada con éxito." };
+      } catch (error) {
+        console.error(error);
+        if (error instanceof z.ZodError) {
+            return { success: false, error: "Datos de formulario no válidos." };
+        }
+        return { success: false, error: "Error al actualizar la empresa." };
+      }
+}
+
+export async function deleteEmpresa(id: string) {
+    try {
+        // Con 'onDelete: Cascade' en el schema, al borrar la empresa,
+        // Prisma borrará automáticamente la dirección asociada.
+        await prisma.empresa.delete({ where: { id } });
+        
+        revalidatePath('/admin/empresas');
+        return { success: true, message: "Empresa eliminada." };
+      } catch (error) {
+        console.error(error);
+        return { success: false, error: "Error al eliminar la empresa." };
+      }
 }

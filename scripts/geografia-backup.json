@@ -1,0 +1,2928 @@
+{
+  "paises": [
+    {
+      "id": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "nombre": "Chile",
+      "createdAt": "2025-06-20T16:09:38.536Z",
+      "updatedAt": "2025-06-20T16:09:38.536Z"
+    }
+  ],
+  "regiones": [
+    {
+      "id": "8c0fddb6-2330-4ee5-a404-86c4031d9e9c",
+      "nombre": "XV - Región de Arica y Parinacota",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:10:24.941Z",
+      "updatedAt": "2025-06-20T16:10:24.941Z"
+    },
+    {
+      "id": "9d6f7b39-2121-4a2d-8690-787cc133b8e0",
+      "nombre": "I - Región de Tarapacá",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:12:59.248Z",
+      "updatedAt": "2025-06-20T16:12:59.248Z"
+    },
+    {
+      "id": "6aa2e05e-c345-4ea2-9ebd-9276de5022fa",
+      "nombre": "II - Región de Antofagasta",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:14:24.755Z",
+      "updatedAt": "2025-06-20T16:14:24.755Z"
+    },
+    {
+      "id": "703a6e31-42be-40c7-86fd-e209f896beaf",
+      "nombre": "III - Región de Atacama",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:17:50.186Z",
+      "updatedAt": "2025-06-20T16:17:50.186Z"
+    },
+    {
+      "id": "ff7b1294-12cc-4887-aa22-4d4ae0dd2bb7",
+      "nombre": "IV - Región de Coquimbo",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:19:28.176Z",
+      "updatedAt": "2025-06-20T16:19:28.176Z"
+    },
+    {
+      "id": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "nombre": "V - Región de Valparaíso",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:22:26.432Z",
+      "updatedAt": "2025-06-20T16:22:26.432Z"
+    },
+    {
+      "id": "07581648-da99-412c-9f28-1469f5380ff1",
+      "nombre": "XIII - Región Metropolitana de Santiago",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:26:49.396Z",
+      "updatedAt": "2025-06-20T16:26:49.396Z"
+    },
+    {
+      "id": "e09a38e0-0a11-46bf-b4a5-e976191e02ce",
+      "nombre": "VI - Región del Libertador General Bernardo O'Higgins",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:32:17.150Z",
+      "updatedAt": "2025-06-20T16:32:17.150Z"
+    },
+    {
+      "id": "c7373374-770a-484f-ac7c-6427e873a10a",
+      "nombre": "VII - Región del Maule",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:34:49.235Z",
+      "updatedAt": "2025-06-20T16:34:49.235Z"
+    },
+    {
+      "id": "51d45e68-ec09-4985-8698-f6284a72506e",
+      "nombre": "XVI - Región de Ñuble",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:37:20.500Z",
+      "updatedAt": "2025-06-20T16:37:20.500Z"
+    },
+    {
+      "id": "7c68d4ff-17ba-4244-884b-bc7e7cf992d3",
+      "nombre": "VIII - Región del Biobío",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:39:18.102Z",
+      "updatedAt": "2025-06-20T16:39:18.102Z"
+    },
+    {
+      "id": "573dd76c-7dcd-45bb-8eac-069ab8f428a9",
+      "nombre": "IX - Región de La Araucanía",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:41:44.173Z",
+      "updatedAt": "2025-06-20T16:41:44.173Z"
+    },
+    {
+      "id": "c248a1c0-2b15-478e-ba13-006db99db0b0",
+      "nombre": "XIV - Región de Los Ríos",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:45:03.645Z",
+      "updatedAt": "2025-06-20T16:45:03.645Z"
+    },
+    {
+      "id": "40a7541e-f8b1-475a-b799-97b7fd79e79d",
+      "nombre": "X - Región de Los Lagos",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:46:36.059Z",
+      "updatedAt": "2025-06-20T16:46:36.059Z"
+    },
+    {
+      "id": "2b9f2fc3-4e4e-4bda-af16-1f6889b4430a",
+      "nombre": "XI - Región de Aysén del General Carlos Ibáñez del Campo",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:49:34.842Z",
+      "updatedAt": "2025-06-20T16:49:34.842Z"
+    },
+    {
+      "id": "3ba9428b-4f6a-4dd0-9bfd-5f4fef34b745",
+      "nombre": "XII - Región de Magallanes y de la Antártica Chilena",
+      "paisId": "241d674b-0e80-41ed-a661-2a0f648203a0",
+      "createdAt": "2025-06-20T16:52:03.416Z",
+      "updatedAt": "2025-06-20T16:52:03.416Z"
+    }
+  ],
+  "provincias": [
+    {
+      "id": "f2456994-7d46-4712-8c0c-ad8d571c211d",
+      "nombre": "Provincia de Arica",
+      "regionId": "8c0fddb6-2330-4ee5-a404-86c4031d9e9c",
+      "createdAt": "2025-06-20T16:11:46.501Z",
+      "updatedAt": "2025-06-20T16:11:46.501Z"
+    },
+    {
+      "id": "957a279a-86e1-4c3f-a76a-8a671419a96f",
+      "nombre": "Provincia de Parinacota",
+      "regionId": "8c0fddb6-2330-4ee5-a404-86c4031d9e9c",
+      "createdAt": "2025-06-20T16:12:12.474Z",
+      "updatedAt": "2025-06-20T16:12:12.474Z"
+    },
+    {
+      "id": "a22c9b6b-35f2-4060-833d-355db45988f5",
+      "nombre": "Provincia de Iquique",
+      "regionId": "9d6f7b39-2121-4a2d-8690-787cc133b8e0",
+      "createdAt": "2025-06-20T16:13:06.502Z",
+      "updatedAt": "2025-06-20T16:13:06.502Z"
+    },
+    {
+      "id": "1e24329d-9e25-42a4-a890-5e031d31ee88",
+      "nombre": "Provincia del Tamarugal",
+      "regionId": "9d6f7b39-2121-4a2d-8690-787cc133b8e0",
+      "createdAt": "2025-06-20T16:13:29.140Z",
+      "updatedAt": "2025-06-20T16:13:29.140Z"
+    },
+    {
+      "id": "8e18dee7-59f3-4128-b1ac-cf1bde4b74a1",
+      "nombre": "Provincia de Antofagasta",
+      "regionId": "6aa2e05e-c345-4ea2-9ebd-9276de5022fa",
+      "createdAt": "2025-06-20T16:15:00.183Z",
+      "updatedAt": "2025-06-20T16:15:00.183Z"
+    },
+    {
+      "id": "0df59b88-ee84-4756-a8f1-84e69ae01c21",
+      "nombre": "Provincia de El Loa",
+      "regionId": "6aa2e05e-c345-4ea2-9ebd-9276de5022fa",
+      "createdAt": "2025-06-20T16:15:32.090Z",
+      "updatedAt": "2025-06-20T16:15:32.090Z"
+    },
+    {
+      "id": "3490a049-f51d-47a5-b07b-756520a67f83",
+      "nombre": "Provincia de Tocopilla",
+      "regionId": "6aa2e05e-c345-4ea2-9ebd-9276de5022fa",
+      "createdAt": "2025-06-20T16:17:17.006Z",
+      "updatedAt": "2025-06-20T16:17:17.006Z"
+    },
+    {
+      "id": "25320218-64ed-41c4-9664-00742d5c7550",
+      "nombre": "Provincia de Copiapó",
+      "regionId": "703a6e31-42be-40c7-86fd-e209f896beaf",
+      "createdAt": "2025-06-20T16:18:08.543Z",
+      "updatedAt": "2025-06-20T16:18:08.543Z"
+    },
+    {
+      "id": "f3470e8a-3236-41a9-9b37-a1c0f0399078",
+      "nombre": "Provincia de Chañaral",
+      "regionId": "703a6e31-42be-40c7-86fd-e209f896beaf",
+      "createdAt": "2025-06-20T16:18:34.722Z",
+      "updatedAt": "2025-06-20T16:18:34.722Z"
+    },
+    {
+      "id": "f45252cc-ebbf-46cc-9ef4-b0658c202712",
+      "nombre": "Provincia de Huasco",
+      "regionId": "703a6e31-42be-40c7-86fd-e209f896beaf",
+      "createdAt": "2025-06-20T16:18:54.676Z",
+      "updatedAt": "2025-06-20T16:18:54.676Z"
+    },
+    {
+      "id": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "nombre": "Provincia de Elqui",
+      "regionId": "ff7b1294-12cc-4887-aa22-4d4ae0dd2bb7",
+      "createdAt": "2025-06-20T16:19:37.596Z",
+      "updatedAt": "2025-06-20T16:19:37.596Z"
+    },
+    {
+      "id": "24d457ac-8009-40e7-9868-deb3c528fb1f",
+      "nombre": "Provincia de Choapa",
+      "regionId": "ff7b1294-12cc-4887-aa22-4d4ae0dd2bb7",
+      "createdAt": "2025-06-20T16:21:23.640Z",
+      "updatedAt": "2025-06-20T16:21:23.640Z"
+    },
+    {
+      "id": "e0543d5c-92b1-4939-b532-27e037964424",
+      "nombre": "Provincia de Limarí",
+      "regionId": "ff7b1294-12cc-4887-aa22-4d4ae0dd2bb7",
+      "createdAt": "2025-06-20T16:21:53.803Z",
+      "updatedAt": "2025-06-20T16:21:53.803Z"
+    },
+    {
+      "id": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "nombre": "Provincia de Valparaíso",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:22:34.912Z",
+      "updatedAt": "2025-06-20T16:22:34.912Z"
+    },
+    {
+      "id": "ba337862-a3bc-4142-a9ad-edbfcef58164",
+      "nombre": "Provincia de Isla de Pascua",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:23:13.281Z",
+      "updatedAt": "2025-06-20T16:23:13.281Z"
+    },
+    {
+      "id": "cbada572-9b4b-4ef0-b7ea-d5285380ea79",
+      "nombre": "Provincia de Los Andes",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:23:27.246Z",
+      "updatedAt": "2025-06-20T16:23:27.246Z"
+    },
+    {
+      "id": "b3ee7912-155e-409a-91fc-2048e9197a7d",
+      "nombre": "Provincia de Marga Marga",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:24:01.321Z",
+      "updatedAt": "2025-06-20T16:24:01.321Z"
+    },
+    {
+      "id": "b4378189-e3c7-4aa1-816d-68c015ef80b3",
+      "nombre": "Provincia de Petorca",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:24:27.331Z",
+      "updatedAt": "2025-06-20T16:24:27.331Z"
+    },
+    {
+      "id": "4285485f-92a7-4916-b413-54779a0de33d",
+      "nombre": "Provincia de Quillota",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:24:57.786Z",
+      "updatedAt": "2025-06-20T16:24:57.786Z"
+    },
+    {
+      "id": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "nombre": "Provincia de San Antonio",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:25:35.948Z",
+      "updatedAt": "2025-06-20T16:25:35.948Z"
+    },
+    {
+      "id": "16df3042-07fa-4cff-84af-ff374780d549",
+      "nombre": "Provincia de San Felipe de Aconcagua",
+      "regionId": "4dfbc63f-fac4-446f-b475-c9eb47e00dd4",
+      "createdAt": "2025-06-20T16:26:14.172Z",
+      "updatedAt": "2025-06-20T16:26:14.172Z"
+    },
+    {
+      "id": "ce96df06-b2a5-4149-b929-85a003138208",
+      "nombre": "Provincia de Santiago",
+      "regionId": "07581648-da99-412c-9f28-1469f5380ff1",
+      "createdAt": "2025-06-20T16:27:06.278Z",
+      "updatedAt": "2025-06-20T16:27:06.278Z"
+    },
+    {
+      "id": "9d4e0cdd-8c57-4f40-b68b-1cc97dd65e1f",
+      "nombre": "Provincia de Chacabuco",
+      "regionId": "07581648-da99-412c-9f28-1469f5380ff1",
+      "createdAt": "2025-06-20T16:29:58.591Z",
+      "updatedAt": "2025-06-20T16:29:58.591Z"
+    },
+    {
+      "id": "b13f79ed-edcf-4bd6-89cc-77b1c70b70e8",
+      "nombre": "Provincia de Cordillera",
+      "regionId": "07581648-da99-412c-9f28-1469f5380ff1",
+      "createdAt": "2025-06-20T16:30:20.817Z",
+      "updatedAt": "2025-06-20T16:30:20.817Z"
+    },
+    {
+      "id": "62f5f2bf-98d6-404b-85ab-9d40c3af2a79",
+      "nombre": "Provincia de Maipo",
+      "regionId": "07581648-da99-412c-9f28-1469f5380ff1",
+      "createdAt": "2025-06-20T16:30:52.787Z",
+      "updatedAt": "2025-06-20T16:30:52.787Z"
+    },
+    {
+      "id": "405d9308-093f-40b2-b41f-6cfea8695de3",
+      "nombre": "Provincia de Melipilla",
+      "regionId": "07581648-da99-412c-9f28-1469f5380ff1",
+      "createdAt": "2025-06-20T16:31:15.366Z",
+      "updatedAt": "2025-06-20T16:31:15.366Z"
+    },
+    {
+      "id": "0d2274ba-09be-471e-a011-50535912f6f0",
+      "nombre": "Provincia de Talagante",
+      "regionId": "07581648-da99-412c-9f28-1469f5380ff1",
+      "createdAt": "2025-06-20T16:31:44.215Z",
+      "updatedAt": "2025-06-20T16:31:44.215Z"
+    },
+    {
+      "id": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "nombre": "Provincia de Cachapoal",
+      "regionId": "e09a38e0-0a11-46bf-b4a5-e976191e02ce",
+      "createdAt": "2025-06-20T16:32:25.428Z",
+      "updatedAt": "2025-06-20T16:32:25.428Z"
+    },
+    {
+      "id": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "nombre": "Provincia de Cardenal Caro",
+      "regionId": "e09a38e0-0a11-46bf-b4a5-e976191e02ce",
+      "createdAt": "2025-06-20T16:33:32.359Z",
+      "updatedAt": "2025-06-20T16:33:32.359Z"
+    },
+    {
+      "id": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "nombre": "Provincia de Colchagua",
+      "regionId": "e09a38e0-0a11-46bf-b4a5-e976191e02ce",
+      "createdAt": "2025-06-20T16:34:05.977Z",
+      "updatedAt": "2025-06-20T16:34:05.977Z"
+    },
+    {
+      "id": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "nombre": "Provincia de Talca",
+      "regionId": "c7373374-770a-484f-ac7c-6427e873a10a",
+      "createdAt": "2025-06-20T16:35:00.160Z",
+      "updatedAt": "2025-06-20T16:35:00.160Z"
+    },
+    {
+      "id": "1b576fce-f683-400d-b7ab-5919fc2b1430",
+      "nombre": "Provincia de Cauquenes",
+      "regionId": "c7373374-770a-484f-ac7c-6427e873a10a",
+      "createdAt": "2025-06-20T16:35:45.214Z",
+      "updatedAt": "2025-06-20T16:35:45.214Z"
+    },
+    {
+      "id": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "nombre": "Provincia de Curicó",
+      "regionId": "c7373374-770a-484f-ac7c-6427e873a10a",
+      "createdAt": "2025-06-20T16:36:03.372Z",
+      "updatedAt": "2025-06-20T16:36:03.372Z"
+    },
+    {
+      "id": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "nombre": "Provincia de Linares",
+      "regionId": "c7373374-770a-484f-ac7c-6427e873a10a",
+      "createdAt": "2025-06-20T16:36:40.146Z",
+      "updatedAt": "2025-06-20T16:36:40.146Z"
+    },
+    {
+      "id": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "nombre": "Provincia de Diguillín",
+      "regionId": "51d45e68-ec09-4985-8698-f6284a72506e",
+      "createdAt": "2025-06-20T16:37:31.933Z",
+      "updatedAt": "2025-06-20T16:37:31.933Z"
+    },
+    {
+      "id": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "nombre": "Provincia de Itata",
+      "regionId": "51d45e68-ec09-4985-8698-f6284a72506e",
+      "createdAt": "2025-06-20T16:38:13.355Z",
+      "updatedAt": "2025-06-20T16:38:13.355Z"
+    },
+    {
+      "id": "f18fddbd-e6e6-4381-a7d4-67898a9dfd46",
+      "nombre": "Provincia de Punilla",
+      "regionId": "51d45e68-ec09-4985-8698-f6284a72506e",
+      "createdAt": "2025-06-20T16:38:46.089Z",
+      "updatedAt": "2025-06-20T16:38:46.089Z"
+    },
+    {
+      "id": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "nombre": "Provincia de Concepción",
+      "regionId": "7c68d4ff-17ba-4244-884b-bc7e7cf992d3",
+      "createdAt": "2025-06-20T16:39:30.733Z",
+      "updatedAt": "2025-06-20T16:39:30.733Z"
+    },
+    {
+      "id": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "nombre": "Provincia de Arauco",
+      "regionId": "7c68d4ff-17ba-4244-884b-bc7e7cf992d3",
+      "createdAt": "2025-06-20T16:40:21.982Z",
+      "updatedAt": "2025-06-20T16:40:21.982Z"
+    },
+    {
+      "id": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "nombre": "Provincia de Biobío",
+      "regionId": "7c68d4ff-17ba-4244-884b-bc7e7cf992d3",
+      "createdAt": "2025-06-20T16:40:52.159Z",
+      "updatedAt": "2025-06-20T16:40:52.159Z"
+    },
+    {
+      "id": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "nombre": "Provincia de Cautín",
+      "regionId": "573dd76c-7dcd-45bb-8eac-069ab8f428a9",
+      "createdAt": "2025-06-20T16:42:05.639Z",
+      "updatedAt": "2025-06-20T16:42:05.639Z"
+    },
+    {
+      "id": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "nombre": "Provincia de Malleco",
+      "regionId": "573dd76c-7dcd-45bb-8eac-069ab8f428a9",
+      "createdAt": "2025-06-20T16:43:46.873Z",
+      "updatedAt": "2025-06-20T16:43:46.873Z"
+    },
+    {
+      "id": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "nombre": "Provincia de Valdivia",
+      "regionId": "c248a1c0-2b15-478e-ba13-006db99db0b0",
+      "createdAt": "2025-06-20T16:45:19.062Z",
+      "updatedAt": "2025-06-20T16:45:19.062Z"
+    },
+    {
+      "id": "55b8fb8c-d367-43b7-ba7c-4e869091b41a",
+      "nombre": "Provincia del Ranco",
+      "regionId": "c248a1c0-2b15-478e-ba13-006db99db0b0",
+      "createdAt": "2025-06-20T16:46:10.484Z",
+      "updatedAt": "2025-06-20T16:46:10.484Z"
+    },
+    {
+      "id": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "nombre": "Provincia de Llanquihue",
+      "regionId": "40a7541e-f8b1-475a-b799-97b7fd79e79d",
+      "createdAt": "2025-06-20T16:46:49.335Z",
+      "updatedAt": "2025-06-20T16:46:49.335Z"
+    },
+    {
+      "id": "301f80f1-6f51-445e-965d-b047417ba699",
+      "nombre": "Provincia de Chiloé",
+      "regionId": "40a7541e-f8b1-475a-b799-97b7fd79e79d",
+      "createdAt": "2025-06-20T16:47:32.761Z",
+      "updatedAt": "2025-06-20T16:47:32.761Z"
+    },
+    {
+      "id": "cf374bf7-8c3b-4637-abba-429353567047",
+      "nombre": "Provincia de Osorno",
+      "regionId": "40a7541e-f8b1-475a-b799-97b7fd79e79d",
+      "createdAt": "2025-06-20T16:48:31.090Z",
+      "updatedAt": "2025-06-20T16:48:31.090Z"
+    },
+    {
+      "id": "81f9e60f-318c-4e3c-afe2-317db9cb39ed",
+      "nombre": "Provincia de Palena",
+      "regionId": "40a7541e-f8b1-475a-b799-97b7fd79e79d",
+      "createdAt": "2025-06-20T16:49:07.056Z",
+      "updatedAt": "2025-06-20T16:49:07.056Z"
+    },
+    {
+      "id": "efe4e4b4-16e0-4eb8-952a-0629ba0cf34a",
+      "nombre": "Provincia de Coyhaique",
+      "regionId": "2b9f2fc3-4e4e-4bda-af16-1f6889b4430a",
+      "createdAt": "2025-06-20T16:49:47.105Z",
+      "updatedAt": "2025-06-20T16:49:47.105Z"
+    },
+    {
+      "id": "f51199a2-9325-44e5-8228-47a83309bc53",
+      "nombre": "Provincia de Aysén",
+      "regionId": "2b9f2fc3-4e4e-4bda-af16-1f6889b4430a",
+      "createdAt": "2025-06-20T16:50:01.941Z",
+      "updatedAt": "2025-06-20T16:50:01.941Z"
+    },
+    {
+      "id": "1482900a-c469-412c-88e7-1791672fa57f",
+      "nombre": "Provincia de Capitán Prat",
+      "regionId": "2b9f2fc3-4e4e-4bda-af16-1f6889b4430a",
+      "createdAt": "2025-06-20T16:50:51.451Z",
+      "updatedAt": "2025-06-20T16:50:51.451Z"
+    },
+    {
+      "id": "ee0e141d-5c4f-4915-b5e3-83d14969e2a5",
+      "nombre": "Provincia de General Carrera",
+      "regionId": "2b9f2fc3-4e4e-4bda-af16-1f6889b4430a",
+      "createdAt": "2025-06-20T16:51:19.768Z",
+      "updatedAt": "2025-06-20T16:51:19.768Z"
+    },
+    {
+      "id": "b64118ee-eec5-411c-bc27-4da9ca296fd2",
+      "nombre": "Provincia de Magallanes",
+      "regionId": "3ba9428b-4f6a-4dd0-9bfd-5f4fef34b745",
+      "createdAt": "2025-06-20T16:52:16.631Z",
+      "updatedAt": "2025-06-20T16:52:16.631Z"
+    },
+    {
+      "id": "7cae5b6d-bb20-49b8-8e74-6271a8e82dc2",
+      "nombre": "Provincia de la Antártica Chilena",
+      "regionId": "3ba9428b-4f6a-4dd0-9bfd-5f4fef34b745",
+      "createdAt": "2025-06-20T16:52:43.662Z",
+      "updatedAt": "2025-06-20T16:52:43.662Z"
+    },
+    {
+      "id": "9aa43a8d-05f2-44b8-9edf-5800f338cb18",
+      "nombre": "Provincia de Tierra del Fuego",
+      "regionId": "3ba9428b-4f6a-4dd0-9bfd-5f4fef34b745",
+      "createdAt": "2025-06-20T16:53:23.398Z",
+      "updatedAt": "2025-06-20T16:53:23.398Z"
+    },
+    {
+      "id": "68ab2725-c1de-4eb2-98c0-4ed98e1ec05f",
+      "nombre": "Provincia de Última Esperanza",
+      "regionId": "3ba9428b-4f6a-4dd0-9bfd-5f4fef34b745",
+      "createdAt": "2025-06-20T16:53:53.013Z",
+      "updatedAt": "2025-06-20T16:53:53.013Z"
+    }
+  ],
+  "comunas": [
+    {
+      "id": "3576c4a5-08a5-4693-a255-4803f06c6e9f",
+      "nombre": "Arica",
+      "provinciaId": "f2456994-7d46-4712-8c0c-ad8d571c211d",
+      "createdAt": "2025-06-20T16:11:54.824Z",
+      "updatedAt": "2025-06-20T16:11:54.824Z"
+    },
+    {
+      "id": "ddf6758c-9b42-4adf-b5f7-9bd2e5be5335",
+      "nombre": "Camarones",
+      "provinciaId": "f2456994-7d46-4712-8c0c-ad8d571c211d",
+      "createdAt": "2025-06-20T16:12:00.597Z",
+      "updatedAt": "2025-06-20T16:12:00.597Z"
+    },
+    {
+      "id": "b0195884-ce7e-4ea6-ae5f-5d0b623e5fb4",
+      "nombre": "Putre",
+      "provinciaId": "957a279a-86e1-4c3f-a76a-8a671419a96f",
+      "createdAt": "2025-06-20T16:12:20.983Z",
+      "updatedAt": "2025-06-20T16:12:20.983Z"
+    },
+    {
+      "id": "fc0e4409-157e-4c02-a474-0ad1456541d3",
+      "nombre": "General Lagos",
+      "provinciaId": "957a279a-86e1-4c3f-a76a-8a671419a96f",
+      "createdAt": "2025-06-20T16:12:27.778Z",
+      "updatedAt": "2025-06-20T16:12:27.778Z"
+    },
+    {
+      "id": "f505a125-2a63-4f05-85a5-74d418a55c92",
+      "nombre": "Iquique",
+      "provinciaId": "a22c9b6b-35f2-4060-833d-355db45988f5",
+      "createdAt": "2025-06-20T16:13:13.501Z",
+      "updatedAt": "2025-06-20T16:13:13.501Z"
+    },
+    {
+      "id": "c7f87a30-e46b-4ff4-b034-4eb8fe315d3d",
+      "nombre": "Alto Hospicio",
+      "provinciaId": "a22c9b6b-35f2-4060-833d-355db45988f5",
+      "createdAt": "2025-06-20T16:13:21.140Z",
+      "updatedAt": "2025-06-20T16:13:21.140Z"
+    },
+    {
+      "id": "a881f5e1-9bb3-4369-a87a-afa4030d5c6c",
+      "nombre": "Pozo Almonte",
+      "provinciaId": "1e24329d-9e25-42a4-a890-5e031d31ee88",
+      "createdAt": "2025-06-20T16:13:56.535Z",
+      "updatedAt": "2025-06-20T16:13:56.535Z"
+    },
+    {
+      "id": "4ab5ea70-3c21-4575-8dbb-a7569b2650b4",
+      "nombre": "Camiña",
+      "provinciaId": "1e24329d-9e25-42a4-a890-5e031d31ee88",
+      "createdAt": "2025-06-20T16:14:01.437Z",
+      "updatedAt": "2025-06-20T16:14:01.437Z"
+    },
+    {
+      "id": "053212fc-7806-401b-b515-834da1faa437",
+      "nombre": "Colchane",
+      "provinciaId": "1e24329d-9e25-42a4-a890-5e031d31ee88",
+      "createdAt": "2025-06-20T16:14:04.807Z",
+      "updatedAt": "2025-06-20T16:14:04.807Z"
+    },
+    {
+      "id": "1b8abe5d-42fa-483b-b65f-29b4a5e854ee",
+      "nombre": "Huara",
+      "provinciaId": "1e24329d-9e25-42a4-a890-5e031d31ee88",
+      "createdAt": "2025-06-20T16:14:08.509Z",
+      "updatedAt": "2025-06-20T16:14:08.509Z"
+    },
+    {
+      "id": "e5fac424-3cb2-48ba-99a2-58ef85785e28",
+      "nombre": "Pica",
+      "provinciaId": "1e24329d-9e25-42a4-a890-5e031d31ee88",
+      "createdAt": "2025-06-20T16:14:11.540Z",
+      "updatedAt": "2025-06-20T16:14:11.540Z"
+    },
+    {
+      "id": "d7338a02-0607-41b6-8b4f-0da9cec42cee",
+      "nombre": "Antofagasta",
+      "provinciaId": "8e18dee7-59f3-4128-b1ac-cf1bde4b74a1",
+      "createdAt": "2025-06-20T16:15:06.932Z",
+      "updatedAt": "2025-06-20T16:15:06.932Z"
+    },
+    {
+      "id": "51c013f6-74f3-473b-a8fb-917959d5be4f",
+      "nombre": "Mejillones",
+      "provinciaId": "8e18dee7-59f3-4128-b1ac-cf1bde4b74a1",
+      "createdAt": "2025-06-20T16:15:10.976Z",
+      "updatedAt": "2025-06-20T16:15:10.976Z"
+    },
+    {
+      "id": "d6c71274-2b09-4a90-bdfa-2daa5cee5d1e",
+      "nombre": "Sierra Gorda",
+      "provinciaId": "8e18dee7-59f3-4128-b1ac-cf1bde4b74a1",
+      "createdAt": "2025-06-20T16:15:18.097Z",
+      "updatedAt": "2025-06-20T16:15:18.097Z"
+    },
+    {
+      "id": "b6d90dea-a734-4c62-9792-fd174368e043",
+      "nombre": "Taltal",
+      "provinciaId": "8e18dee7-59f3-4128-b1ac-cf1bde4b74a1",
+      "createdAt": "2025-06-20T16:15:24.690Z",
+      "updatedAt": "2025-06-20T16:15:24.690Z"
+    },
+    {
+      "id": "e5d876ef-6992-44e0-84d0-904f27d37e7d",
+      "nombre": "Calama",
+      "provinciaId": "0df59b88-ee84-4756-a8f1-84e69ae01c21",
+      "createdAt": "2025-06-20T16:16:23.410Z",
+      "updatedAt": "2025-06-20T16:16:23.410Z"
+    },
+    {
+      "id": "e98be7b9-7134-46a9-8877-71940b193e35",
+      "nombre": "Ollagüe",
+      "provinciaId": "0df59b88-ee84-4756-a8f1-84e69ae01c21",
+      "createdAt": "2025-06-20T16:17:07.058Z",
+      "updatedAt": "2025-06-20T16:17:07.058Z"
+    },
+    {
+      "id": "3ba69ff1-189b-44e2-b06c-39dc280567bf",
+      "nombre": "San Pedro de Atacama",
+      "provinciaId": "0df59b88-ee84-4756-a8f1-84e69ae01c21",
+      "createdAt": "2025-06-20T16:17:10.681Z",
+      "updatedAt": "2025-06-20T16:17:10.681Z"
+    },
+    {
+      "id": "085655da-0c8d-45ea-8d9a-5da2715566fa",
+      "nombre": "Tocopilla",
+      "provinciaId": "3490a049-f51d-47a5-b07b-756520a67f83",
+      "createdAt": "2025-06-20T16:17:23.355Z",
+      "updatedAt": "2025-06-20T16:17:23.355Z"
+    },
+    {
+      "id": "aa9fbe6a-dec9-4da3-a0ab-d31c21b9d72d",
+      "nombre": "María Elena",
+      "provinciaId": "3490a049-f51d-47a5-b07b-756520a67f83",
+      "createdAt": "2025-06-20T16:17:26.647Z",
+      "updatedAt": "2025-06-20T16:17:26.647Z"
+    },
+    {
+      "id": "6ea1206a-0265-4201-9b38-9ffb67c9380e",
+      "nombre": "Copiapó",
+      "provinciaId": "25320218-64ed-41c4-9664-00742d5c7550",
+      "createdAt": "2025-06-20T16:18:16.556Z",
+      "updatedAt": "2025-06-20T16:18:16.556Z"
+    },
+    {
+      "id": "37429359-4e97-4610-ae78-3d7faa0020ae",
+      "nombre": "Caldera",
+      "provinciaId": "25320218-64ed-41c4-9664-00742d5c7550",
+      "createdAt": "2025-06-20T16:18:21.007Z",
+      "updatedAt": "2025-06-20T16:18:21.007Z"
+    },
+    {
+      "id": "c6fcb142-a20d-4639-8bfc-a65d404bfa5f",
+      "nombre": "Tierra Amarilla",
+      "provinciaId": "25320218-64ed-41c4-9664-00742d5c7550",
+      "createdAt": "2025-06-20T16:18:24.399Z",
+      "updatedAt": "2025-06-20T16:18:24.399Z"
+    },
+    {
+      "id": "2303a5f7-e4b1-460e-96fd-2e2529791159",
+      "nombre": "Chañaral",
+      "provinciaId": "f3470e8a-3236-41a9-9b37-a1c0f0399078",
+      "createdAt": "2025-06-20T16:18:40.634Z",
+      "updatedAt": "2025-06-20T16:18:40.634Z"
+    },
+    {
+      "id": "74df8661-5854-49b0-831f-670e443b5c59",
+      "nombre": "Diego de Almagro",
+      "provinciaId": "f3470e8a-3236-41a9-9b37-a1c0f0399078",
+      "createdAt": "2025-06-20T16:18:45.018Z",
+      "updatedAt": "2025-06-20T16:18:45.018Z"
+    },
+    {
+      "id": "5886e4c8-c3af-4136-8410-5b7e945a0ee7",
+      "nombre": "Vallenar",
+      "provinciaId": "f45252cc-ebbf-46cc-9ef4-b0658c202712",
+      "createdAt": "2025-06-20T16:19:01.273Z",
+      "updatedAt": "2025-06-20T16:19:01.273Z"
+    },
+    {
+      "id": "09f2c306-3493-4c81-8b7b-fd0dff2529fc",
+      "nombre": "Alto del Carmen",
+      "provinciaId": "f45252cc-ebbf-46cc-9ef4-b0658c202712",
+      "createdAt": "2025-06-20T16:19:07.042Z",
+      "updatedAt": "2025-06-20T16:19:07.042Z"
+    },
+    {
+      "id": "bcfa2f7b-858c-43b7-bd7b-2bbe5b5ee268",
+      "nombre": "Freirina",
+      "provinciaId": "f45252cc-ebbf-46cc-9ef4-b0658c202712",
+      "createdAt": "2025-06-20T16:19:12.170Z",
+      "updatedAt": "2025-06-20T16:19:12.170Z"
+    },
+    {
+      "id": "84adbe79-17a3-40f4-b9df-e67ca1964379",
+      "nombre": "Huasco",
+      "provinciaId": "f45252cc-ebbf-46cc-9ef4-b0658c202712",
+      "createdAt": "2025-06-20T16:19:16.202Z",
+      "updatedAt": "2025-06-20T16:19:16.202Z"
+    },
+    {
+      "id": "7a3c2ccd-2a08-43f2-a70f-1a3480d6d991",
+      "nombre": "La Serena",
+      "provinciaId": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "createdAt": "2025-06-20T16:19:44.612Z",
+      "updatedAt": "2025-06-20T16:19:44.612Z"
+    },
+    {
+      "id": "6039c550-7392-4995-88c0-03cf08f97f67",
+      "nombre": "Coquimbo",
+      "provinciaId": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "createdAt": "2025-06-20T16:21:05.277Z",
+      "updatedAt": "2025-06-20T16:21:05.277Z"
+    },
+    {
+      "id": "e1bce107-5bb8-47f8-84e9-ae91614384cb",
+      "nombre": "Andacollo",
+      "provinciaId": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "createdAt": "2025-06-20T16:21:08.124Z",
+      "updatedAt": "2025-06-20T16:21:08.124Z"
+    },
+    {
+      "id": "0e93606d-d52a-4893-bc83-735c5c0bac42",
+      "nombre": "La Higuera",
+      "provinciaId": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "createdAt": "2025-06-20T16:21:11.028Z",
+      "updatedAt": "2025-06-20T16:21:11.028Z"
+    },
+    {
+      "id": "d4ce4224-efce-4b84-9145-6876ccb7476e",
+      "nombre": "Paihuano",
+      "provinciaId": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "createdAt": "2025-06-20T16:21:15.370Z",
+      "updatedAt": "2025-06-20T16:21:15.370Z"
+    },
+    {
+      "id": "fecf9133-c5a0-4c97-848d-6d13fb233b07",
+      "nombre": "Vicuña",
+      "provinciaId": "0454a0b8-1613-4ed9-984a-d43ba2b1a079",
+      "createdAt": "2025-06-20T16:21:18.130Z",
+      "updatedAt": "2025-06-20T16:21:18.130Z"
+    },
+    {
+      "id": "312a62b8-3960-427e-b70a-7516c0934f12",
+      "nombre": "Illapel",
+      "provinciaId": "24d457ac-8009-40e7-9868-deb3c528fb1f",
+      "createdAt": "2025-06-20T16:21:34.644Z",
+      "updatedAt": "2025-06-20T16:21:34.644Z"
+    },
+    {
+      "id": "1d58295f-b97f-4a0c-8ab3-79df9a04ead4",
+      "nombre": "Canela",
+      "provinciaId": "24d457ac-8009-40e7-9868-deb3c528fb1f",
+      "createdAt": "2025-06-20T16:21:38.353Z",
+      "updatedAt": "2025-06-20T16:21:38.353Z"
+    },
+    {
+      "id": "a102a613-9453-4518-a287-e2ffae1425ac",
+      "nombre": "Los Vilos",
+      "provinciaId": "24d457ac-8009-40e7-9868-deb3c528fb1f",
+      "createdAt": "2025-06-20T16:21:43.362Z",
+      "updatedAt": "2025-06-20T16:21:43.362Z"
+    },
+    {
+      "id": "8e786c8d-0fc3-4961-a9ad-61428620d3c8",
+      "nombre": "Salamanca",
+      "provinciaId": "24d457ac-8009-40e7-9868-deb3c528fb1f",
+      "createdAt": "2025-06-20T16:21:46.499Z",
+      "updatedAt": "2025-06-20T16:21:46.499Z"
+    },
+    {
+      "id": "cf27b497-f2c5-4fe8-8ab6-2b60c9a1f4cc",
+      "nombre": "Ovalle",
+      "provinciaId": "e0543d5c-92b1-4939-b532-27e037964424",
+      "createdAt": "2025-06-20T16:22:00.838Z",
+      "updatedAt": "2025-06-20T16:22:00.838Z"
+    },
+    {
+      "id": "4fdd85f6-ed9a-479a-9c77-4cb106c566a5",
+      "nombre": "Combarbalá",
+      "provinciaId": "e0543d5c-92b1-4939-b532-27e037964424",
+      "createdAt": "2025-06-20T16:22:03.751Z",
+      "updatedAt": "2025-06-20T16:22:03.751Z"
+    },
+    {
+      "id": "29286843-ad05-4af3-9707-46457dfd8d29",
+      "nombre": "Monte Patria",
+      "provinciaId": "e0543d5c-92b1-4939-b532-27e037964424",
+      "createdAt": "2025-06-20T16:22:08.440Z",
+      "updatedAt": "2025-06-20T16:22:08.440Z"
+    },
+    {
+      "id": "fb0396d5-c10e-4e1f-a0a3-44d80760023e",
+      "nombre": "Punitaqui",
+      "provinciaId": "e0543d5c-92b1-4939-b532-27e037964424",
+      "createdAt": "2025-06-20T16:22:13.321Z",
+      "updatedAt": "2025-06-20T16:22:13.321Z"
+    },
+    {
+      "id": "1774cf58-c103-4ee8-9bde-318c30cd0044",
+      "nombre": "Río Hurtado",
+      "provinciaId": "e0543d5c-92b1-4939-b532-27e037964424",
+      "createdAt": "2025-06-20T16:22:17.053Z",
+      "updatedAt": "2025-06-20T16:22:17.053Z"
+    },
+    {
+      "id": "ee6714eb-0179-40e1-a1f2-fd9efc687c03",
+      "nombre": "Valparaíso",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:22:43.102Z",
+      "updatedAt": "2025-06-20T16:22:43.102Z"
+    },
+    {
+      "id": "a3406048-9d1e-4563-9dda-6de8f18310df",
+      "nombre": "Casablanca",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:22:46.556Z",
+      "updatedAt": "2025-06-20T16:22:46.556Z"
+    },
+    {
+      "id": "695323ff-4e9a-48b1-bd66-7e04cb2bbf0e",
+      "nombre": "Concón",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:22:49.749Z",
+      "updatedAt": "2025-06-20T16:22:49.749Z"
+    },
+    {
+      "id": "2c0f0670-97b0-4015-8b3c-c0b037570807",
+      "nombre": "Juan Fernández",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:22:54.046Z",
+      "updatedAt": "2025-06-20T16:22:54.046Z"
+    },
+    {
+      "id": "a70c25ac-2153-48ce-be8d-5d29d041b5ba",
+      "nombre": "Puchuncaví",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:22:56.967Z",
+      "updatedAt": "2025-06-20T16:22:56.967Z"
+    },
+    {
+      "id": "99d1bc1b-5dcd-42f4-817a-9f5fa54bddb4",
+      "nombre": "Quintero",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:23:02.114Z",
+      "updatedAt": "2025-06-20T16:23:02.114Z"
+    },
+    {
+      "id": "104237b5-a090-496f-9579-67cb14c987ec",
+      "nombre": "Viña del Mar",
+      "provinciaId": "46dfaf12-27fd-4baf-bfc4-0295ad49451b",
+      "createdAt": "2025-06-20T16:23:05.470Z",
+      "updatedAt": "2025-06-20T16:23:05.470Z"
+    },
+    {
+      "id": "8e8fa405-0e7a-4a5c-afdd-34a9588be045",
+      "nombre": "Isla de Pascua",
+      "provinciaId": "ba337862-a3bc-4142-a9ad-edbfcef58164",
+      "createdAt": "2025-06-20T16:23:20.294Z",
+      "updatedAt": "2025-06-20T16:23:20.294Z"
+    },
+    {
+      "id": "06698250-4a74-46c1-8b49-fc32231099e5",
+      "nombre": "Los Andes",
+      "provinciaId": "cbada572-9b4b-4ef0-b7ea-d5285380ea79",
+      "createdAt": "2025-06-20T16:23:38.364Z",
+      "updatedAt": "2025-06-20T16:23:38.364Z"
+    },
+    {
+      "id": "dbe15313-88b0-4e63-a464-201a14f9b626",
+      "nombre": "Calle Larga",
+      "provinciaId": "cbada572-9b4b-4ef0-b7ea-d5285380ea79",
+      "createdAt": "2025-06-20T16:23:42.262Z",
+      "updatedAt": "2025-06-20T16:23:42.262Z"
+    },
+    {
+      "id": "e2350c63-c902-4725-b612-4d33cfa57615",
+      "nombre": "Rinconada",
+      "provinciaId": "cbada572-9b4b-4ef0-b7ea-d5285380ea79",
+      "createdAt": "2025-06-20T16:23:46.147Z",
+      "updatedAt": "2025-06-20T16:23:46.147Z"
+    },
+    {
+      "id": "12f776d0-096e-4ce5-9d39-57a91effe320",
+      "nombre": "San Esteban",
+      "provinciaId": "cbada572-9b4b-4ef0-b7ea-d5285380ea79",
+      "createdAt": "2025-06-20T16:23:54.733Z",
+      "updatedAt": "2025-06-20T16:23:54.733Z"
+    },
+    {
+      "id": "7ecf7ee3-ee85-455b-8363-51416f085e4d",
+      "nombre": "Quilpué",
+      "provinciaId": "b3ee7912-155e-409a-91fc-2048e9197a7d",
+      "createdAt": "2025-06-20T16:24:07.025Z",
+      "updatedAt": "2025-06-20T16:24:07.025Z"
+    },
+    {
+      "id": "82b48550-1e60-4144-8495-c400e35e64a2",
+      "nombre": "Limache",
+      "provinciaId": "b3ee7912-155e-409a-91fc-2048e9197a7d",
+      "createdAt": "2025-06-20T16:24:11.166Z",
+      "updatedAt": "2025-06-20T16:24:11.166Z"
+    },
+    {
+      "id": "dc992b3b-34a6-46a5-afd1-5396e95632a4",
+      "nombre": "Olmué",
+      "provinciaId": "b3ee7912-155e-409a-91fc-2048e9197a7d",
+      "createdAt": "2025-06-20T16:24:14.070Z",
+      "updatedAt": "2025-06-20T16:24:14.070Z"
+    },
+    {
+      "id": "7298eb33-49c1-435f-bd2e-b47d61d60a96",
+      "nombre": "Villa Alemana",
+      "provinciaId": "b3ee7912-155e-409a-91fc-2048e9197a7d",
+      "createdAt": "2025-06-20T16:24:18.100Z",
+      "updatedAt": "2025-06-20T16:24:18.100Z"
+    },
+    {
+      "id": "ea401fba-48e6-4db1-9e48-a61f32570a1c",
+      "nombre": "La Ligua",
+      "provinciaId": "b4378189-e3c7-4aa1-816d-68c015ef80b3",
+      "createdAt": "2025-06-20T16:24:35.352Z",
+      "updatedAt": "2025-06-20T16:24:35.352Z"
+    },
+    {
+      "id": "da486b2e-ead2-476d-9630-a91ee11dc85b",
+      "nombre": "Cabildo",
+      "provinciaId": "b4378189-e3c7-4aa1-816d-68c015ef80b3",
+      "createdAt": "2025-06-20T16:24:38.860Z",
+      "updatedAt": "2025-06-20T16:24:38.860Z"
+    },
+    {
+      "id": "5b95990d-5dfb-4629-a7a7-7a7e18fc1ce0",
+      "nombre": "Papudo",
+      "provinciaId": "b4378189-e3c7-4aa1-816d-68c015ef80b3",
+      "createdAt": "2025-06-20T16:24:41.600Z",
+      "updatedAt": "2025-06-20T16:24:41.600Z"
+    },
+    {
+      "id": "afd35d02-ce40-4bac-9857-e8291858a0a1",
+      "nombre": "Petorca",
+      "provinciaId": "b4378189-e3c7-4aa1-816d-68c015ef80b3",
+      "createdAt": "2025-06-20T16:24:44.672Z",
+      "updatedAt": "2025-06-20T16:24:44.672Z"
+    },
+    {
+      "id": "40440348-a8dd-46a0-91fd-a56e649a0bd6",
+      "nombre": "Zapallar",
+      "provinciaId": "b4378189-e3c7-4aa1-816d-68c015ef80b3",
+      "createdAt": "2025-06-20T16:24:47.880Z",
+      "updatedAt": "2025-06-20T16:24:47.880Z"
+    },
+    {
+      "id": "e9cdc753-8722-4f72-af43-8d9bf1d5d158",
+      "nombre": "Quillota",
+      "provinciaId": "4285485f-92a7-4916-b413-54779a0de33d",
+      "createdAt": "2025-06-20T16:25:07.317Z",
+      "updatedAt": "2025-06-20T16:25:07.317Z"
+    },
+    {
+      "id": "ad22e603-c43e-4c20-be50-48db119edfd0",
+      "nombre": "Calera",
+      "provinciaId": "4285485f-92a7-4916-b413-54779a0de33d",
+      "createdAt": "2025-06-20T16:25:13.485Z",
+      "updatedAt": "2025-06-20T16:25:13.485Z"
+    },
+    {
+      "id": "e3811f2c-8dd4-44b0-b973-a15657bdbbc6",
+      "nombre": "Hijuelas",
+      "provinciaId": "4285485f-92a7-4916-b413-54779a0de33d",
+      "createdAt": "2025-06-20T16:25:16.469Z",
+      "updatedAt": "2025-06-20T16:25:16.469Z"
+    },
+    {
+      "id": "16c47ffe-fa2c-4858-b4e7-578ffc37121b",
+      "nombre": "La Cruz",
+      "provinciaId": "4285485f-92a7-4916-b413-54779a0de33d",
+      "createdAt": "2025-06-20T16:25:24.338Z",
+      "updatedAt": "2025-06-20T16:25:24.338Z"
+    },
+    {
+      "id": "1439515b-8b53-4179-a856-2118304107e3",
+      "nombre": "Nogales",
+      "provinciaId": "4285485f-92a7-4916-b413-54779a0de33d",
+      "createdAt": "2025-06-20T16:25:28.763Z",
+      "updatedAt": "2025-06-20T16:25:28.763Z"
+    },
+    {
+      "id": "779ed22c-d66d-4a9a-9d18-706fcc97e3e6",
+      "nombre": "San Antonio",
+      "provinciaId": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "createdAt": "2025-06-20T16:25:46.646Z",
+      "updatedAt": "2025-06-20T16:25:46.646Z"
+    },
+    {
+      "id": "2b13f762-b7bc-43f4-ac37-1d557f985238",
+      "nombre": "Algarrobo",
+      "provinciaId": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "createdAt": "2025-06-20T16:25:49.352Z",
+      "updatedAt": "2025-06-20T16:25:49.352Z"
+    },
+    {
+      "id": "e1ed3ae1-1071-4708-bc4b-21bcaddfe675",
+      "nombre": "Cartagena",
+      "provinciaId": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "createdAt": "2025-06-20T16:25:52.898Z",
+      "updatedAt": "2025-06-20T16:25:52.898Z"
+    },
+    {
+      "id": "66e0704a-2a9b-4750-8a2a-bac7c4ab6f11",
+      "nombre": "El Quisco",
+      "provinciaId": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "createdAt": "2025-06-20T16:25:56.392Z",
+      "updatedAt": "2025-06-20T16:25:56.392Z"
+    },
+    {
+      "id": "30ce756b-cef1-4520-84f3-e036cdd94b40",
+      "nombre": "El Tabo",
+      "provinciaId": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "createdAt": "2025-06-20T16:26:00.562Z",
+      "updatedAt": "2025-06-20T16:26:00.562Z"
+    },
+    {
+      "id": "beffa14e-de79-4800-b0d9-9d71caed3ffa",
+      "nombre": "Santo Domingo",
+      "provinciaId": "5e7d5ed9-a9d5-46a1-bb44-148289837bb0",
+      "createdAt": "2025-06-20T16:26:06.939Z",
+      "updatedAt": "2025-06-20T16:26:06.939Z"
+    },
+    {
+      "id": "0c0da188-3fc0-4ddf-a7f5-765b19a35eeb",
+      "nombre": "San Felipe",
+      "provinciaId": "16df3042-07fa-4cff-84af-ff374780d549",
+      "createdAt": "2025-06-20T16:26:23.349Z",
+      "updatedAt": "2025-06-20T16:26:23.349Z"
+    },
+    {
+      "id": "291145b2-147d-4105-9320-f132f1ab4352",
+      "nombre": "Catemu",
+      "provinciaId": "16df3042-07fa-4cff-84af-ff374780d549",
+      "createdAt": "2025-06-20T16:26:26.098Z",
+      "updatedAt": "2025-06-20T16:26:26.098Z"
+    },
+    {
+      "id": "d6b93ac1-d4b2-4c36-85a3-a946d08fc502",
+      "nombre": "Llay-Llay",
+      "provinciaId": "16df3042-07fa-4cff-84af-ff374780d549",
+      "createdAt": "2025-06-20T16:26:30.071Z",
+      "updatedAt": "2025-06-20T16:26:30.071Z"
+    },
+    {
+      "id": "8217a51d-0bb5-4530-95b6-2de68939e0a1",
+      "nombre": "Panquehue",
+      "provinciaId": "16df3042-07fa-4cff-84af-ff374780d549",
+      "createdAt": "2025-06-20T16:26:33.713Z",
+      "updatedAt": "2025-06-20T16:26:33.713Z"
+    },
+    {
+      "id": "1a525ec7-d988-4bda-a714-8e99fc35fedb",
+      "nombre": "Putaendo",
+      "provinciaId": "16df3042-07fa-4cff-84af-ff374780d549",
+      "createdAt": "2025-06-20T16:26:36.488Z",
+      "updatedAt": "2025-06-20T16:26:36.488Z"
+    },
+    {
+      "id": "c055db09-012c-4509-9f0d-56002a1bddd0",
+      "nombre": "Santa María",
+      "provinciaId": "16df3042-07fa-4cff-84af-ff374780d549",
+      "createdAt": "2025-06-20T16:26:41.006Z",
+      "updatedAt": "2025-06-20T16:26:41.006Z"
+    },
+    {
+      "id": "ec26d775-9ba5-4039-9c05-a84beab11ea2",
+      "nombre": "Santiago",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:11.529Z",
+      "updatedAt": "2025-06-20T16:27:11.529Z"
+    },
+    {
+      "id": "2e9917d7-e03b-49ac-9dd5-5e65c8d7b882",
+      "nombre": "Cerrillos",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:14.736Z",
+      "updatedAt": "2025-06-20T16:27:14.736Z"
+    },
+    {
+      "id": "42254623-e9c1-49b4-8e9c-57331e1a4a48",
+      "nombre": "Cerro Navia",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:20.087Z",
+      "updatedAt": "2025-06-20T16:27:20.087Z"
+    },
+    {
+      "id": "8f341516-0a19-4848-8aed-88ea4dea9454",
+      "nombre": "Conchalí",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:22.957Z",
+      "updatedAt": "2025-06-20T16:27:22.957Z"
+    },
+    {
+      "id": "8ca4bd0a-4ee7-4174-91b9-eee883f3f29e",
+      "nombre": "El Bosque",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:28.712Z",
+      "updatedAt": "2025-06-20T16:27:28.712Z"
+    },
+    {
+      "id": "5dbf04e7-6f84-4f70-8c30-387390ed3f84",
+      "nombre": "Estación Central",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:33.013Z",
+      "updatedAt": "2025-06-20T16:27:33.013Z"
+    },
+    {
+      "id": "079913e4-ddfb-45f0-b8b6-01794475144d",
+      "nombre": "Huechuraba",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:40.233Z",
+      "updatedAt": "2025-06-20T16:27:40.233Z"
+    },
+    {
+      "id": "1629442e-e04f-4bd2-b4b6-7a5335c5d27e",
+      "nombre": "Independencia",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:44.874Z",
+      "updatedAt": "2025-06-20T16:27:44.874Z"
+    },
+    {
+      "id": "2b6b569b-556b-40af-9a0c-5734e28502a9",
+      "nombre": "La Cisterna",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:48.286Z",
+      "updatedAt": "2025-06-20T16:27:48.286Z"
+    },
+    {
+      "id": "987bb224-5010-42fe-aa89-e6c4226f909b",
+      "nombre": "La Florida",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:51.589Z",
+      "updatedAt": "2025-06-20T16:27:51.589Z"
+    },
+    {
+      "id": "d1f3bcfd-7de9-4d32-af04-d8ed0e027cda",
+      "nombre": "La Granja",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:55.401Z",
+      "updatedAt": "2025-06-20T16:27:55.401Z"
+    },
+    {
+      "id": "e6ae7789-64b3-496d-9ad5-e78dd635ff54",
+      "nombre": "La Pintana",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:27:58.981Z",
+      "updatedAt": "2025-06-20T16:27:58.981Z"
+    },
+    {
+      "id": "70eee7d5-992e-41b7-b0cc-184bf67ede72",
+      "nombre": "La Reina",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:02.402Z",
+      "updatedAt": "2025-06-20T16:28:02.402Z"
+    },
+    {
+      "id": "da327e0a-31e5-4058-bbca-5757704d29e2",
+      "nombre": "Las Condes",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:06.197Z",
+      "updatedAt": "2025-06-20T16:28:06.197Z"
+    },
+    {
+      "id": "d6160f81-8a15-4f44-886b-c81025cb1e85",
+      "nombre": "Lo Barnechea",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:09.271Z",
+      "updatedAt": "2025-06-20T16:28:09.271Z"
+    },
+    {
+      "id": "c1dbf197-fd7e-4a53-a507-b52add5d5d55",
+      "nombre": "Lo Espejo",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:13.493Z",
+      "updatedAt": "2025-06-20T16:28:13.493Z"
+    },
+    {
+      "id": "0cce7a31-72ba-4271-a4b5-5c39546e0853",
+      "nombre": "Lo Prado",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:16.570Z",
+      "updatedAt": "2025-06-20T16:28:16.570Z"
+    },
+    {
+      "id": "ae51d975-9928-499a-923c-171b669d4781",
+      "nombre": "Macul",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:18.925Z",
+      "updatedAt": "2025-06-20T16:28:18.925Z"
+    },
+    {
+      "id": "14964c08-4b4f-4844-8446-063bef7a0b8c",
+      "nombre": "Maipú",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:21.659Z",
+      "updatedAt": "2025-06-20T16:28:21.659Z"
+    },
+    {
+      "id": "429ebc79-979b-4a25-99aa-62cdf497b9c8",
+      "nombre": "Ñuñoa",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:24.392Z",
+      "updatedAt": "2025-06-20T16:28:24.392Z"
+    },
+    {
+      "id": "2aa03172-94c0-4ab1-bbe1-6c58469cdee4",
+      "nombre": "Pedro Aguirre Cerda",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:29.067Z",
+      "updatedAt": "2025-06-20T16:28:29.067Z"
+    },
+    {
+      "id": "f0c9932c-f8ce-485f-8774-a4598fc33936",
+      "nombre": "Peñalolén",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:32.115Z",
+      "updatedAt": "2025-06-20T16:28:32.115Z"
+    },
+    {
+      "id": "0513d3d3-4706-40cc-8d1b-5ab25712a0e8",
+      "nombre": "Providencia",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:35.199Z",
+      "updatedAt": "2025-06-20T16:28:35.199Z"
+    },
+    {
+      "id": "81f7b176-82a2-4391-9ffe-64da7bcb27b2",
+      "nombre": "Pudahuel",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:37.811Z",
+      "updatedAt": "2025-06-20T16:28:37.811Z"
+    },
+    {
+      "id": "decf131e-48a0-4ba3-9900-c582ed2f1710",
+      "nombre": "Quilicura",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:40.730Z",
+      "updatedAt": "2025-06-20T16:28:40.730Z"
+    },
+    {
+      "id": "3ec86962-07c4-4235-b3e1-2aed874f99ef",
+      "nombre": "Quinta Normal",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:44.290Z",
+      "updatedAt": "2025-06-20T16:28:44.290Z"
+    },
+    {
+      "id": "97e21305-0360-4734-ad78-c8b079979d63",
+      "nombre": "Recoleta",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:47.174Z",
+      "updatedAt": "2025-06-20T16:28:47.174Z"
+    },
+    {
+      "id": "cb736f0b-79b6-408a-9e40-34ce6874e671",
+      "nombre": "Renca",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:49.669Z",
+      "updatedAt": "2025-06-20T16:28:49.669Z"
+    },
+    {
+      "id": "5ac54327-6c2a-4b64-aba8-6da41c030aa3",
+      "nombre": "San Joaquín",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:52.921Z",
+      "updatedAt": "2025-06-20T16:28:52.921Z"
+    },
+    {
+      "id": "3320bebe-bea6-452a-b51a-e92b1e071863",
+      "nombre": "San Miguel",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:56.029Z",
+      "updatedAt": "2025-06-20T16:28:56.029Z"
+    },
+    {
+      "id": "2e05c966-dc6f-409a-b4ea-8281ca7abb90",
+      "nombre": "San Ramón",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:28:59.206Z",
+      "updatedAt": "2025-06-20T16:28:59.206Z"
+    },
+    {
+      "id": "3a58b3ca-615b-4677-b42d-7aaf9c117fb2",
+      "nombre": "Vitacura",
+      "provinciaId": "ce96df06-b2a5-4149-b929-85a003138208",
+      "createdAt": "2025-06-20T16:29:02.996Z",
+      "updatedAt": "2025-06-20T16:29:02.996Z"
+    },
+    {
+      "id": "59068b05-0fe2-46fb-a22e-accd554c2ffd",
+      "nombre": "Colina",
+      "provinciaId": "9d4e0cdd-8c57-4f40-b68b-1cc97dd65e1f",
+      "createdAt": "2025-06-20T16:30:05.449Z",
+      "updatedAt": "2025-06-20T16:30:05.449Z"
+    },
+    {
+      "id": "430eb6da-92b4-40d4-984d-a6b5c465f579",
+      "nombre": "Lampa",
+      "provinciaId": "9d4e0cdd-8c57-4f40-b68b-1cc97dd65e1f",
+      "createdAt": "2025-06-20T16:30:08.797Z",
+      "updatedAt": "2025-06-20T16:30:08.797Z"
+    },
+    {
+      "id": "26ef1293-efce-4edb-a974-ec413d21f997",
+      "nombre": "Tiltil",
+      "provinciaId": "9d4e0cdd-8c57-4f40-b68b-1cc97dd65e1f",
+      "createdAt": "2025-06-20T16:30:13.213Z",
+      "updatedAt": "2025-06-20T16:30:13.213Z"
+    },
+    {
+      "id": "46d50171-69ef-433d-a852-0973886976dc",
+      "nombre": "Puente Alto",
+      "provinciaId": "b13f79ed-edcf-4bd6-89cc-77b1c70b70e8",
+      "createdAt": "2025-06-20T16:30:28.085Z",
+      "updatedAt": "2025-06-20T16:30:28.085Z"
+    },
+    {
+      "id": "797ccbc6-ece3-4d02-affc-21fc4251a673",
+      "nombre": "Pirque",
+      "provinciaId": "b13f79ed-edcf-4bd6-89cc-77b1c70b70e8",
+      "createdAt": "2025-06-20T16:30:43.305Z",
+      "updatedAt": "2025-06-20T16:30:43.305Z"
+    },
+    {
+      "id": "6f56cc18-71ff-46b6-9c68-9923bf56a629",
+      "nombre": "San José de Maipo",
+      "provinciaId": "b13f79ed-edcf-4bd6-89cc-77b1c70b70e8",
+      "createdAt": "2025-06-20T16:30:46.717Z",
+      "updatedAt": "2025-06-20T16:30:46.717Z"
+    },
+    {
+      "id": "906506a5-82f9-4578-834c-c9c2781e397a",
+      "nombre": "San Bernardo",
+      "provinciaId": "62f5f2bf-98d6-404b-85ab-9d40c3af2a79",
+      "createdAt": "2025-06-20T16:30:58.503Z",
+      "updatedAt": "2025-06-20T16:30:58.503Z"
+    },
+    {
+      "id": "460812cb-1f64-4ce9-a4d3-63095ee908ed",
+      "nombre": "Buin",
+      "provinciaId": "62f5f2bf-98d6-404b-85ab-9d40c3af2a79",
+      "createdAt": "2025-06-20T16:31:02.262Z",
+      "updatedAt": "2025-06-20T16:31:02.262Z"
+    },
+    {
+      "id": "d2c461f8-9ebc-4813-90ae-5e4af91c426c",
+      "nombre": "Calera de Tango",
+      "provinciaId": "62f5f2bf-98d6-404b-85ab-9d40c3af2a79",
+      "createdAt": "2025-06-20T16:31:05.649Z",
+      "updatedAt": "2025-06-20T16:31:05.649Z"
+    },
+    {
+      "id": "327a2957-c33c-44e4-b7b9-ffd88f239baa",
+      "nombre": "Paine",
+      "provinciaId": "62f5f2bf-98d6-404b-85ab-9d40c3af2a79",
+      "createdAt": "2025-06-20T16:31:08.950Z",
+      "updatedAt": "2025-06-20T16:31:08.950Z"
+    },
+    {
+      "id": "2b55e830-2fcc-44b7-8fc9-0b083954d798",
+      "nombre": "Melipilla",
+      "provinciaId": "405d9308-093f-40b2-b41f-6cfea8695de3",
+      "createdAt": "2025-06-20T16:31:23.452Z",
+      "updatedAt": "2025-06-20T16:31:23.452Z"
+    },
+    {
+      "id": "d35693b0-552d-440a-ab84-996d76c58572",
+      "nombre": "Alhué",
+      "provinciaId": "405d9308-093f-40b2-b41f-6cfea8695de3",
+      "createdAt": "2025-06-20T16:31:27.138Z",
+      "updatedAt": "2025-06-20T16:31:27.138Z"
+    },
+    {
+      "id": "d6e33cfc-df20-4947-ba76-e2eacc73d5d9",
+      "nombre": "Curacaví",
+      "provinciaId": "405d9308-093f-40b2-b41f-6cfea8695de3",
+      "createdAt": "2025-06-20T16:31:30.448Z",
+      "updatedAt": "2025-06-20T16:31:30.448Z"
+    },
+    {
+      "id": "7e3e1226-c309-45a8-b171-acdc877d79c5",
+      "nombre": "María Pinto",
+      "provinciaId": "405d9308-093f-40b2-b41f-6cfea8695de3",
+      "createdAt": "2025-06-20T16:31:33.470Z",
+      "updatedAt": "2025-06-20T16:31:33.470Z"
+    },
+    {
+      "id": "f8c23e08-7eee-417e-978c-b26e26f97985",
+      "nombre": "San Pedro",
+      "provinciaId": "405d9308-093f-40b2-b41f-6cfea8695de3",
+      "createdAt": "2025-06-20T16:31:37.431Z",
+      "updatedAt": "2025-06-20T16:31:37.431Z"
+    },
+    {
+      "id": "8ccf254b-5501-4a75-898a-911300023129",
+      "nombre": "Talagante",
+      "provinciaId": "0d2274ba-09be-471e-a011-50535912f6f0",
+      "createdAt": "2025-06-20T16:31:50.621Z",
+      "updatedAt": "2025-06-20T16:31:50.621Z"
+    },
+    {
+      "id": "2de0b4b3-6219-4e42-bd34-7f9bd479ed74",
+      "nombre": "El Monte",
+      "provinciaId": "0d2274ba-09be-471e-a011-50535912f6f0",
+      "createdAt": "2025-06-20T16:31:55.119Z",
+      "updatedAt": "2025-06-20T16:31:55.119Z"
+    },
+    {
+      "id": "839e1cdc-bf1a-43c9-9e8b-6fd030cf9ae2",
+      "nombre": "Isla de Maipo",
+      "provinciaId": "0d2274ba-09be-471e-a011-50535912f6f0",
+      "createdAt": "2025-06-20T16:31:58.378Z",
+      "updatedAt": "2025-06-20T16:31:58.378Z"
+    },
+    {
+      "id": "23c3ef1c-91ac-4714-9aea-927475077c78",
+      "nombre": "Padre Hurtado",
+      "provinciaId": "0d2274ba-09be-471e-a011-50535912f6f0",
+      "createdAt": "2025-06-20T16:32:03.092Z",
+      "updatedAt": "2025-06-20T16:32:03.092Z"
+    },
+    {
+      "id": "9d298f6f-df78-4c0b-9d35-9e52af5cf251",
+      "nombre": "Peñaflor",
+      "provinciaId": "0d2274ba-09be-471e-a011-50535912f6f0",
+      "createdAt": "2025-06-20T16:32:06.646Z",
+      "updatedAt": "2025-06-20T16:32:06.646Z"
+    },
+    {
+      "id": "b95f6f2b-0bf7-46c7-b73a-292fb13c2ca3",
+      "nombre": "Rancagua",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:30.087Z",
+      "updatedAt": "2025-06-20T16:32:30.087Z"
+    },
+    {
+      "id": "1d17b03f-5d94-4dc6-805a-6b70a689c639",
+      "nombre": "Codegua",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:33.398Z",
+      "updatedAt": "2025-06-20T16:32:33.398Z"
+    },
+    {
+      "id": "92a5b47b-75af-4b05-8ef8-39351380e588",
+      "nombre": "Coinco",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:36.882Z",
+      "updatedAt": "2025-06-20T16:32:36.882Z"
+    },
+    {
+      "id": "439c1e7c-48b0-42ad-937d-590343423ce1",
+      "nombre": "Coltauco",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:40.295Z",
+      "updatedAt": "2025-06-20T16:32:40.295Z"
+    },
+    {
+      "id": "5ec6017c-bbd4-4d82-977b-6b0058dd1a3a",
+      "nombre": "Doñihue",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:44.054Z",
+      "updatedAt": "2025-06-20T16:32:44.054Z"
+    },
+    {
+      "id": "8644c692-2164-4f94-8190-7617299a6c94",
+      "nombre": "Graneros",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:47.160Z",
+      "updatedAt": "2025-06-20T16:32:47.160Z"
+    },
+    {
+      "id": "debf9bf4-4048-4f06-a522-f6ccde591b80",
+      "nombre": "Las Cabras",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:50.649Z",
+      "updatedAt": "2025-06-20T16:32:50.649Z"
+    },
+    {
+      "id": "1a277aa9-2c78-4595-839d-cd054143bb8e",
+      "nombre": "Machalí",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:53.059Z",
+      "updatedAt": "2025-06-20T16:32:53.059Z"
+    },
+    {
+      "id": "7803e8a3-7e0e-4cb1-9261-114af856f7b2",
+      "nombre": "Malloa",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:55.498Z",
+      "updatedAt": "2025-06-20T16:32:55.498Z"
+    },
+    {
+      "id": "04ed4035-30d6-4c1c-9e2e-a66be28313c8",
+      "nombre": "Mostazal",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:32:59.522Z",
+      "updatedAt": "2025-06-20T16:32:59.522Z"
+    },
+    {
+      "id": "5aeafc84-886c-4006-8ea6-92373919213c",
+      "nombre": "Olivar",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:04.777Z",
+      "updatedAt": "2025-06-20T16:33:04.777Z"
+    },
+    {
+      "id": "c6e06ea1-b3db-465d-b7ad-add5feef7d6a",
+      "nombre": "Peumo",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:08.589Z",
+      "updatedAt": "2025-06-20T16:33:08.589Z"
+    },
+    {
+      "id": "927445e2-f29a-40db-8e81-4683db6a1f86",
+      "nombre": "Pichidegua",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:12.218Z",
+      "updatedAt": "2025-06-20T16:33:12.218Z"
+    },
+    {
+      "id": "b0024d93-0ba2-4df2-bcca-14f8700c0412",
+      "nombre": "Quinta de Tilcoco",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:16.119Z",
+      "updatedAt": "2025-06-20T16:33:16.119Z"
+    },
+    {
+      "id": "8cb3d474-4dc2-45a1-96e8-1788ba956134",
+      "nombre": "Rengo",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:19.150Z",
+      "updatedAt": "2025-06-20T16:33:19.150Z"
+    },
+    {
+      "id": "1d101bcf-b261-48f1-955e-ae681009a20d",
+      "nombre": "Requínoa",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:21.511Z",
+      "updatedAt": "2025-06-20T16:33:21.511Z"
+    },
+    {
+      "id": "096ed986-c777-4af5-861a-b13a00015554",
+      "nombre": "San Vicente",
+      "provinciaId": "71395fc2-0cae-4d7d-af8e-8960690ce7b6",
+      "createdAt": "2025-06-20T16:33:25.084Z",
+      "updatedAt": "2025-06-20T16:33:25.084Z"
+    },
+    {
+      "id": "fef21dbb-1bdb-4474-a314-33cc79f1aee5",
+      "nombre": "Pichilemu",
+      "provinciaId": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "createdAt": "2025-06-20T16:33:46.758Z",
+      "updatedAt": "2025-06-20T16:33:46.758Z"
+    },
+    {
+      "id": "732aee12-a8d4-4d6b-8873-67edd6f78c6e",
+      "nombre": "La Estrella",
+      "provinciaId": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "createdAt": "2025-06-20T16:33:48.132Z",
+      "updatedAt": "2025-06-20T16:33:48.132Z"
+    },
+    {
+      "id": "b355d109-36cf-4f30-b4bc-67b6df48b958",
+      "nombre": "Litueche",
+      "provinciaId": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "createdAt": "2025-06-20T16:33:51.533Z",
+      "updatedAt": "2025-06-20T16:33:51.533Z"
+    },
+    {
+      "id": "71e37e0d-4536-4fb2-b699-588c8366c96e",
+      "nombre": "Marchihue",
+      "provinciaId": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "createdAt": "2025-06-20T16:33:53.933Z",
+      "updatedAt": "2025-06-20T16:33:53.933Z"
+    },
+    {
+      "id": "53fc9736-779f-45c1-a29f-2c904182fb64",
+      "nombre": "Navidad",
+      "provinciaId": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "createdAt": "2025-06-20T16:33:57.148Z",
+      "updatedAt": "2025-06-20T16:33:57.148Z"
+    },
+    {
+      "id": "a0a48cfa-ceb6-4402-bb26-9ba3f09a3616",
+      "nombre": "Paredones",
+      "provinciaId": "d0953251-a8d1-4b30-bab7-2bf978f9bb8e",
+      "createdAt": "2025-06-20T16:33:59.558Z",
+      "updatedAt": "2025-06-20T16:33:59.558Z"
+    },
+    {
+      "id": "00d6c2c5-fe4c-4f5c-af0e-3f43dadf8183",
+      "nombre": "San Fernando",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:14.626Z",
+      "updatedAt": "2025-06-20T16:34:14.626Z"
+    },
+    {
+      "id": "143d6d7e-1883-4f27-a758-99083378a14e",
+      "nombre": "Chimbarongo",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:21.536Z",
+      "updatedAt": "2025-06-20T16:34:21.536Z"
+    },
+    {
+      "id": "c0960e39-45af-4680-9b32-fdd056be0d0f",
+      "nombre": "Lolol",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:23.557Z",
+      "updatedAt": "2025-06-20T16:34:23.557Z"
+    },
+    {
+      "id": "db876926-6223-4962-9011-e3ead05d505d",
+      "nombre": "Nancagua",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:25.651Z",
+      "updatedAt": "2025-06-20T16:34:25.651Z"
+    },
+    {
+      "id": "44989259-1f22-42ab-b8d5-63e067bac07c",
+      "nombre": "Palmilla",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:27.656Z",
+      "updatedAt": "2025-06-20T16:34:27.656Z"
+    },
+    {
+      "id": "9a3643b6-21f6-44cf-858c-c4acdd177a29",
+      "nombre": "Peralillo",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:29.534Z",
+      "updatedAt": "2025-06-20T16:34:29.534Z"
+    },
+    {
+      "id": "37a1f12c-b71a-4ede-b29a-2bf2f02aef00",
+      "nombre": "Placilla",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:31.485Z",
+      "updatedAt": "2025-06-20T16:34:31.485Z"
+    },
+    {
+      "id": "6b2ba43c-6199-4f56-9940-375fd04844b3",
+      "nombre": "Pumanque",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:34.352Z",
+      "updatedAt": "2025-06-20T16:34:34.352Z"
+    },
+    {
+      "id": "7da3d612-3f5e-4565-a7e1-f3ddbdc4d971",
+      "nombre": "Santa Cruz",
+      "provinciaId": "f4459a19-e6d5-4d4f-bc03-61b7d72ec082",
+      "createdAt": "2025-06-20T16:34:37.343Z",
+      "updatedAt": "2025-06-20T16:34:37.343Z"
+    },
+    {
+      "id": "5e6ee6ff-7738-4a40-8277-06f327b53911",
+      "nombre": "Talca",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:06.469Z",
+      "updatedAt": "2025-06-20T16:35:06.469Z"
+    },
+    {
+      "id": "ba9ffefe-57d2-4c26-ac5a-bdb82ba0e42b",
+      "nombre": "Constitución",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:09.471Z",
+      "updatedAt": "2025-06-20T16:35:09.471Z"
+    },
+    {
+      "id": "3fd819f0-a63a-40f2-9140-1515c5203eba",
+      "nombre": "Curepto",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:13.631Z",
+      "updatedAt": "2025-06-20T16:35:13.631Z"
+    },
+    {
+      "id": "2ed3e9a9-cd64-4f79-8f5c-d9a4de1553c9",
+      "nombre": "Empedrado",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:16.153Z",
+      "updatedAt": "2025-06-20T16:35:16.153Z"
+    },
+    {
+      "id": "4bd4533c-c29a-43c1-8011-893ad0bff963",
+      "nombre": "Maule",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:18.376Z",
+      "updatedAt": "2025-06-20T16:35:18.376Z"
+    },
+    {
+      "id": "616259ce-45d5-4bcc-a2bf-71a6b4334220",
+      "nombre": "Pelarco",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:21.501Z",
+      "updatedAt": "2025-06-20T16:35:21.501Z"
+    },
+    {
+      "id": "39084a67-f6fd-4587-b498-88d5a2e99797",
+      "nombre": "Pencahue",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:24.300Z",
+      "updatedAt": "2025-06-20T16:35:24.300Z"
+    },
+    {
+      "id": "40c5854e-f3c9-4d7c-83e4-c60e321b3c95",
+      "nombre": "Río Claro",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:27.699Z",
+      "updatedAt": "2025-06-20T16:35:27.699Z"
+    },
+    {
+      "id": "d52220ff-1eea-486c-b80c-aa4fa7772ac5",
+      "nombre": "San Clemente",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:30.631Z",
+      "updatedAt": "2025-06-20T16:35:30.631Z"
+    },
+    {
+      "id": "3d63036c-6adc-482f-87e1-0033a6ed65bf",
+      "nombre": "San Rafael",
+      "provinciaId": "63aadf4c-2efa-4f09-9c9a-cdd141d56d38",
+      "createdAt": "2025-06-20T16:35:33.683Z",
+      "updatedAt": "2025-06-20T16:35:33.683Z"
+    },
+    {
+      "id": "f2f178f9-4cf8-4be4-b308-4d7f66233985",
+      "nombre": "Cauquenes",
+      "provinciaId": "1b576fce-f683-400d-b7ab-5919fc2b1430",
+      "createdAt": "2025-06-20T16:35:51.778Z",
+      "updatedAt": "2025-06-20T16:35:51.778Z"
+    },
+    {
+      "id": "ee92cf0b-7ed4-46de-b86a-b4366de9f7aa",
+      "nombre": "Chanco",
+      "provinciaId": "1b576fce-f683-400d-b7ab-5919fc2b1430",
+      "createdAt": "2025-06-20T16:35:54.825Z",
+      "updatedAt": "2025-06-20T16:35:54.825Z"
+    },
+    {
+      "id": "42a927cf-6ec6-441b-b59d-8929b6399dab",
+      "nombre": "Pelluhue",
+      "provinciaId": "1b576fce-f683-400d-b7ab-5919fc2b1430",
+      "createdAt": "2025-06-20T16:35:57.380Z",
+      "updatedAt": "2025-06-20T16:35:57.380Z"
+    },
+    {
+      "id": "fbff3ea3-196a-4ff4-aced-f845729d826e",
+      "nombre": "Curicó",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:12.351Z",
+      "updatedAt": "2025-06-20T16:36:12.351Z"
+    },
+    {
+      "id": "a9faaf8d-c80b-4af4-87d2-6cd0ac986531",
+      "nombre": "Hualañé",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:15.513Z",
+      "updatedAt": "2025-06-20T16:36:15.513Z"
+    },
+    {
+      "id": "2c579ede-d597-46bf-b4f9-c15ea32beea8",
+      "nombre": "Licantén",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:17.952Z",
+      "updatedAt": "2025-06-20T16:36:17.952Z"
+    },
+    {
+      "id": "ebe444b1-c080-403c-967e-935afceee436",
+      "nombre": "Molina",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:20.049Z",
+      "updatedAt": "2025-06-20T16:36:20.049Z"
+    },
+    {
+      "id": "4da4c8a8-1b36-4061-8ef9-2b1767d9e335",
+      "nombre": "Rauco",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:21.954Z",
+      "updatedAt": "2025-06-20T16:36:21.954Z"
+    },
+    {
+      "id": "692acdc8-1f09-4be2-87f3-059d68e4d984",
+      "nombre": "Romeral",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:24.178Z",
+      "updatedAt": "2025-06-20T16:36:24.178Z"
+    },
+    {
+      "id": "6f4c3189-81e9-413f-93d7-9b248c170a0d",
+      "nombre": "Sagrada Familia",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:28.096Z",
+      "updatedAt": "2025-06-20T16:36:28.096Z"
+    },
+    {
+      "id": "a7295ad8-2c4a-46d7-8149-de120faa8708",
+      "nombre": "Teno",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:30.487Z",
+      "updatedAt": "2025-06-20T16:36:30.487Z"
+    },
+    {
+      "id": "0cab065b-1395-4123-9371-f551d64ec4f0",
+      "nombre": "Vichuquén",
+      "provinciaId": "e8c4cc18-91d8-43b2-854a-51a3d667af77",
+      "createdAt": "2025-06-20T16:36:33.071Z",
+      "updatedAt": "2025-06-20T16:36:33.071Z"
+    },
+    {
+      "id": "d2fb2883-0a57-4912-9746-e57311796170",
+      "nombre": "Linares",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:36:46.510Z",
+      "updatedAt": "2025-06-20T16:36:46.510Z"
+    },
+    {
+      "id": "6ddf8541-2054-40db-bbd5-acf22ab91943",
+      "nombre": "Colbún",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:36:49.268Z",
+      "updatedAt": "2025-06-20T16:36:49.268Z"
+    },
+    {
+      "id": "64fab5ab-bbd0-4355-bb4a-bf1c5cc05e2d",
+      "nombre": "Longaví",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:36:52.455Z",
+      "updatedAt": "2025-06-20T16:36:52.455Z"
+    },
+    {
+      "id": "cb729818-e9f7-49ee-ae64-acd9fdf08734",
+      "nombre": "Parral",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:36:58.226Z",
+      "updatedAt": "2025-06-20T16:36:58.226Z"
+    },
+    {
+      "id": "9b464aea-b463-4b86-a37d-67d03abce2eb",
+      "nombre": "Retiro",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:37:01.078Z",
+      "updatedAt": "2025-06-20T16:37:01.078Z"
+    },
+    {
+      "id": "45b3abda-fabc-4882-ac84-54486d0422f1",
+      "nombre": "San Javier",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:37:04.059Z",
+      "updatedAt": "2025-06-20T16:37:04.059Z"
+    },
+    {
+      "id": "50462141-cc98-40ba-ae51-376bb2b48525",
+      "nombre": "Villa Alegre",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:37:06.878Z",
+      "updatedAt": "2025-06-20T16:37:06.878Z"
+    },
+    {
+      "id": "e0fa2e7c-6e61-4f5f-bcef-3d18ea5feb84",
+      "nombre": "Yerbas Buenas",
+      "provinciaId": "8c9d4cb8-6d70-41a3-a16d-2afc28e1b865",
+      "createdAt": "2025-06-20T16:37:09.836Z",
+      "updatedAt": "2025-06-20T16:37:09.836Z"
+    },
+    {
+      "id": "d9c1f809-06c1-42bc-9c52-5cd7d505681a",
+      "nombre": "Chillán",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:37.876Z",
+      "updatedAt": "2025-06-20T16:37:37.876Z"
+    },
+    {
+      "id": "e53031d8-56bc-4402-814e-b02cd80b8da7",
+      "nombre": "Bulnes",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:41.154Z",
+      "updatedAt": "2025-06-20T16:37:41.154Z"
+    },
+    {
+      "id": "66290bca-5468-4360-9f54-773ab18cf18c",
+      "nombre": "Chillán Viejo",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:44.923Z",
+      "updatedAt": "2025-06-20T16:37:44.923Z"
+    },
+    {
+      "id": "2dddfac0-cf07-451e-9398-ec31cdb01299",
+      "nombre": "El Carmen",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:48.192Z",
+      "updatedAt": "2025-06-20T16:37:48.192Z"
+    },
+    {
+      "id": "32c03f8b-e0e7-43e8-ab83-43cdc6d1486d",
+      "nombre": "Pemuco",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:50.455Z",
+      "updatedAt": "2025-06-20T16:37:50.455Z"
+    },
+    {
+      "id": "58ef14c6-8243-4a79-a6e0-453ef089d24a",
+      "nombre": "Pinto",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:52.902Z",
+      "updatedAt": "2025-06-20T16:37:52.902Z"
+    },
+    {
+      "id": "eb2eda15-3d40-45c8-8db5-37a28dd8e978",
+      "nombre": "Quillón",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:56.098Z",
+      "updatedAt": "2025-06-20T16:37:56.098Z"
+    },
+    {
+      "id": "db984be1-0967-4b49-ac93-a4fe27c3d8f6",
+      "nombre": "San Ignacio",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:37:58.914Z",
+      "updatedAt": "2025-06-20T16:37:58.914Z"
+    },
+    {
+      "id": "3ddcc576-d293-48ef-ab32-d04e43707a42",
+      "nombre": "Yungay",
+      "provinciaId": "d8a309ac-7cc7-481b-b166-ba1afa60c880",
+      "createdAt": "2025-06-20T16:38:02.028Z",
+      "updatedAt": "2025-06-20T16:38:02.028Z"
+    },
+    {
+      "id": "f3ea3f01-dc1f-4345-b708-fcd5777f93bb",
+      "nombre": "Quirihue",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:22.502Z",
+      "updatedAt": "2025-06-20T16:38:22.502Z"
+    },
+    {
+      "id": "ab3640af-ba64-45d9-827d-ff4d9e4b09dc",
+      "nombre": "Cobquecura",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:26.696Z",
+      "updatedAt": "2025-06-20T16:38:26.696Z"
+    },
+    {
+      "id": "9e3aa68d-c0b7-4c18-a60c-43ffafd2061a",
+      "nombre": "Coelemu",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:29.324Z",
+      "updatedAt": "2025-06-20T16:38:29.324Z"
+    },
+    {
+      "id": "9b0dce02-8f18-42f5-b8c4-49977a66a6cc",
+      "nombre": "Ninhue",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:31.500Z",
+      "updatedAt": "2025-06-20T16:38:31.500Z"
+    },
+    {
+      "id": "a9f6c9f7-66d1-4b79-9838-4a45d2e5f26a",
+      "nombre": "Portezuelo",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:33.816Z",
+      "updatedAt": "2025-06-20T16:38:33.816Z"
+    },
+    {
+      "id": "b43ae793-d522-465c-b296-ff9c0cb56c55",
+      "nombre": "Ránquil",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:37.093Z",
+      "updatedAt": "2025-06-20T16:38:37.093Z"
+    },
+    {
+      "id": "2a568cbb-b1eb-4b14-b752-bc72ee368503",
+      "nombre": "Treguaco",
+      "provinciaId": "b087f49d-d764-4f44-bf38-78249ca44f8d",
+      "createdAt": "2025-06-20T16:38:39.524Z",
+      "updatedAt": "2025-06-20T16:38:39.524Z"
+    },
+    {
+      "id": "814da51b-d003-4c3c-92db-8261d00cc019",
+      "nombre": "San Carlos",
+      "provinciaId": "f18fddbd-e6e6-4381-a7d4-67898a9dfd46",
+      "createdAt": "2025-06-20T16:38:53.835Z",
+      "updatedAt": "2025-06-20T16:38:53.835Z"
+    },
+    {
+      "id": "04f6eb29-4fd9-4289-8516-ea13e109e266",
+      "nombre": "Coihueco",
+      "provinciaId": "f18fddbd-e6e6-4381-a7d4-67898a9dfd46",
+      "createdAt": "2025-06-20T16:38:57.577Z",
+      "updatedAt": "2025-06-20T16:38:57.577Z"
+    },
+    {
+      "id": "0851d088-7087-4852-b867-20feb042c87f",
+      "nombre": "Ñiquén",
+      "provinciaId": "f18fddbd-e6e6-4381-a7d4-67898a9dfd46",
+      "createdAt": "2025-06-20T16:39:00.633Z",
+      "updatedAt": "2025-06-20T16:39:00.633Z"
+    },
+    {
+      "id": "ecd09bcd-b8b0-4945-a325-9bff45dba223",
+      "nombre": "San Fabián",
+      "provinciaId": "f18fddbd-e6e6-4381-a7d4-67898a9dfd46",
+      "createdAt": "2025-06-20T16:39:03.401Z",
+      "updatedAt": "2025-06-20T16:39:03.401Z"
+    },
+    {
+      "id": "7f81ae69-011b-44b7-9301-0bdbd96bc5b0",
+      "nombre": "San Nicolás",
+      "provinciaId": "f18fddbd-e6e6-4381-a7d4-67898a9dfd46",
+      "createdAt": "2025-06-20T16:39:05.986Z",
+      "updatedAt": "2025-06-20T16:39:05.986Z"
+    },
+    {
+      "id": "ba204fad-ea0d-41e6-9b6b-e2221789595e",
+      "nombre": "Concepción",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:36.229Z",
+      "updatedAt": "2025-06-20T16:39:36.229Z"
+    },
+    {
+      "id": "48c2b02e-9052-4473-86ed-764798474838",
+      "nombre": "Coronel",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:39.667Z",
+      "updatedAt": "2025-06-20T16:39:39.667Z"
+    },
+    {
+      "id": "df611510-8002-4331-a99c-4fa992fcca85",
+      "nombre": "Chiguayante",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:42.087Z",
+      "updatedAt": "2025-06-20T16:39:42.087Z"
+    },
+    {
+      "id": "9cbdea00-cdb5-4b44-b90b-3f9f2638f80d",
+      "nombre": "Florida",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:44.912Z",
+      "updatedAt": "2025-06-20T16:39:44.912Z"
+    },
+    {
+      "id": "ee917dec-94b8-4ced-9bb9-4511178cc4df",
+      "nombre": "Hualqui",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:47.177Z",
+      "updatedAt": "2025-06-20T16:39:47.177Z"
+    },
+    {
+      "id": "734e60dd-5c38-43c0-bfaf-6b330e48952e",
+      "nombre": "Lota",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:49.807Z",
+      "updatedAt": "2025-06-20T16:39:49.807Z"
+    },
+    {
+      "id": "1159a952-f139-4331-8890-7a242dd6ac28",
+      "nombre": "Penco",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:53.122Z",
+      "updatedAt": "2025-06-20T16:39:53.122Z"
+    },
+    {
+      "id": "fe83aee0-de19-4a3a-a350-4df8a2c3282b",
+      "nombre": "San Pedro de la Paz",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:55.994Z",
+      "updatedAt": "2025-06-20T16:39:55.994Z"
+    },
+    {
+      "id": "f512d91e-3b9b-463e-a151-b9034bda0977",
+      "nombre": "Santa Juana",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:39:58.714Z",
+      "updatedAt": "2025-06-20T16:39:58.714Z"
+    },
+    {
+      "id": "134bf20a-e811-4950-97b2-6df3f2cc17f2",
+      "nombre": "Talcahuano",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:40:01.435Z",
+      "updatedAt": "2025-06-20T16:40:01.435Z"
+    },
+    {
+      "id": "f985f48a-10f2-4be0-9c31-b883b5489f53",
+      "nombre": "Tomé",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:40:04.814Z",
+      "updatedAt": "2025-06-20T16:40:04.814Z"
+    },
+    {
+      "id": "9ee6070a-73c6-48c7-a31a-ce3d95f35385",
+      "nombre": "Hualpén",
+      "provinciaId": "beba51c6-6a15-419d-ac8d-92bba59fc1a8",
+      "createdAt": "2025-06-20T16:40:09.227Z",
+      "updatedAt": "2025-06-20T16:40:09.227Z"
+    },
+    {
+      "id": "aed3bd4b-9aa7-416c-bd9c-e01a3d2efeed",
+      "nombre": "Lebu",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:27.017Z",
+      "updatedAt": "2025-06-20T16:40:27.017Z"
+    },
+    {
+      "id": "37ac2952-e40d-40a3-b359-0d6b876c94b8",
+      "nombre": "Arauco",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:29.390Z",
+      "updatedAt": "2025-06-20T16:40:29.390Z"
+    },
+    {
+      "id": "a856c556-81ab-4686-94a0-4d3fd00ccce4",
+      "nombre": "Cañete",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:32.740Z",
+      "updatedAt": "2025-06-20T16:40:32.740Z"
+    },
+    {
+      "id": "01bdb95c-f763-4ebb-bdfd-73fe2d2ce0d7",
+      "nombre": "Contulmo",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:36.249Z",
+      "updatedAt": "2025-06-20T16:40:36.249Z"
+    },
+    {
+      "id": "367c63b8-6091-4ffd-9549-bca9974c3978",
+      "nombre": "Curanilahue",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:38.941Z",
+      "updatedAt": "2025-06-20T16:40:38.941Z"
+    },
+    {
+      "id": "6aaaedf3-87c1-4ff0-8d65-b032ed9cd9f0",
+      "nombre": "Los Álamos",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:42.147Z",
+      "updatedAt": "2025-06-20T16:40:42.147Z"
+    },
+    {
+      "id": "12ad8801-b356-4d9f-83dc-9d793f1142a3",
+      "nombre": "Tirúa",
+      "provinciaId": "60aac304-fb3d-4fff-846b-280629c66e3a",
+      "createdAt": "2025-06-20T16:40:44.990Z",
+      "updatedAt": "2025-06-20T16:40:44.990Z"
+    },
+    {
+      "id": "52b9ed3b-f093-480c-9e2e-392524fc28c5",
+      "nombre": "Los Ángeles",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:01.826Z",
+      "updatedAt": "2025-06-20T16:41:01.826Z"
+    },
+    {
+      "id": "edab4e88-2a45-4975-b3cd-e27b382f0b19",
+      "nombre": "Alto Biobío",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:05.516Z",
+      "updatedAt": "2025-06-20T16:41:05.516Z"
+    },
+    {
+      "id": "551a3c60-d4af-44a4-8dd1-4c0e69937313",
+      "nombre": "Antuco",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:07.443Z",
+      "updatedAt": "2025-06-20T16:41:07.443Z"
+    },
+    {
+      "id": "c3095dd7-889a-4c90-95e0-7207ac430204",
+      "nombre": "Cabrero",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:09.431Z",
+      "updatedAt": "2025-06-20T16:41:09.431Z"
+    },
+    {
+      "id": "b2f2800f-5a4d-4e63-baae-783756eb5477",
+      "nombre": "Laja",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:11.814Z",
+      "updatedAt": "2025-06-20T16:41:11.814Z"
+    },
+    {
+      "id": "fb274c5a-b334-49e4-8aff-c4306d00c4b2",
+      "nombre": "Mulchén",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:14.610Z",
+      "updatedAt": "2025-06-20T16:41:14.610Z"
+    },
+    {
+      "id": "fd3559dc-f7da-4a23-8d58-82e6051210e1",
+      "nombre": "Nacimiento",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:16.874Z",
+      "updatedAt": "2025-06-20T16:41:16.874Z"
+    },
+    {
+      "id": "89662ff2-75fa-48c9-b27d-df044370c033",
+      "nombre": "Negrete",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:19.582Z",
+      "updatedAt": "2025-06-20T16:41:19.582Z"
+    },
+    {
+      "id": "76f3553b-c843-4ea9-a36c-00b1081e3342",
+      "nombre": "Quilaco",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:21.929Z",
+      "updatedAt": "2025-06-20T16:41:21.929Z"
+    },
+    {
+      "id": "7d2b7668-2ab5-4f4d-9632-7176a57f8f87",
+      "nombre": "Quilleco",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:24.466Z",
+      "updatedAt": "2025-06-20T16:41:24.466Z"
+    },
+    {
+      "id": "bb97f385-e084-48ab-97cf-aae3bdd4dc92",
+      "nombre": "San Rosendo",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:27.643Z",
+      "updatedAt": "2025-06-20T16:41:27.643Z"
+    },
+    {
+      "id": "33ab4e41-f259-4afd-8a14-f94fb0757b8a",
+      "nombre": "Santa Bárbara",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:30.539Z",
+      "updatedAt": "2025-06-20T16:41:30.539Z"
+    },
+    {
+      "id": "216ab6b3-53f7-4a1e-973c-fcb659c640a2",
+      "nombre": "Tucapel",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:32.613Z",
+      "updatedAt": "2025-06-20T16:41:32.613Z"
+    },
+    {
+      "id": "1d97ec22-e3e3-49bb-8ca7-3a1eb5f27431",
+      "nombre": "Yumbel",
+      "provinciaId": "a74b444a-95ea-47fc-83e6-e218547518da",
+      "createdAt": "2025-06-20T16:41:34.867Z",
+      "updatedAt": "2025-06-20T16:41:34.867Z"
+    },
+    {
+      "id": "51a764eb-6eb0-4507-bc26-ee5c87ea7e4d",
+      "nombre": "Temuco",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:11.867Z",
+      "updatedAt": "2025-06-20T16:42:11.867Z"
+    },
+    {
+      "id": "4d09151c-3e24-4055-9196-1d2df639b5b5",
+      "nombre": "Carahue",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:15.201Z",
+      "updatedAt": "2025-06-20T16:42:15.201Z"
+    },
+    {
+      "id": "786b91cb-3e66-47c8-9382-060d8a9165a7",
+      "nombre": "Cunco",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:17.364Z",
+      "updatedAt": "2025-06-20T16:42:17.364Z"
+    },
+    {
+      "id": "edcfc90e-d6e9-4998-b7f9-3b8bfb0d0be5",
+      "nombre": "Curarrehue",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:19.682Z",
+      "updatedAt": "2025-06-20T16:42:19.682Z"
+    },
+    {
+      "id": "499d4597-796f-4753-b088-3604339a4b3d",
+      "nombre": "Freire",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:27.382Z",
+      "updatedAt": "2025-06-20T16:42:27.382Z"
+    },
+    {
+      "id": "e1d0df9f-4fd8-405a-8b25-bb46cb5e4efb",
+      "nombre": "Galvarino",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:30.045Z",
+      "updatedAt": "2025-06-20T16:42:30.045Z"
+    },
+    {
+      "id": "3227ba7e-a3fb-4270-a130-1719d1dfa060",
+      "nombre": "Gorbea",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:33.359Z",
+      "updatedAt": "2025-06-20T16:42:33.359Z"
+    },
+    {
+      "id": "875cc790-d420-4b58-86c3-e9a733750c51",
+      "nombre": "Loncoche",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:35.639Z",
+      "updatedAt": "2025-06-20T16:42:35.639Z"
+    },
+    {
+      "id": "0cc420e2-7341-4b92-aa33-7fb0a3623d0c",
+      "nombre": "Melipeuco",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:40.032Z",
+      "updatedAt": "2025-06-20T16:42:40.032Z"
+    },
+    {
+      "id": "01714f78-7e5e-47c1-a409-eb9771098a01",
+      "nombre": "Nueva Imperial",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:42.486Z",
+      "updatedAt": "2025-06-20T16:42:42.486Z"
+    },
+    {
+      "id": "a2b48ce2-4be2-4cc9-b29a-74e355e9a174",
+      "nombre": "Padre Las Casas",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:45.040Z",
+      "updatedAt": "2025-06-20T16:42:45.040Z"
+    },
+    {
+      "id": "043bfce7-b0ad-4bc7-85c7-84f32246b4bb",
+      "nombre": "Perquenco",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:47.433Z",
+      "updatedAt": "2025-06-20T16:42:47.433Z"
+    },
+    {
+      "id": "c6a93a10-83fe-4e5e-8b07-2ab82ad504f1",
+      "nombre": "Pitrufquén",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:49.517Z",
+      "updatedAt": "2025-06-20T16:42:49.517Z"
+    },
+    {
+      "id": "f68cc8ef-0bf7-4db1-ba08-fef32322dc21",
+      "nombre": "Pucón",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:42:52.144Z",
+      "updatedAt": "2025-06-20T16:42:52.144Z"
+    },
+    {
+      "id": "4b7ecd0f-5805-4e28-8c9c-9163b9ce9c42",
+      "nombre": "Saavedra",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:43:00.844Z",
+      "updatedAt": "2025-06-20T16:43:00.844Z"
+    },
+    {
+      "id": "fffafaef-52f3-49a9-8579-6a46cc7f8b15",
+      "nombre": "Teodoro Schmidt",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:43:20.169Z",
+      "updatedAt": "2025-06-20T16:43:20.169Z"
+    },
+    {
+      "id": "71e8ac40-846a-4d6e-bcbc-2832ded498f9",
+      "nombre": "Toltén",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:43:25.476Z",
+      "updatedAt": "2025-06-20T16:43:25.476Z"
+    },
+    {
+      "id": "eecbe2ca-2a01-48d6-9f96-147dcbffb624",
+      "nombre": "Vilcún",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:43:27.827Z",
+      "updatedAt": "2025-06-20T16:43:27.827Z"
+    },
+    {
+      "id": "dcb1d502-53b1-44e5-9938-e2f70188aa7b",
+      "nombre": "Villarrica",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:43:30.634Z",
+      "updatedAt": "2025-06-20T16:43:30.634Z"
+    },
+    {
+      "id": "6c86dfd8-1812-4f3b-9907-bd1c00a99c30",
+      "nombre": "Cholchol",
+      "provinciaId": "93b4b927-c2e5-4fce-9509-527e00da6993",
+      "createdAt": "2025-06-20T16:43:34.194Z",
+      "updatedAt": "2025-06-20T16:43:34.194Z"
+    },
+    {
+      "id": "398941bf-9142-4703-9e16-75e108612e48",
+      "nombre": "Angol",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:43:55.513Z",
+      "updatedAt": "2025-06-20T16:43:55.513Z"
+    },
+    {
+      "id": "d200a7e3-2895-4ad3-92a2-be7d55f5def1",
+      "nombre": "Collipulli",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:43:59.963Z",
+      "updatedAt": "2025-06-20T16:43:59.963Z"
+    },
+    {
+      "id": "97e29e38-f037-442f-a10d-0a50767dccda",
+      "nombre": "Curacautín",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:04.081Z",
+      "updatedAt": "2025-06-20T16:44:04.081Z"
+    },
+    {
+      "id": "5fa0728a-7b17-4599-b35a-df90fd314d43",
+      "nombre": "Ercilla",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:06.459Z",
+      "updatedAt": "2025-06-20T16:44:06.459Z"
+    },
+    {
+      "id": "089d58dd-345d-45ba-9b5b-2361a1c36d1b",
+      "nombre": "Lonquimay",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:08.655Z",
+      "updatedAt": "2025-06-20T16:44:08.655Z"
+    },
+    {
+      "id": "a0e8573e-1a6b-4cbf-82c8-8e5f67c483c1",
+      "nombre": "Los Sauces",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:11.766Z",
+      "updatedAt": "2025-06-20T16:44:11.766Z"
+    },
+    {
+      "id": "fb5fcfca-557f-4805-8123-eb937b53e644",
+      "nombre": "Lumaco",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:32.321Z",
+      "updatedAt": "2025-06-20T16:44:32.321Z"
+    },
+    {
+      "id": "20df8693-5c13-4518-9bfa-bd07db7d9315",
+      "nombre": "Purén",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:35.155Z",
+      "updatedAt": "2025-06-20T16:44:35.155Z"
+    },
+    {
+      "id": "d6925ca6-91ab-4e4d-b0b9-6d6c9f19d6e2",
+      "nombre": "Renaico",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:38.121Z",
+      "updatedAt": "2025-06-20T16:44:38.121Z"
+    },
+    {
+      "id": "46b022cb-0bfb-4ac6-8222-6c16dca0eeca",
+      "nombre": "Traiguén",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:51.625Z",
+      "updatedAt": "2025-06-20T16:44:51.625Z"
+    },
+    {
+      "id": "d74229cf-315b-498e-bcff-ab3e63835aa2",
+      "nombre": "Victoria",
+      "provinciaId": "44b2c054-d2cf-4727-b6bc-2fd0add577c6",
+      "createdAt": "2025-06-20T16:44:54.756Z",
+      "updatedAt": "2025-06-20T16:44:54.756Z"
+    },
+    {
+      "id": "74948044-5a46-43fb-a261-12186a0da01b",
+      "nombre": "Valdivia",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:25.383Z",
+      "updatedAt": "2025-06-20T16:45:25.383Z"
+    },
+    {
+      "id": "0b71afc0-7593-419d-9452-d14f2d6eaf20",
+      "nombre": "Corral",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:30.370Z",
+      "updatedAt": "2025-06-20T16:45:30.370Z"
+    },
+    {
+      "id": "8197ae88-4aad-41e3-a499-6c835c35e420",
+      "nombre": "Lanco",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:34.383Z",
+      "updatedAt": "2025-06-20T16:45:34.383Z"
+    },
+    {
+      "id": "b80d24e1-d570-464c-83dc-bdf648e43edd",
+      "nombre": "Los Lagos",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:39.366Z",
+      "updatedAt": "2025-06-20T16:45:39.366Z"
+    },
+    {
+      "id": "09d87ed2-a74a-4c04-b830-5a5a562b8d60",
+      "nombre": "Máfil",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:48.931Z",
+      "updatedAt": "2025-06-20T16:45:48.931Z"
+    },
+    {
+      "id": "00d1c35e-5858-4a34-ade8-1a056b0b5d20",
+      "nombre": "Mariquina",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:57.550Z",
+      "updatedAt": "2025-06-20T16:45:57.550Z"
+    },
+    {
+      "id": "56be711e-209d-4abd-9f49-60be8a562bfc",
+      "nombre": "Paillaco",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:45:59.157Z",
+      "updatedAt": "2025-06-20T16:45:59.157Z"
+    },
+    {
+      "id": "5907ce48-475b-40fe-ada6-13c13895929c",
+      "nombre": "Panguipulli",
+      "provinciaId": "2dfe287b-ba1b-414d-a80b-2a7c6138ce24",
+      "createdAt": "2025-06-20T16:46:02.566Z",
+      "updatedAt": "2025-06-20T16:46:02.566Z"
+    },
+    {
+      "id": "71ce40ed-7e9e-4ef4-a944-5f8e38b9e0c0",
+      "nombre": "La Unión",
+      "provinciaId": "55b8fb8c-d367-43b7-ba7c-4e869091b41a",
+      "createdAt": "2025-06-20T16:46:16.805Z",
+      "updatedAt": "2025-06-20T16:46:16.805Z"
+    },
+    {
+      "id": "baae3168-571a-40f4-805d-1b9abe254aee",
+      "nombre": "Futrono",
+      "provinciaId": "55b8fb8c-d367-43b7-ba7c-4e869091b41a",
+      "createdAt": "2025-06-20T16:46:20.873Z",
+      "updatedAt": "2025-06-20T16:46:20.873Z"
+    },
+    {
+      "id": "2b364917-d3bd-4069-a217-1eeef9b19c15",
+      "nombre": "Lago Ranco",
+      "provinciaId": "55b8fb8c-d367-43b7-ba7c-4e869091b41a",
+      "createdAt": "2025-06-20T16:46:24.473Z",
+      "updatedAt": "2025-06-20T16:46:24.473Z"
+    },
+    {
+      "id": "eb988d4f-1845-4a66-a168-a7b67bc1d7b6",
+      "nombre": "Río Bueno",
+      "provinciaId": "55b8fb8c-d367-43b7-ba7c-4e869091b41a",
+      "createdAt": "2025-06-20T16:46:27.460Z",
+      "updatedAt": "2025-06-20T16:46:27.460Z"
+    },
+    {
+      "id": "ee5ad49b-eb03-4235-ba76-6a7031f5f03c",
+      "nombre": "Puerto Montt",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:46:58.906Z",
+      "updatedAt": "2025-06-20T16:46:58.906Z"
+    },
+    {
+      "id": "7fc3f66b-e25e-4842-98c4-c1c552f7025a",
+      "nombre": "Calbuco",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:03.659Z",
+      "updatedAt": "2025-06-20T16:47:03.659Z"
+    },
+    {
+      "id": "46f34c77-d726-48ad-b7be-323e950c7742",
+      "nombre": "Cochamó",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:07.025Z",
+      "updatedAt": "2025-06-20T16:47:07.025Z"
+    },
+    {
+      "id": "125a2da2-94e2-4eb6-b170-15b1f948f686",
+      "nombre": "Fresia",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:10.404Z",
+      "updatedAt": "2025-06-20T16:47:10.404Z"
+    },
+    {
+      "id": "a551f146-c93b-4785-9d9b-196119f503e3",
+      "nombre": "Frutillar",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:14.149Z",
+      "updatedAt": "2025-06-20T16:47:14.149Z"
+    },
+    {
+      "id": "9f908229-8b38-459d-8391-9b5253a3088b",
+      "nombre": "Los Muermos",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:18.567Z",
+      "updatedAt": "2025-06-20T16:47:18.567Z"
+    },
+    {
+      "id": "e7d91e52-7f08-407b-b335-f5a2f5acf748",
+      "nombre": "Llanquihue",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:20.980Z",
+      "updatedAt": "2025-06-20T16:47:20.980Z"
+    },
+    {
+      "id": "48ba717b-ebce-427f-aec7-14e7f454ca0e",
+      "nombre": "Maullín",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:24.963Z",
+      "updatedAt": "2025-06-20T16:47:24.963Z"
+    },
+    {
+      "id": "adab7568-aa53-49b5-a737-f0771c0a9683",
+      "nombre": "Puerto Varas",
+      "provinciaId": "403b2e4a-c641-41d3-97a1-61e7ce486366",
+      "createdAt": "2025-06-20T16:47:28.368Z",
+      "updatedAt": "2025-06-20T16:47:28.368Z"
+    },
+    {
+      "id": "b6370915-da32-494a-8db9-0909bd7169b9",
+      "nombre": "Castro",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:47:40.695Z",
+      "updatedAt": "2025-06-20T16:47:40.695Z"
+    },
+    {
+      "id": "786aacd0-9274-40c7-b969-91e825ec9114",
+      "nombre": "Ancud",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:47:46.134Z",
+      "updatedAt": "2025-06-20T16:47:46.134Z"
+    },
+    {
+      "id": "816dca40-6f44-4a07-8ce1-f908fdc3792d",
+      "nombre": "Chonchi",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:47:49.291Z",
+      "updatedAt": "2025-06-20T16:47:49.291Z"
+    },
+    {
+      "id": "c1ee09c4-d294-4a25-9f6f-9f237ebe11db",
+      "nombre": "Curaco de Vélez",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:47:52.952Z",
+      "updatedAt": "2025-06-20T16:47:52.952Z"
+    },
+    {
+      "id": "e3cc6eca-674a-47c3-9b49-1bc0f82709a1",
+      "nombre": "Dalcahue",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:47:56.384Z",
+      "updatedAt": "2025-06-20T16:47:56.384Z"
+    },
+    {
+      "id": "36295106-78ae-4f08-9d31-90eb39a299f5",
+      "nombre": "Puqueldón",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:48:00.263Z",
+      "updatedAt": "2025-06-20T16:48:00.263Z"
+    },
+    {
+      "id": "a8a02d32-2b4e-4b60-89af-12f867caefcc",
+      "nombre": "Queilén",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:48:02.947Z",
+      "updatedAt": "2025-06-20T16:48:02.947Z"
+    },
+    {
+      "id": "6d28d84c-feb8-4807-b0c5-553552fa27fa",
+      "nombre": "Quellón",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:48:06.665Z",
+      "updatedAt": "2025-06-20T16:48:06.665Z"
+    },
+    {
+      "id": "d6fc98ea-ee3c-4c9b-ad1d-ea229db56c56",
+      "nombre": "Quemchi",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:48:09.471Z",
+      "updatedAt": "2025-06-20T16:48:09.471Z"
+    },
+    {
+      "id": "a9d770a6-c82c-4353-a788-7d427cd8ed39",
+      "nombre": "Quinchao",
+      "provinciaId": "301f80f1-6f51-445e-965d-b047417ba699",
+      "createdAt": "2025-06-20T16:48:12.893Z",
+      "updatedAt": "2025-06-20T16:48:12.893Z"
+    },
+    {
+      "id": "97783931-daae-4568-bd22-73b8207f234e",
+      "nombre": "Osorno",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:37.242Z",
+      "updatedAt": "2025-06-20T16:48:37.242Z"
+    },
+    {
+      "id": "19134865-ddc7-41a8-83f8-2c85b1ae7a78",
+      "nombre": "Puerto Octay",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:41.513Z",
+      "updatedAt": "2025-06-20T16:48:41.513Z"
+    },
+    {
+      "id": "1954f2c1-2737-4ac0-b2ad-6b71355b8d94",
+      "nombre": "Purranque",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:45.758Z",
+      "updatedAt": "2025-06-20T16:48:45.758Z"
+    },
+    {
+      "id": "e8998c0a-cda0-4956-a727-b445fbe0fc62",
+      "nombre": "Puyehue",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:48.273Z",
+      "updatedAt": "2025-06-20T16:48:48.273Z"
+    },
+    {
+      "id": "b393165e-f6b6-44b7-aa52-7ffec558e44c",
+      "nombre": "Río Negro",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:52.263Z",
+      "updatedAt": "2025-06-20T16:48:52.263Z"
+    },
+    {
+      "id": "fddd06e9-8f62-4307-85b9-cb1503d292ba",
+      "nombre": "San Juan de la Costa",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:55.558Z",
+      "updatedAt": "2025-06-20T16:48:55.558Z"
+    },
+    {
+      "id": "b658d9d2-ce2e-4daf-ab42-778f09eb7aec",
+      "nombre": "San Pablo",
+      "provinciaId": "cf374bf7-8c3b-4637-abba-429353567047",
+      "createdAt": "2025-06-20T16:48:58.956Z",
+      "updatedAt": "2025-06-20T16:48:58.956Z"
+    },
+    {
+      "id": "458b5d3e-f1c2-4484-af46-86bdac0001df",
+      "nombre": "Chaitén",
+      "provinciaId": "81f9e60f-318c-4e3c-afe2-317db9cb39ed",
+      "createdAt": "2025-06-20T16:49:13.180Z",
+      "updatedAt": "2025-06-20T16:49:13.180Z"
+    },
+    {
+      "id": "e8d192ef-c247-4164-8009-22b5fafcf8c1",
+      "nombre": "Futaleufú",
+      "provinciaId": "81f9e60f-318c-4e3c-afe2-317db9cb39ed",
+      "createdAt": "2025-06-20T16:49:16.588Z",
+      "updatedAt": "2025-06-20T16:49:16.588Z"
+    },
+    {
+      "id": "9d567869-ced9-4640-965c-983dff8dd8f0",
+      "nombre": "Hualaihué",
+      "provinciaId": "81f9e60f-318c-4e3c-afe2-317db9cb39ed",
+      "createdAt": "2025-06-20T16:49:20.307Z",
+      "updatedAt": "2025-06-20T16:49:20.307Z"
+    },
+    {
+      "id": "1c1031c1-e2b8-481a-9421-4fca350586df",
+      "nombre": "Palena",
+      "provinciaId": "81f9e60f-318c-4e3c-afe2-317db9cb39ed",
+      "createdAt": "2025-06-20T16:49:23.223Z",
+      "updatedAt": "2025-06-20T16:49:23.223Z"
+    },
+    {
+      "id": "23a6f248-71a9-45ab-94fd-8c74044862db",
+      "nombre": "Coyhaique",
+      "provinciaId": "efe4e4b4-16e0-4eb8-952a-0629ba0cf34a",
+      "createdAt": "2025-06-20T16:49:53.348Z",
+      "updatedAt": "2025-06-20T16:49:53.348Z"
+    },
+    {
+      "id": "84bd071c-81fa-4d1f-8b2d-6c3443d1e5a8",
+      "nombre": "Lago Verde",
+      "provinciaId": "efe4e4b4-16e0-4eb8-952a-0629ba0cf34a",
+      "createdAt": "2025-06-20T16:49:56.368Z",
+      "updatedAt": "2025-06-20T16:49:56.368Z"
+    },
+    {
+      "id": "b1d12551-f0d3-4580-86a9-e09ef9f18abf",
+      "nombre": "Aysén",
+      "provinciaId": "f51199a2-9325-44e5-8228-47a83309bc53",
+      "createdAt": "2025-06-20T16:50:07.170Z",
+      "updatedAt": "2025-06-20T16:50:07.170Z"
+    },
+    {
+      "id": "05251ecf-80df-47f1-b093-a5afe0804bb3",
+      "nombre": "Cisnes",
+      "provinciaId": "f51199a2-9325-44e5-8228-47a83309bc53",
+      "createdAt": "2025-06-20T16:50:10.439Z",
+      "updatedAt": "2025-06-20T16:50:10.439Z"
+    },
+    {
+      "id": "199967b0-35b1-46db-9c03-a5fb82f0de0b",
+      "nombre": "Guaitecas",
+      "provinciaId": "f51199a2-9325-44e5-8228-47a83309bc53",
+      "createdAt": "2025-06-20T16:50:13.445Z",
+      "updatedAt": "2025-06-20T16:50:13.445Z"
+    },
+    {
+      "id": "d9499d95-f296-4540-8553-05448422decb",
+      "nombre": "Cochrane",
+      "provinciaId": "1482900a-c469-412c-88e7-1791672fa57f",
+      "createdAt": "2025-06-20T16:51:01.856Z",
+      "updatedAt": "2025-06-20T16:51:01.856Z"
+    },
+    {
+      "id": "47dfe14c-34f7-4a87-8a01-cfd3b5bfcad6",
+      "nombre": "O'Higgins",
+      "provinciaId": "1482900a-c469-412c-88e7-1791672fa57f",
+      "createdAt": "2025-06-20T16:51:08.605Z",
+      "updatedAt": "2025-06-20T16:51:08.605Z"
+    },
+    {
+      "id": "3b17a7a9-3792-47e0-a311-3be77b3d7d46",
+      "nombre": "Tortel",
+      "provinciaId": "1482900a-c469-412c-88e7-1791672fa57f",
+      "createdAt": "2025-06-20T16:51:11.396Z",
+      "updatedAt": "2025-06-20T16:51:11.396Z"
+    },
+    {
+      "id": "6ae51a61-b3d0-4577-90d1-6e2564260490",
+      "nombre": "Chile Chico",
+      "provinciaId": "ee0e141d-5c4f-4915-b5e3-83d14969e2a5",
+      "createdAt": "2025-06-20T16:51:37.344Z",
+      "updatedAt": "2025-06-20T16:51:37.344Z"
+    },
+    {
+      "id": "e85614d5-c4f1-4504-9025-abbdf40cb5a8",
+      "nombre": "Río Ibáñez",
+      "provinciaId": "ee0e141d-5c4f-4915-b5e3-83d14969e2a5",
+      "createdAt": "2025-06-20T16:51:40.831Z",
+      "updatedAt": "2025-06-20T16:51:40.831Z"
+    },
+    {
+      "id": "c7ff95c5-2467-4bbb-9e9b-e7aebcc9e89c",
+      "nombre": "Punta Arenas",
+      "provinciaId": "b64118ee-eec5-411c-bc27-4da9ca296fd2",
+      "createdAt": "2025-06-20T16:52:24.984Z",
+      "updatedAt": "2025-06-20T16:52:24.984Z"
+    },
+    {
+      "id": "b3b777b0-c5ab-4901-b25a-f2908634ca1d",
+      "nombre": "Laguna Blanca",
+      "provinciaId": "b64118ee-eec5-411c-bc27-4da9ca296fd2",
+      "createdAt": "2025-06-20T16:52:29.139Z",
+      "updatedAt": "2025-06-20T16:52:29.139Z"
+    },
+    {
+      "id": "f4b7a912-30eb-4f13-a335-ebc781792333",
+      "nombre": "Río Verde",
+      "provinciaId": "b64118ee-eec5-411c-bc27-4da9ca296fd2",
+      "createdAt": "2025-06-20T16:52:32.326Z",
+      "updatedAt": "2025-06-20T16:52:32.326Z"
+    },
+    {
+      "id": "8ebe7ce4-565d-4915-b7fe-067f520bd497",
+      "nombre": "San Gregorio",
+      "provinciaId": "b64118ee-eec5-411c-bc27-4da9ca296fd2",
+      "createdAt": "2025-06-20T16:52:36.021Z",
+      "updatedAt": "2025-06-20T16:52:36.021Z"
+    },
+    {
+      "id": "1506cbd2-b436-480e-8aba-460d80a8d722",
+      "nombre": "Cabo de Hornos",
+      "provinciaId": "7cae5b6d-bb20-49b8-8e74-6271a8e82dc2",
+      "createdAt": "2025-06-20T16:53:01.880Z",
+      "updatedAt": "2025-06-20T16:53:01.880Z"
+    },
+    {
+      "id": "0bd76281-7328-4066-a5da-7dd5b55cd996",
+      "nombre": "Antártica",
+      "provinciaId": "7cae5b6d-bb20-49b8-8e74-6271a8e82dc2",
+      "createdAt": "2025-06-20T16:53:07.073Z",
+      "updatedAt": "2025-06-20T16:53:07.073Z"
+    },
+    {
+      "id": "af4dcb0b-603e-40f2-9cb1-1883fcedf1a6",
+      "nombre": "Porvenir",
+      "provinciaId": "9aa43a8d-05f2-44b8-9edf-5800f338cb18",
+      "createdAt": "2025-06-20T16:53:33.279Z",
+      "updatedAt": "2025-06-20T16:53:33.279Z"
+    },
+    {
+      "id": "8e57018b-0fb0-4950-b8bb-ed07a222a675",
+      "nombre": "Primavera",
+      "provinciaId": "9aa43a8d-05f2-44b8-9edf-5800f338cb18",
+      "createdAt": "2025-06-20T16:53:38.080Z",
+      "updatedAt": "2025-06-20T16:53:38.080Z"
+    },
+    {
+      "id": "fd21c083-40fd-4c49-bf6e-d0933964e5b9",
+      "nombre": "Timaukel",
+      "provinciaId": "9aa43a8d-05f2-44b8-9edf-5800f338cb18",
+      "createdAt": "2025-06-20T16:53:43.309Z",
+      "updatedAt": "2025-06-20T16:53:43.309Z"
+    },
+    {
+      "id": "f5b035a0-29ec-405a-a56a-750fb4e9c3d4",
+      "nombre": "Natales",
+      "provinciaId": "68ab2725-c1de-4eb2-98c0-4ed98e1ec05f",
+      "createdAt": "2025-06-20T16:54:00.537Z",
+      "updatedAt": "2025-06-20T16:54:00.537Z"
+    },
+    {
+      "id": "2b17ba6c-8739-4b12-8d24-9ac663ed6cbc",
+      "nombre": "Torres del Paine",
+      "provinciaId": "68ab2725-c1de-4eb2-98c0-4ed98e1ec05f",
+      "createdAt": "2025-06-20T16:54:08.095Z",
+      "updatedAt": "2025-06-20T16:54:08.095Z"
+    }
+  ]
+}

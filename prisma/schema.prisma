@@ -136,7 +136,7 @@ model Region {
   id         String    @id @default(uuid())
   nombre     String
   paisId     String
-  pais       Pais      @relation(fields: [paisId], references: [id])
+  pais       Pais      @relation(fields: [paisId], references: [id], onDelete: Cascade)
   provincias Provincia[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -149,7 +149,7 @@ model Provincia {
   id        String   @id @default(uuid())
   nombre    String
   regionId  String
-  region    Region   @relation(fields: [regionId], references: [id])
+  region    Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
   comunas   Comuna[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,7 +162,7 @@ model Comuna {
   id          String    @id @default(uuid())
   nombre      String
   provinciaId String
-  provincia   Provincia @relation(fields: [provinciaId], references: [id])
+  provincia   Provincia @relation(fields: [provinciaId], references: [id], onDelete: Cascade)
   direcciones Direccion[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -171,38 +171,47 @@ model Comuna {
   @@map("comunas")
 }
 
+// --- MODELO EMPRESA REFACTORIZADO ---
+model Empresa {
+  id                String             @id @default(uuid())
+  nombre            String
+  rut               String             @unique
+  logoUrl           String?
+  telefono          String?
+  email             String?            @unique
+  
+  direccion         Direccion?         @relation("EmpresaToDireccion")
+  sucursales        Sucursal[]
+  contactos         ContactoEmpresa[]
+  equiposInventario EquipoInventario[]
+  tickets           Ticket[]           @relation("TicketEmpresa")
+  
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@map("empresas")
+}
+
+// --- MODELO DIRECCION REFACTORIZADO ---
 model Direccion {
-  id                  String   @id @default(uuid())
-  calle               String
-  numero              String
-  comunaId            String
-  comuna              Comuna   @relation(fields: [comunaId], references: [id])
-  empresasComerciales Empresa[] @relation("EmpresaDireccionComercial")
-  sucursales          Sucursal[]
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id        String   @id @default(uuid())
+  calle     String
+  numero    String
+  depto     String?
+  comunaId  String
+  comuna    Comuna   @relation(fields: [comunaId], references: [id], onDelete: Cascade)
+  
+  empresaId String   @unique 
+  empresa   Empresa  @relation("EmpresaToDireccion", fields: [empresaId], references: [id], onDelete: Cascade)
+
+  sucursales Sucursal[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("direcciones")
 }
 
-model Empresa {
-  id                   String            @id @default(uuid())
-  nombre               String            @unique
-  rut                  String?
-  logoUrl              String?
-  telefono             String?
-  email                String?
-  direccionComercialId String?           @map("direccionId")
-  direccionComercial   Direccion?        @relation("EmpresaDireccionComercial", fields: [direccionComercialId], references: [id])
-  sucursales           Sucursal[]
-  equiposInventario    EquipoInventario[]
-  contactosEmpresa     ContactoEmpresa[]
-  tickets              Ticket[]          @relation("TicketEmpresa")
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-
-  @@map("empresas")
-}
 
 model ContactoEmpresa {
   id                 String             @id @default(uuid())
@@ -211,7 +220,7 @@ model ContactoEmpresa {
   telefono           String
   cargo              String?
   empresaId          String?
-  empresa            Empresa?           @relation(fields: [empresaId], references: [id])
+  empresa            Empresa?           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   ubicacionId        String?
   ubicacion          Ubicacion?         @relation("UbicacionContactos", fields: [ubicacionId], references: [id])
   tickets            Ticket[]           @relation("SolicitanteTickets")
@@ -222,7 +231,6 @@ model ContactoEmpresa {
   @@map("contactos_empresas")
 }
 
-// --- MODELO SUCURSAL CORREGIDO ---
 model Sucursal {
   id          String      @id @default(uuid())
   nombre      String
@@ -231,22 +239,20 @@ model Sucursal {
   direccionId String      @unique
   direccion   Direccion   @relation(fields: [direccionId], references: [id], onDelete: Cascade)
   empresaId   String?
-  empresa     Empresa?    @relation(fields: [empresaId], references: [id])
+  empresa     Empresa?    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   ubicaciones Ubicacion[]
-  tickets     Ticket[] // Relación inversa directa con Ticket
-
+  tickets     Ticket[] 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   @@map("sucursales")
 }
 
-// --- MODELO UBICACION SIN RELACIÓN A TICKET ---
 model Ubicacion {
   id                String             @id @default(uuid())
   nombreReferencial String?
   sucursalId        String
-  sucursal          Sucursal           @relation(fields: [sucursalId], references: [id])
+  sucursal          Sucursal           @relation(fields: [sucursalId], references: [id], onDelete: Cascade)
   notas             String?
   contactos         ContactoEmpresa[]  @relation("UbicacionContactos")
   equiposInventario EquipoInventario[] @relation("EquipoUbicacionActual")
@@ -259,6 +265,8 @@ model Ubicacion {
 // --- MODELO TICKET CORREGIDO ---
 model Ticket {
   id                    String             @id @default(uuid())
+  // CORRECCIÓN: Se elimina @default(autoincrement()) porque SQLite no lo soporta en campos no-ID.
+  // La generación de este número deberá ser manejada por la lógica de la aplicación.
   numeroCaso            Int                @unique
   titulo                String
   descripcionDetallada  String?
@@ -272,11 +280,8 @@ model Ticket {
   contacto              ContactoEmpresa?   @relation("SolicitanteTickets", fields: [contactoId], references: [id])
   empresaId             String?
   empresa               Empresa?           @relation("TicketEmpresa", fields: [empresaId], references: [id])
-  
-  // --- CAMBIO ESTRUCTURAL: RELACIÓN DIRECTA CON SUCURSAL ---
   sucursalId            String?
   sucursal              Sucursal?          @relation(fields: [sucursalId], references: [id])
-
   tecnicoAsignadoId     String?
   tecnicoAsignado       User?              @relation("TecnicoTickets", fields: [tecnicoAsignadoId], references: [id])
   acciones              AccionTicket[]
@@ -288,7 +293,6 @@ model Ticket {
   equipoAfectado        String?
 }
 
-// --- OTROS MODELOS (sin cambios) ---
 model AccionTicket {
   id           String   @id @default(uuid())
   ticketId     String
