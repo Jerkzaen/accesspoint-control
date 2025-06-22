@@ -2,28 +2,43 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma, Empresa, ContactoEmpresa, Direccion, Ticket, Sucursal, EquipoInventario } from "@prisma/client";
-import { empresaSchema } from "@/lib/validators/empresaValidator"; // Asegúrate de que este validador exista
+// Importamos los esquemas de validación Zod para Empresa
+import { empresaSchema, createEmpresaSchema, updateEmpresaSchema } from "@/lib/validators/empresaValidator"; 
 
 /**
  * Define los tipos de entrada para las operaciones CRUD de Empresa.
+ * Estos tipos deben coincidir con lo que esperan tus esquemas Zod y Prisma.
  */
-export type EmpresaCreateInput = Prisma.EmpresaCreateInput & {
+export type EmpresaCreateInput = {
+  nombre: string;
+  rut: string;
+  logoUrl?: string | null;
+  telefono?: string | null;
+  email?: string | null;
   direccionPrincipal?: {
     calle: string;
     numero: string;
-    depto?: string | null; // Aceptar null para depto
+    depto?: string | null;
     comunaId: string;
   };
 };
-export type EmpresaUpdateInput = Prisma.EmpresaUpdateInput & {
+
+export type EmpresaUpdateInput = {
+  id?: string; // El ID de la empresa es para la ruta, no el payload de actualización necesariamente
+  nombre?: string;
+  rut?: string;
+  logoUrl?: string | null;
+  telefono?: string | null;
+  email?: string | null;
   direccionPrincipal?: {
     id?: string; // Para actualizar o crear una nueva dirección principal
     calle?: string;
     numero?: string;
-    depto?: string | null; // Aceptar null para depto
+    depto?: string | null;
     comunaId?: string;
   } | null; // Permitir que direccionPrincipal sea null para desvincular
 };
+
 
 /**
  * Tipo para una Empresa con sus relaciones más comunes, haciendo las relaciones opcionales
@@ -57,7 +72,6 @@ export class EmpresaService {
         },
         orderBy: { nombre: 'asc' },
       });
-      // El cast es seguro si includeDirection es true, pero Prisma maneja esto internamente.
       return empresas;
     } catch (error) {
       console.error("Error al obtener empresas en EmpresaService:", error);
@@ -92,18 +106,18 @@ export class EmpresaService {
   /**
    * Crea una nueva empresa, incluyendo opcionalmente su dirección principal.
    * Utiliza una transacción para asegurar que ambas operaciones sean atómicas.
+   * Valida los datos de entrada con Zod.
    * @param data Los datos para crear la empresa y su dirección principal.
    * @returns El objeto Empresa creado.
    */
   static async createEmpresa(data: EmpresaCreateInput): Promise<Empresa> {
-    // Validar los datos de entrada con Zod
-    // Nota: Si usas createEmpresaSchema en actions, esta validación ya se habría hecho.
-    // Aquí usamos parse con el esquema principal y luego extendemos si es necesario.
-    const validatedData = empresaSchema.parse(data);
-
+    // Validar los datos de entrada con el esquema de creación de Zod
+    // Esto asegura que los datos sean válidos antes de la interacción con la DB.
     try {
+      const validatedData = createEmpresaSchema.parse(data);
+
       const newEmpresa = await prisma.$transaction(async (tx) => {
-        let direccionId: string | null = null; // Inicializar como null
+        let direccionId: string | null = null; 
 
         // Si se proporciona una dirección principal, la creamos primero
         if (validatedData.direccionPrincipal) {
@@ -126,7 +140,6 @@ export class EmpresaService {
             logoUrl: validatedData.logoUrl,
             telefono: validatedData.telefono,
             email: validatedData.email,
-            // Conecta o desvincula la dirección principal
             direccionPrincipal: direccionId ? { connect: { id: direccionId } } : undefined,
           },
         });
@@ -135,6 +148,10 @@ export class EmpresaService {
       return newEmpresa;
     } catch (error) {
       console.error("Error al crear empresa en EmpresaService:", error);
+      // Retorna el mensaje de error de Zod si es una excepción de validación
+      if (error instanceof Error && 'issues' in error) { // ZodError
+        throw new Error("Error de validación al crear empresa: " + (error as any).issues.map((i: any) => i.message).join(", "));
+      }
       // Manejo de errores de Prisma, por ejemplo, para duplicados
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -148,23 +165,24 @@ export class EmpresaService {
   /**
    * Actualiza una empresa existente, incluyendo opcionalmente su dirección principal.
    * Utiliza una transacción para asegurar que todas las operaciones sean atómicas.
+   * Valida los datos de entrada con Zod.
    * @param id El ID de la empresa a actualizar.
    * @param data Los datos para actualizar la empresa y su dirección principal.
    * @returns El objeto Empresa actualizado.
    */
   static async updateEmpresa(id: string, data: EmpresaUpdateInput): Promise<Empresa> {
-    // Validar los datos de entrada con Zod (solo los campos presentes en el partial)
-    const validatedData = empresaSchema.partial().parse(data);
-
+    // Validar los datos de entrada con el esquema de actualización de Zod
+    // Esto asegura que los datos sean válidos antes de la interacción con la DB.
     try {
+      const validatedData = updateEmpresaSchema.parse(data);
+
       const updatedEmpresa = await prisma.$transaction(async (tx) => {
-        let direccionPrincipalIdToUpdate: string | null | undefined; // Usaremos este para la actualización de la empresa
+        let direccionPrincipalIdToUpdate: string | null | undefined; 
 
         // Lógica para actualizar, crear o desvincular la dirección principal si se proporciona
         if (validatedData.direccionPrincipal !== undefined) {
           if (validatedData.direccionPrincipal === null) {
-            // Si se envía null, significa que se quiere desvincular la dirección principal
-            direccionPrincipalIdToUpdate = null;
+            direccionPrincipalIdToUpdate = null; // Para desvincular la relación
           } else {
             const { id: dirId, ...dirData } = validatedData.direccionPrincipal;
             if (dirId) {
@@ -192,8 +210,7 @@ export class EmpresaService {
               direccionPrincipalIdToUpdate = nuevaDireccion.id;
             } else {
               // Si la dirección principal es un objeto pero no tiene ID ni datos completos,
-              // asumimos que no se quiere modificar la dirección principal existente, o es un error de input.
-              // En este caso, mantenemos el direccionPrincipalId existente si lo hay.
+              // mantenemos el direccionPrincipalId existente.
               const currentEmpresa = await tx.empresa.findUnique({
                 where: { id },
                 select: { direccionPrincipalId: true }
@@ -221,7 +238,6 @@ export class EmpresaService {
 
         // Si la propiedad direccionPrincipal se envió (incluso como null),
         // entonces asignamos direccionPrincipalIdToUpdate.
-        // Si no se envió, no tocamos direccionPrincipalId en la actualización de la empresa.
         if (validatedData.direccionPrincipal !== undefined) {
           empresaUpdateData.direccionPrincipal = direccionPrincipalIdToUpdate === null
             ? { disconnect: true } // Desvincular si se quiere null
@@ -240,7 +256,11 @@ export class EmpresaService {
       return updatedEmpresa;
     } catch (error) {
       console.error(`Error al actualizar empresa con ID ${id} en EmpresaService:`, error);
-       if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Retorna el mensaje de error de Zod si es una excepción de validación
+      if (error instanceof Error && 'issues' in error) { // ZodError
+        throw new Error("Error de validación al actualizar empresa: " + (error as any).issues.map((i: any) => i.message).join(", "));
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new Error("El RUT de la empresa ya existe.");
         }
@@ -274,10 +294,6 @@ export class EmpresaService {
         });
 
         if (ticketsCount > 0) {
-          // Si hay tickets, la lógica de negocio podría ser "inactivar" la empresa
-          // o reasignar los tickets a una empresa genérica/null.
-          // Por ahora, lanzamos un error que indica que hay tickets.
-          // Podrías cambiar esto para actualizar los tickets y establecer empresaId a null.
           throw new Error("No se puede eliminar la empresa porque tiene tickets asociados. Por favor, reasigna o cierra los tickets de esta empresa primero.");
         }
 
@@ -287,7 +303,6 @@ export class EmpresaService {
         });
 
         // Desvincular la dirección principal si existe
-        // Correcto: establecemos la clave foránea a null para desvincular
         await tx.empresa.update({
           where: { id },
           data: {

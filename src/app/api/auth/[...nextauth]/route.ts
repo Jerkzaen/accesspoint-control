@@ -7,8 +7,6 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 // Si tienes un archivo centralizado para prisma (ej. @/lib/prisma), úsalo:
 import { prisma } from "@/lib/prisma"; 
 // Si no, y lo instancias aquí:
-// import { PrismaClient } from "@prisma/client";
-// const prisma = new PrismaClient(); 
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),

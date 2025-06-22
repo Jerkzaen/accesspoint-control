@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import type { Comuna, Direccion, Pais, Provincia, Region, Empresa, Sucursal } from '@prisma/client';
+// Importamos los esquemas de validación Zod para Direccion
+import { createDireccionSchema, updateDireccionSchema } from "@/lib/validators/direccionValidator";
 
 /**
  * Define el tipo de dato para una Comuna que incluye su Provincia y Región.
@@ -25,7 +27,6 @@ export type DireccionConRelaciones = Direccion & {
       };
     };
   };
-  // Ya no incluye 'empresa' directamente aquí; Empresa y Sucursal la referencian.
   empresasPrincipales?: Empresa[]; // Agregamos esta relación opcional si la Direccion es la principal de una empresa
   sucursales?: Sucursal[]; // Agregamos esta relación opcional
 };
@@ -124,7 +125,6 @@ export class GeografiaService {
         where: {
           nombre: {
             contains: searchTerm,
-            // SQLite suele ser insensible a mayúsculas/minúsculas con 'contains'
           },
         },
         include: {
@@ -166,10 +166,10 @@ export class GeografiaService {
               },
             },
           },
-          empresasPrincipales: { // Incluimos la nueva relación
-            select: { id: true, nombre: true } // Selecciona solo los campos necesarios
+          empresasPrincipales: {
+            select: { id: true, nombre: true }
           },
-          sucursales: { // Incluimos la relación con sucursales
+          sucursales: {
             select: { id: true, nombre: true }
           }
         },
@@ -183,40 +183,50 @@ export class GeografiaService {
   }
 
   /**
-   * Añade una nueva dirección.
+   * Añade una nueva dirección, validando los datos con Zod.
    * @param data Los datos de la nueva dirección (calle, numero, depto, comunaId).
    * @returns Una promesa que resuelve con el objeto Direccion creado.
    */
-  static async addDireccion(data: { calle: string; numero: string; depto?: string; comunaId: string; }): Promise<Direccion> {
+  static async addDireccion(data: { calle: string; numero: string; depto?: string | null; comunaId: string; }): Promise<Direccion> {
     try {
+      // Validar los datos de entrada con Zod
+      const validatedData = createDireccionSchema.parse(data);
+
       const newDireccion = await prisma.direccion.create({
         data: {
-          calle: data.calle,
-          numero: data.numero,
-          depto: data.depto,
-          comuna: { connect: { id: data.comunaId } },
+          calle: validatedData.calle,
+          numero: validatedData.numero,
+          depto: validatedData.depto,
+          comuna: { connect: { id: validatedData.comunaId } },
         },
       });
       return newDireccion;
     } catch (error) {
       console.error("Error al añadir dirección en GeografiaService:", error);
+      // Retorna el mensaje de error de Zod si es una excepción de validación
+      if (error instanceof Error && 'issues' in error) { // ZodError
+        throw new Error("Error de validación al añadir dirección: " + (error as any).issues.map((i: any) => i.message).join(", "));
+      }
       throw new Error("Error al añadir dirección.");
     }
   }
 
   /**
-   * Actualiza una dirección existente.
+   * Actualiza una dirección existente, validando los datos con Zod.
    * @param id El ID de la dirección a actualizar.
    * @param data Los datos a actualizar (parciales).
    * @returns Una promesa que resuelve con el objeto Direccion actualizado.
    */
-  static async updateDireccion(id: string, data: { calle?: string; numero?: string; depto?: string; comunaId?: string; }): Promise<Direccion> {
+  static async updateDireccion(id: string, data: { calle?: string; numero?: string; depto?: string | null; comunaId?: string; }): Promise<Direccion> {
     try {
+      // Validar los datos de entrada con Zod
+      const validatedData = updateDireccionSchema.parse(data);
+
       const updateData: any = {};
-      if (data.calle !== undefined) updateData.calle = data.calle;
-      if (data.numero !== undefined) updateData.numero = data.numero;
-      if (data.depto !== undefined) updateData.depto = data.depto;
-      if (data.comunaId !== undefined) updateData.comuna = { connect: { id: data.comunaId } };
+      if (validatedData.calle !== undefined) updateData.calle = validatedData.calle;
+      if (validatedData.numero !== undefined) updateData.numero = validatedData.numero;
+      if (validatedData.depto !== undefined) updateData.depto = validatedData.depto;
+      if (validatedData.comunaId !== undefined) updateData.comuna = { connect: { id: validatedData.comunaId } };
 
       const updatedDireccion = await prisma.direccion.update({
         where: { id },
@@ -225,6 +235,10 @@ export class GeografiaService {
       return updatedDireccion;
     } catch (error) {
       console.error("Error al actualizar dirección en GeografiaService:", error);
+      // Retorna el mensaje de error de Zod si es una excepción de validación
+      if (error instanceof Error && 'issues' in error) { // ZodError
+        throw new Error("Error de validación al actualizar dirección: " + (error as any).issues.map((i: any) => i.message).join(", "));
+      }
       throw new Error("Error al actualizar dirección.");
     }
   }

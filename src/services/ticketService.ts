@@ -17,6 +17,8 @@ import {
   User,
   EstadoPrestamoEquipo,
 } from "@prisma/client";
+// Importamos el esquema de validación Zod para AccionTicket
+import { createAccionTicketSchema } from "@/lib/validators/accionTicketValidator";
 
 /**
  * Define los tipos de entrada para las operaciones CRUD de Ticket.
@@ -35,7 +37,7 @@ export type TicketCreateInput = {
   contactoId?: string | null; // ID de ContactoEmpresa
   empresaId?: string | null; // ID de Empresa
   sucursalId?: string | null; // ID de Sucursal
-  creadoPorUsuarioId: string; // ID del User que crea el ticket (DIRECTO - ahora existe en el esquema)
+  creadoPorUsuarioId: string; // ID del User que crea el ticket (DIRECTO)
   tecnicoAsignadoId?: string | null; // ID del User técnico asignado
   fechaSolucionEstimada?: Date | null;
   equipoAfectado?: string | null;
@@ -136,21 +138,21 @@ export class TicketService {
           contactoId: true,
           empresaId: true,
           sucursalId: true,
-          creadoPorUsuarioId: true, // <-- CORRECCIÓN: Siempre incluir el ID escalar
+          creadoPorUsuarioId: true, // Siempre incluir el ID escalar
           tecnicoAsignadoId: true,
           fechaCreacion: true,
           fechaSolucionEstimada: true,
           fechaSolucionReal: true,
           updatedAt: true,
           equipoAfectado: true,
-          // Incluimos los objetos de relación solo si `includeRelations` es verdadero
-          ...(includeRelations && {
+          // Incluimos las relaciones si `includeRelations` es verdadero
+          ... (includeRelations && {
             contacto: { select: { id: true, nombreCompleto: true, email: true, telefono: true } },
             empresa: { select: { id: true, nombre: true } },
             sucursal: { select: { id: true, nombre: true } },
             creadoPorUsuario: { select: { id: true, name: true, email: true } }, // Incluir el objeto de relación
             tecnicoAsignado: { select: { id: true, name: true, email: true } },
-          }),
+          })
         },
         orderBy: { fechaCreacion: 'desc' },
       });
@@ -174,7 +176,7 @@ export class TicketService {
           contacto: true,
           empresa: true,
           sucursal: true,
-          creadoPorUsuario: true, // Incluir el objeto de relación
+          creadoPorUsuario: true,
           tecnicoAsignado: true,
           acciones: {
             orderBy: { fechaAccion: 'desc' },
@@ -215,7 +217,7 @@ export class TicketService {
             solicitanteNombre: data.solicitanteNombre,
             solicitanteTelefono: data.solicitanteTelefono,
             solicitanteCorreo: data.solicitanteCorreo,
-            // <-- CORRECCIÓN: Usar el spread operator condicional para propiedades opcionales
+            // Usar el spread operator condicional para propiedades opcionales
             ...(data.contactoId && { contacto: { connect: { id: data.contactoId } } }),
             ...(data.empresaId && { empresa: { connect: { id: data.empresaId } } }),
             ...(data.sucursalId && { sucursal: { connect: { id: data.sucursalId } } }),
@@ -269,7 +271,7 @@ export class TicketService {
   static async updateTicket(data: TicketUpdateInput): Promise<Ticket> {
     try {
       const updatedTicket = await prisma.$transaction(async (tx) => {
-        // Corregido: Usar spread operator condicional para propiedades opcionales
+        // Usar spread operator condicional para propiedades opcionales
         const updateData: Prisma.TicketUpdateInput = {
           titulo: data.titulo,
           descripcionDetallada: data.descripcionDetallada,
@@ -339,17 +341,23 @@ export class TicketService {
    */
   static async addAccionToTicket(data: AccionTicketCreateInput): Promise<AccionTicket> {
     try {
+      // Validar los datos de entrada con Zod
+      const validatedData = createAccionTicketSchema.parse(data);
+
       const newAccion = await prisma.accionTicket.create({
         data: {
-          ticket: { connect: { id: data.ticketId } },
-          descripcion: data.descripcion,
-          realizadaPor: { connect: { id: data.usuarioId } },
-          categoria: data.categoria,
+          ticket: { connect: { id: validatedData.ticketId } },
+          descripcion: validatedData.descripcion,
+          realizadaPor: { connect: { id: validatedData.usuarioId } },
+          categoria: validatedData.categoria,
         },
       });
       return newAccion;
     } catch (error) {
       console.error("Error al añadir acción a ticket en TicketService:", error);
+      if (error instanceof Error && 'issues' in error) { // ZodError
+        throw new Error("Error de validación al añadir acción: " + (error as any).issues.map((i: any) => i.message).join(", "));
+      }
       throw new Error("Error al añadir acción al ticket. Detalles: " + (error as Error).message);
     }
   }
@@ -382,8 +390,6 @@ export class TicketService {
    */
   static async importTicketsMassive(ticketsData: TicketCreateInput[]): Promise<{ count: number }> {
     try {
-      // Corregido: Eliminar las opciones (maxWait, timeout) cuando se pasa un array de operaciones.
-      // Estas opciones son solo para la sobrecarga de $transaction con un callback.
       const results = await prisma.$transaction(
         ticketsData.map(data => {
           const numeroCaso = data.numeroCaso === undefined || data.numeroCaso === 0
@@ -401,7 +407,6 @@ export class TicketService {
               solicitanteNombre: data.solicitanteNombre,
               solicitanteTelefono: data.solicitanteTelefono,
               solicitanteCorreo: data.solicitanteCorreo,
-              // Corregido: Usar spread operator condicional para propiedades opcionales.
               ...(data.contactoId && { contacto: { connect: { id: data.contactoId } } }),
               ...(data.empresaId && { empresa: { connect: { id: data.empresaId } } }),
               ...(data.sucursalId && { sucursal: { connect: { id: data.sucursalId } } }),
@@ -412,7 +417,6 @@ export class TicketService {
             }
           });
         })
-        // No hay segundo argumento para opciones aquí.
       );
       return { count: results.length };
     } catch (error) {
@@ -421,37 +425,22 @@ export class TicketService {
     }
   }
 
-  // Métodos para EquipoInventario y EquipoEnPrestamo (inicialmente aquí, se pueden mover a equipoService.ts)
+  // Métodos para EquipoInventario y EquipoEnPrestamo (se han movido a sus respectivos servicios)
 
   /**
-   * Obtiene todos los equipos en inventario.
-   * @returns Un array de objetos EquipoInventario.
-   */
-  static async getEquiposInventario(): Promise<EquipoInventario[]> {
-    try {
-      return await prisma.equipoInventario.findMany({
-        orderBy: { nombreDescriptivo: 'asc' },
-      });
-    }
-    catch (error) {
-      console.error("Error al obtener equipos de inventario en TicketService:", error);
-      throw new Error("No se pudieron obtener los equipos de inventario.");
-    }
-  }
-
-  /**
-   * Obtiene los préstamos de equipos.
+   * Este método se mantiene aquí por su fuerte acoplamiento conceptual con los tickets,
+   * aunque los detalles de CRUD de EquipoEnPrestamo están en EquipoEnPrestamoService.
    * @returns Un array de objetos EquipoEnPrestamo.
    */
   static async getEquiposEnPrestamo(): Promise<EquipoEnPrestamo[]> {
     try {
       const prestamos = await prisma.equipoEnPrestamo.findMany({
-        // Usamos 'include' con 'true' si queremos todos los campos de la relación,
-        // o 'select' si queremos campos específicos. Ambos son válidos aquí.
         include: {
           equipo: true,
           prestadoAContacto: true,
           ticketAsociado: true,
+          entregadoPorUsuario: true, // Incluir la nueva relación
+          recibidoPorUsuario: true,  // Incluir la nueva relación
         },
         orderBy: { fechaPrestamo: 'desc' },
       });

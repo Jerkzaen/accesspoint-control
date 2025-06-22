@@ -1,17 +1,16 @@
-// Guardar como scripts/geografia.ts
+// src/scripts/geografia.ts
 
-import { PrismaClient } from '@prisma/client';
+// Importamos la instancia centralizada de PrismaClient
+import { prisma } from "@/lib/prisma"; // <--- CORRECCIÓN CLAVE: Usar la instancia centralizada
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import readline from 'readline'; // Importamos readline si se usa para confirmaciones
 
-// --- Corrección para Módulos ES ---
 // Obtenemos el directorio actual de una manera compatible con ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// --- Fin de la corrección ---
 
-const prisma = new PrismaClient();
 const backupFilePath = path.join(__dirname, 'geografia-backup.json');
 
 /**
@@ -43,7 +42,9 @@ async function backup() {
   } catch (error) {
     console.error('❌ Error durante el proceso de respaldo:', error);
   } finally {
-    await prisma.$disconnect();
+    // Es importante desconectar Prisma si el script es un proceso de corta duración
+    // que se ejecuta y termina, para liberar la conexión.
+    await prisma.$disconnect(); 
   }
 }
 
@@ -64,25 +65,32 @@ async function restore() {
 
     // Borrar datos existentes en el orden inverso a las dependencias
     console.log('🗑️ Limpiando tablas geográficas existentes...');
-    await prisma.comuna.deleteMany({});
-    await prisma.provincia.deleteMany({});
-    await prisma.region.deleteMany({});
-    await prisma.pais.deleteMany({});
+    // Usamos una transacción para asegurar que la limpieza y la inserción sean atómicas.
+    await prisma.$transaction(async (tx) => {
+        await tx.comuna.deleteMany({});
+        await tx.provincia.deleteMany({});
+        await tx.region.deleteMany({});
+        await tx.pais.deleteMany({});
+    });
     console.log('   Tablas limpiadas.');
 
     // Insertar nuevos datos en orden de dependencia
     console.log('🌱 Insertando datos desde el respaldo...');
-    await prisma.pais.createMany({ data: backupData.paises });
-    await prisma.region.createMany({ data: backupData.regiones });
-    await prisma.provincia.createMany({ data: backupData.provincias });
-    await prisma.comuna.createMany({ data: backupData.comunas });
+    await prisma.$transaction(async (tx) => {
+        await tx.pais.createMany({ data: backupData.paises });
+        await tx.region.createMany({ data: backupData.regiones });
+        await tx.provincia.createMany({ data: backupData.provincias });
+        await tx.comuna.createMany({ data: backupData.comunas });
+    });
     
     console.log('✅ Restauración completada con éxito.');
 
   } catch (error) {
     console.error('❌ Error durante el proceso de restauración:', error);
   } finally {
-    await prisma.$disconnect();
+    // Es importante desconectar Prisma si el script es un proceso de corta duración
+    // que se ejecuta y termina, para liberar la conexión.
+    await prisma.$disconnect(); 
   }
 }
 
@@ -95,22 +103,19 @@ async function main() {
   if (command === 'backup') {
     await backup();
   } else if (command === 'restore') {
-    // --- Corrección para Módulos ES ---
-    // Usamos import() dinámico para readline
-    const readline = (await import('readline')).createInterface({
+    const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
-    // --- Fin de la corrección ---
 
-    const answer = await new Promise(resolve => {
-      readline.question('❓ ¿Estás seguro de que quieres borrar y restaurar los datos geográficos? (s/n): ', (ans: string) => {
-        readline.close();
+    const answer = await new Promise<string>(resolve => {
+      rl.question('❓ ¿Estás seguro de que quieres borrar y restaurar los datos geográficos? (s/n): ', (ans: string) => {
+        rl.close();
         resolve(ans);
       });
     });
 
-    if (answer === 's' || answer === 'S') {
+    if (answer.toLowerCase() === 's') {
         await restore();
     } else {
         console.log('Operación cancelada.');
