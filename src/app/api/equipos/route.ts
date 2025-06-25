@@ -1,96 +1,61 @@
-// src/app/api/equipos/route.ts
+// RUTA: src/app/api/equipos/route.ts
 
 import { EquipoInventarioService, EquipoInventarioCreateInput } from "@/services/equipoInventarioService";
 import { Prisma } from "@prisma/client";
-
-// Utilidad para serializar fechas en los objetos de equipo
-function serializeEquipo(equipo: any) {
-  return {
-    ...equipo,
-    createdAt: equipo.createdAt?.toISOString?.() ?? equipo.createdAt,
-    updatedAt: equipo.updatedAt?.toISOString?.() ?? equipo.updatedAt,
-    fechaAdquisicion: equipo.fechaAdquisicion?.toISOString?.() ?? equipo.fechaAdquisicion,
-    ubicacionActual: equipo.ubicacionActual
-      ? {
-          ...equipo.ubicacionActual,
-          createdAt: equipo.ubicacionActual.createdAt?.toISOString?.() ?? equipo.ubicacionActual.createdAt,
-          updatedAt: equipo.ubicacionActual.updatedAt?.toISOString?.() ?? equipo.ubicacionActual.updatedAt,
-        }
-      : null,
-    empresa: equipo.empresa
-      ? {
-          ...equipo.empresa,
-          createdAt: equipo.empresa.createdAt?.toISOString?.() ?? equipo.empresa.createdAt,
-          updatedAt: equipo.empresa.updatedAt?.toISOString?.() ?? equipo.empresa.updatedAt,
-        }
-      : null,
-  };
-}
+import { NextResponse } from "next/server";
+// --- IMPORTAMOS getServerSession ---
+import { getServerSession } from "next-auth/next";
 
 /**
  * GET handler para obtener todos los equipos de inventario.
- * @param request The Next.js request object.
- * @returns A JSON response with the equipment list or an error message.
  */
 export async function GET(request: Request) {
+  // --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const equipos = await EquipoInventarioService.getEquiposInventario(true);
-    const serialized = Array.isArray(equipos)
-      ? equipos.map(serializeEquipo)
-      : [];
-    return new Response(JSON.stringify(serialized), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(equipos, { status: 200 });
   } catch (error) {
     console.error("Error in GET /api/equipos:", error);
-    return new Response(
-      JSON.stringify({
-        message: "Error al obtener equipos de inventario",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { message: "Error al obtener equipos de inventario" },
+      { status: 500 }
     );
   }
 }
 
 /**
- * POST handler for creating a new inventory item.
- * @param request The Next.js request object.
- * @returns A JSON response with the created equipment or an error message.
+ * POST handler para crear un nuevo equipo.
  */
 export async function POST(request: Request) {
+  // --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const data: EquipoInventarioCreateInput = await request.json();
     const newEquipo = await EquipoInventarioService.createEquipoInventario(data);
-    const serialized = serializeEquipo(newEquipo);
-    return new Response(JSON.stringify(serialized), {
-      status: 201,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(newEquipo, { status: 201 });
   } catch (error: any) {
     console.error("Error in POST /api/equipos:", error);
-    if (error.message && error.message.startsWith("Error de validación al crear equipo:")) {
-      return new Response(
-        JSON.stringify({ message: error.message }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+    if (error.message && error.message.startsWith("Error de validación")) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return new Response(
-        JSON.stringify({
-          message: "Error al crear equipo: El identificador único ya existe.",
-          error: error.message,
-        }),
-        { status: 409, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { message: "Error al crear equipo: El identificador único ya existe." },
+        { status: 409 }
       );
     }
-    return new Response(
-      JSON.stringify({
-        message: "Error al crear equipo",
-        error: error instanceof Error ? error.message : "Error desconocido",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { message: "Error al crear equipo" },
+      { status: 500 }
     );
   }
 }
