@@ -1,80 +1,43 @@
-// RUTA: src/app/api/tickets/[id]/accion/[accionId]/__tests__/route.test.ts
+// RUTA: src/app/api/tickets/[id]/accion/__tests__/route.test.ts
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { type NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { TicketService } from '@/services/ticketService';
 
-// --- MOCKS ---
-vi.mock('next-auth/next', () => ({
-  getServerSession: vi.fn(),
-}));
+vi.mock('next-auth/next', () => ({ getServerSession: vi.fn() }));
+vi.mock('@/services/ticketService');
 
-// Actualizamos el mock del servicio para incluir los nuevos métodos
-vi.mock('@/services/ticketService', () => ({
-  TicketService: {
-    getTickets: vi.fn(),
-    createTicket: vi.fn(),
-    getTicketById: vi.fn(),
-    updateTicket: vi.fn(),
-    deleteTicket: vi.fn(),
-    getAccionesByTicketId: vi.fn(),
-    addAccionToTicket: vi.fn(),
-    updateAccion: vi.fn(), // Nuevo método
-    deleteAccion: vi.fn(), // Nuevo método
-  }
-}));
+import { GET, POST } from '../route';
 
-// --- IMPORTACIÓN DEL CÓDIGO A PROBAR ---
-import { PUT, DELETE } from '../route';
-
-describe('API Endpoints para /api/tickets/[id]/accion/[accionId]', () => {
-
-  const mockAdminSession = { user: { id: 'admin-123' } };
-  const mockAccionId = 'accion-test-id';
-  const mockAccion = { id: mockAccionId, descripcion: 'Acción original' };
+describe('API Endpoints para /api/tickets/[id]/accion', () => {
+  const mockAdminSession = { user: { id: 'admin-123', role: 'ADMIN' } };
+  const mockTicketId = 'ticket-test-id';
+  const mockAccion = { id: 'accion-test-id', ticketId: mockTicketId, descripcion: 'Acción de prueba.'};
 
   beforeEach(() => {
     vi.resetAllMocks();
-    (getServerSession as Mock).mockResolvedValue(mockAdminSession);
   });
 
-  // --- Pruebas para PUT ---
-  describe('PUT', () => {
-    it('debe actualizar una acción y devolver 200', async () => {
-      const updateData = { descripcion: 'Descripción actualizada' };
-      (TicketService.updateAccion as Mock).mockResolvedValue({ ...mockAccion, ...updateData });
-
-      const request = new Request(`http://localhost/api/tickets/any/accion/${mockAccionId}`, {
-        method: 'PUT', body: JSON.stringify(updateData),
-      });
-      const response = await PUT(request as NextRequest, { params: { accionId: mockAccionId } });
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body.descripcion).toBe('Descripción actualizada');
-      expect(TicketService.updateAccion).toHaveBeenCalledWith(mockAccionId, updateData);
-    });
-
-     it('debe devolver 401 si el usuario no está autenticado', async () => {
+  describe('GET', () => {
+    it('debe devolver 401 si no hay sesión', async () => {
       (getServerSession as Mock).mockResolvedValue(null);
-      const request = new Request(`http://localhost/api/tickets/any/accion/${mockAccionId}`, { method: 'PUT', body: '{}' });
-      const response = await PUT(request as NextRequest, { params: { accionId: mockAccionId } });
+      const request = new Request(`http://localhost/api/tickets/${mockTicketId}/accion`);
+      const response = await GET(request as NextRequest, { params: { id: mockTicketId } });
       expect(response.status).toBe(401);
     });
   });
 
-  // --- Pruebas para DELETE ---
-  describe('DELETE', () => {
-    it('debe eliminar una acción y devolver 200', async () => {
-      (TicketService.deleteAccion as Mock).mockResolvedValue(undefined);
-      const request = new Request(`http://localhost/api/tickets/any/accion/${mockAccionId}`, { method: 'DELETE' });
-      const response = await DELETE(request as NextRequest, { params: { accionId: mockAccionId } });
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body.message).toBe('Acción eliminada exitosamente.');
-      expect(TicketService.deleteAccion).toHaveBeenCalledWith(mockAccionId);
+  describe('POST', () => {
+    it('debe crear una acción y devolver 201', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        const newAccionData = { descripcion: 'Nueva acción creada' };
+        (TicketService.addAccionToTicket as Mock).mockResolvedValue({ ...mockAccion, ...newAccionData });
+        const request = new Request(`http://localhost/api/tickets/${mockTicketId}/accion`, {
+            method: 'POST', body: JSON.stringify(newAccionData),
+        });
+        const response = await POST(request as NextRequest, { params: { id: mockTicketId } });
+        expect(response.status).toBe(201);
     });
   });
 });

@@ -34,6 +34,17 @@ enum EstadoTicket {
   CANCELADO
 }
 
+enum TipoAccion {
+  INICIAL
+  SEGUIMIENTO
+  DIAGNOSTICO
+  CONEXION_REMOTA
+  ENVIO_EQUIPO
+  RECEPCION_EQUIPO
+  CIERRE_ADMINISTRATIVO
+  FINAL
+}
+
 enum TipoEquipoInventario {
   VTS
   BIARTIC
@@ -295,16 +306,24 @@ model Ticket {
 }
 
 model AccionTicket {
-  id           String   @id @default(uuid())
-  ticketId     String
-  ticket       Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  descripcion  String
-  fechaAccion  DateTime @default(now())
-  usuarioId    String
-  realizadaPor User     @relation(fields: [usuarioId], references: [id])
-  categoria    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  descripcion String
+  fechaAccion DateTime @default(now())
+  usuarioId   String
+  realizadaPor User    @relation(fields: [usuarioId], references: [id])
+  
+  // --- CAMPOS NUEVOS Y CORREGIDOS ---
+  // Cambiamos `categoria` a `tipo` para usar nuestro nuevo Enum
+  tipo                 TipoAccion? @default(SEGUIMIENTO) 
+  tiempoInvertidoMinutos Int?
+  estadoTicketAnterior EstadoTicket?
+  estadoTicketNuevo    EstadoTicket?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   @@map("AccionTicket")
 }
 
