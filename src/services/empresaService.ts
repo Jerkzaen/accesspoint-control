@@ -276,7 +276,7 @@ export class EmpresaService {
    * @param id El ID de la empresa a eliminar.
    * @returns Un objeto de éxito o error.
    */
-  static async deleteEmpresa(id: string): Promise<{ success: boolean; message?: string }> {
+  static async deleteEmpresa(id: string): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {
         // Verificar si la empresa tiene sucursales activas (onDelete: Restrict en Sucursal)
@@ -315,10 +315,9 @@ export class EmpresaService {
           where: { id },
         });
       });
-      return { success: true, message: "Empresa eliminada exitosamente." };
-    } catch (error: any) {
+    } catch (error) {
       console.error(`Error al eliminar empresa con ID ${id} en EmpresaService:`, error);
-      return { success: false, message: error.message || "Error al eliminar la empresa." };
+      throw error;
     }
   }
 }

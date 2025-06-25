@@ -1,3 +1,5 @@
+// RUTA: /tsconfig.json
+// (Este archivo va en la raíz de tu proyecto)
 {
   "compilerOptions": {
     "lib": [
@@ -11,7 +13,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -26,7 +28,9 @@
         "./src/*"
       ]
     },
-    "target": "ES2017"
+    "target": "ES2017",
+    // NOTA: He combinado los 'types' para incluir los que necesitas para vitest y testing-library.
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "next-env.d.ts",

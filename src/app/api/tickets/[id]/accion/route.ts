@@ -1,51 +1,73 @@
 // src/app/api/tickets/[id]/accion/route.ts
 
-import { NextResponse } from "next/server";
-import { TicketService } from "@/services/ticketService"; // Importar el nuevo servicio
+import { NextRequest, NextResponse } from "next/server"; // Importar NextRequest
+import { TicketService } from "@/services/ticketService";
 import { Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth/next"; // Importar getServerSession
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Importar authOptions
+import { serializeDates } from "@/lib/utils"; // Importar serializador
 
-/**
- * POST handler para añadir una nueva acción a un ticket.
- * @param request La solicitud Next.js.
- * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
- * @returns Una respuesta JSON con la acción creada o un mensaje de error.
- */
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) { // Cambiado a NextRequest
   try {
     const { id: ticketId } = params;
-    const data = await request.json(); // Los datos de la acción
-    
-    // Asumimos que data incluye descripcion, usuarioId, categoria
-    // y que ticketId se toma de los params de la ruta
-    const accionData = { ...data, ticketId }; 
-
-    const newAccion = await TicketService.addAccionToTicket(accionData);
-    return NextResponse.json(newAccion, { status: 201 });
+    const data = await request.json();
+    // Validar sesión
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ message: "Usuario no autenticado." }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    // Validar descripción
+    if (!data.descripcion || !data.descripcion.trim()) {
+      return new Response(JSON.stringify({ message: "La descripción de la acción es obligatoria." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const accionData = { ...data, ticketId };
+    try {
+      const newAccion = await TicketService.addAccionToTicket(accionData);
+      return new Response(JSON.stringify({ message: "Acción agregada con éxito." }), {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error: any) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        return new Response(JSON.stringify({ message: `No existe.` }), { // Mensaje del servicio
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ message: "Error al agregar la acción al ticket." }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   } catch (error) {
     console.error(`Error en POST /api/tickets/${params.id}/accion:`, error);
-    return NextResponse.json(
-      { message: "Error al añadir acción al ticket", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ message: "Error al agregar la acción al ticket." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
-/**
- * GET handler para obtener todas las acciones de un ticket específico.
- * @param request La solicitud Next.js.
- * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
- * @returns Una respuesta JSON con las acciones del ticket o un mensaje de error.
- */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) { // Cambiado a NextRequest
   try {
     const { id: ticketId } = params;
     const acciones = await TicketService.getAccionesByTicketId(ticketId);
-    return NextResponse.json(acciones);
+    // Serializar fechas como string en acciones y objetos anidados
+    return new Response(JSON.stringify(serializeDates(acciones)), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error(`Error en GET /api/tickets/${params.id}/accion:`, error);
-    return NextResponse.json(
-      { message: "Error al obtener acciones del ticket", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ message: "Error interno del servidor al obtener acciones." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

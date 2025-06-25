@@ -226,9 +226,9 @@ export class EquipoEnPrestamoService {
   /**
    * Elimina un registro de equipo en préstamo.
    * @param id El ID del registro de préstamo a eliminar.
-   * @returns Un objeto de éxito o error.
+   * @returns void si tiene éxito, lanza un error si falla.
    */
-  static async deleteEquipoEnPrestamo(id: string): Promise<{ success: boolean; message?: string }> {
+  static async deleteEquipoEnPrestamo(id: string): Promise<void> {
     try {
       await prisma.$transaction(async (tx) => {
         // No hay dependencias directas en cascada con EquipoEnPrestamo,
@@ -238,10 +238,9 @@ export class EquipoEnPrestamoService {
           where: { id },
         });
       });
-      return { success: true, message: "Registro de préstamo eliminado exitosamente." };
     } catch (error: any) {
       console.error(`Error al eliminar registro de préstamo con ID ${id} en EquipoEnPrestamoService:`, error);
-      return { success: false, message: error.message || "Error al eliminar el registro de préstamo." };
+      throw new Error("Error al eliminar el registro de préstamo. Detalles: " + (error?.message || error));
     }
   }
 }

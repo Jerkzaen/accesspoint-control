@@ -1,58 +1,54 @@
-// src/app/api/contactos/route.ts
+// RUTA: src/app/api/contactos/route.ts
+// (Este es el archivo para la ruta principal, NO la de [id])
 
-import { NextRequest, NextResponse } from "next/server";
 import { ContactoEmpresaService, ContactoEmpresaCreateInput } from "@/services/contactoEmpresaService";
 import { Prisma } from "@prisma/client";
+import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth/next";
 
 /**
- * GET handler para obtener todos los contactos de empresa.
- * @param request La solicitud Next.js.
- * @returns Una respuesta JSON con los contactos o un mensaje de error.
+ * GET handler para obtener TODOS los contactos.
+ * No recibe `params`.
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: Request): Promise<NextResponse> {
+  // Verificación de sesión
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    // Incluimos relaciones por defecto para la visualización general si es útil.
-    // Esto podría ajustarse según la necesidad específica del frontend.
-    const contactos = await ContactoEmpresaService.getContactosEmpresa(true); 
-    return NextResponse.json(contactos);
-  } catch (error) {
-    console.error("Error en GET /api/contactos:", error);
-    return NextResponse.json(
-      { message: "Error al obtener contactos", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    const contactos = await ContactoEmpresaService.getContactosEmpresa(true);
+    // No es necesario serializar las fechas aquí, NextResponse lo maneja bien.
+    return NextResponse.json(contactos, { status: 200 });
+  } catch (error: any) {
+    console.error('Error en GET /api/contactos:', error);
+    return NextResponse.json({ message: 'Error al obtener contactos' }, { status: 500 });
   }
 }
 
 /**
- * POST handler para crear un nuevo contacto de empresa.
- * @param request La solicitud Next.js.
- * @returns Una respuesta JSON con el contacto creado o un mensaje de error.
+ * POST handler para CREAR un nuevo contacto.
+ * No recibe `params`.
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: Request): Promise<NextResponse> {
+  // Verificación de sesión
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const data: ContactoEmpresaCreateInput = await request.json();
     const newContacto = await ContactoEmpresaService.createContactoEmpresa(data);
     return NextResponse.json(newContacto, { status: 201 });
-  } catch (error) {
-    console.error("Error en POST /api/contactos:", error);
-    if (error instanceof Error && 'issues' in error) { // ZodError
-      return NextResponse.json(
-        { message: "Error de validación al crear contacto: " + (error as any).issues.map((i: any) => i.message).join(", ") },
-        { status: 400 }
-      );
+  } catch (error: any) {
+    console.error('Error en POST /api/contactos:', error);
+    // Manejo de error de email duplicado
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ message: 'Error al crear contacto: El correo electrónico ya existe.' }, { status: 409 });
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') { // Unique constraint failed (e.g., on email)
-        return NextResponse.json(
-          { message: "Error al crear contacto: El correo electrónico ya existe.", error: error.message },
-          { status: 409 } // Conflict
-        );
-      }
-    }
-    return NextResponse.json(
-      { message: "Error al crear contacto", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    // Manejo de otros errores
+    return NextResponse.json({ message: 'Error al crear contacto' }, { status: 500 });
   }
 }

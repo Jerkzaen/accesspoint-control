@@ -1,8 +1,8 @@
-    // src/app/api/contactos/[id]/route.ts
+// src/app/api/contactos/[id]/route.ts
 
-import { NextRequest, NextResponse } from "next/server";
 import { ContactoEmpresaService, ContactoEmpresaUpdateInput } from "@/services/contactoEmpresaService";
 import { Prisma } from "@prisma/client";
+import { NextResponse } from 'next/server';
 
 /**
  * GET handler para obtener un contacto de empresa por su ID.
@@ -11,22 +11,37 @@ import { Prisma } from "@prisma/client";
  * @returns Una respuesta JSON con el contacto o un mensaje de error.
  */
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const { id } = params;
-    const contacto = await ContactoEmpresaService.getContactoEmpresaById(id);
+    const contacto = await ContactoEmpresaService.getContactoEmpresaById(params.id);
     if (!contacto) {
       return NextResponse.json({ message: "Contacto no encontrado" }, { status: 404 });
     }
-    return NextResponse.json(contacto);
+    // Serializar fechas igual que en la ruta principal
+    const contactoJson = {
+      ...contacto,
+      createdAt: contacto.createdAt?.toISOString?.() ?? contacto.createdAt,
+      updatedAt: contacto.updatedAt?.toISOString?.() ?? contacto.updatedAt,
+      empresa: contacto.empresa
+        ? {
+            ...contacto.empresa,
+            createdAt: contacto.empresa.createdAt?.toISOString?.() ?? contacto.empresa.createdAt,
+            updatedAt: contacto.empresa.updatedAt?.toISOString?.() ?? contacto.empresa.updatedAt,
+          }
+        : null,
+      ubicacion: contacto.ubicacion
+        ? {
+            ...contacto.ubicacion,
+            createdAt: contacto.ubicacion.createdAt?.toISOString?.() ?? contacto.ubicacion.createdAt,
+            updatedAt: contacto.ubicacion.updatedAt?.toISOString?.() ?? contacto.ubicacion.updatedAt,
+          }
+        : null,
+    };
+    return NextResponse.json(contactoJson, { status: 200 });
   } catch (error) {
-    console.error(`Error en GET /api/contactos/${params.id}:`, error);
-    return NextResponse.json(
-      { message: "Error al obtener contacto", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Error al obtener contacto" }, { status: 500 });
   }
 }
 
@@ -37,36 +52,27 @@ export async function GET(
  * @returns Una respuesta JSON con el contacto actualizado o un mensaje de error.
  */
 export async function PUT(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const { id } = params;
     const data: ContactoEmpresaUpdateInput = await request.json();
-    // Aseguramos que el ID de la ruta sobreescriba cualquier ID en el cuerpo.
-    const updatedContacto = await ContactoEmpresaService.updateContactoEmpresa({ ...data, id }); 
-    return NextResponse.json(updatedContacto);
-  } catch (error) {
-    console.error(`Error en PUT /api/contactos/${params.id}:`, error);
-    if (error instanceof Error && 'issues' in error) { // ZodError
-      return NextResponse.json(
-        { message: "Error de validación al actualizar contacto: " + (error as any).issues.map((i: any) => i.message).join(", ") },
-        { status: 400 }
-      );
+    const updatedContacto = await ContactoEmpresaService.updateContactoEmpresa({ ...data, id: params.id });
+    return NextResponse.json(updatedContacto, { status: 200 });
+  } catch (error: any) {
+
+    if (error.message && error.message.startsWith('Error de validación')) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') { // Unique constraint failed (e.g., on email)
-        return NextResponse.json(
-          { message: "Error al actualizar contacto: El correo electrónico ya existe.", error: error.message },
-          { status: 409 } // Conflict
-        );
+
+      if (error.code === 'P2002') {
+        return NextResponse.json({ message: 'Error al actualizar contacto: El correo electrónico ya existe.' }, { status: 409 });
       }
     }
-    return NextResponse.json(
-      { message: "Error al actualizar contacto", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error al actualizar contacto' }, { status: 500 });
   }
+
 }
 
 /**
@@ -76,21 +82,21 @@ export async function PUT(
  * @returns Una respuesta JSON de éxito o un mensaje de error.
  */
 export async function DELETE(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const { id } = params;
-    const result = await ContactoEmpresaService.deleteContactoEmpresa(id);
-    if (!result.success) {
-      return NextResponse.json({ message: result.message || "Error al eliminar contacto" }, { status: 400 });
+    await ContactoEmpresaService.deleteContactoEmpresa(params.id);
+    return NextResponse.json({ message: 'Contacto de empresa eliminado exitosamente' }, { status: 200 });
+  } catch (error: any) {
+    const msg = error.message || '';
+    if (
+      /pr[eé]stados asociados/i.test(msg) ||
+      /pr[eé]stamos asociados/i.test(msg) ||
+      /tickets asociados/i.test(msg)
+    ) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
-    return NextResponse.json({ message: result.message || "Contacto eliminado exitosamente" }, { status: 200 });
-  } catch (error) {
-    console.error(`Error en DELETE /api/contactos/${params.id}:`, error);
-    return NextResponse.json(
-      { message: "Error al eliminar contacto", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error al eliminar contacto' }, { status: 500 });
   }
 }

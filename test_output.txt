@@ -1,0 +1,24 @@
+
+> accesspoint-control@0.1.0 test
+> vitest --globals
+
+[31mfailed to load config from C:\Proyectos\accesspoint-control\vitest.config.ts[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Startup Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯⎯[39m
+file:///C:/Proyectos/accesspoint-control/node_modules/.vite-temp/vitest.config.ts.timestamp-1750808717929-de6866f665cac.mjs:2
+import { defineConfig } from "file:///C:/Proyectos/accesspoint-control/node_modules/vitest/dist/index.js";
+         ^^^^^^^^^^^^
+SyntaxError: The requested module 'file:///C:/Proyectos/accesspoint-control/node_modules/vitest/dist/index.js' does not provide an export named 'defineConfig'
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:182:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:266:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async loadConfigFromBundledFile (file:///C:/Proyectos/accesspoint-control/node_modules/vite/dist/node/chunks/dep-Bsx9IwL8.js:36470:12)
+    at async bundleAndLoadConfigFile (file:///C:/Proyectos/accesspoint-control/node_modules/vite/dist/node/chunks/dep-Bsx9IwL8.js:36355:21)
+    at async loadConfigFromFile (file:///C:/Proyectos/accesspoint-control/node_modules/vite/dist/node/chunks/dep-Bsx9IwL8.js:36322:42)
+    at async resolveConfig (file:///C:/Proyectos/accesspoint-control/node_modules/vite/dist/node/chunks/dep-Bsx9IwL8.js:35978:22)
+    at async _createServer (file:///C:/Proyectos/accesspoint-control/node_modules/vite/dist/node/chunks/dep-Bsx9IwL8.js:28331:67)
+    at async createViteServer (file:///C:/Proyectos/accesspoint-control/node_modules/vitest/dist/chunks/cli-api.BkDphVBG.js:6911:17)
+    at async createVitest (file:///C:/Proyectos/accesspoint-control/node_modules/vitest/dist/chunks/cli-api.BkDphVBG.js:10202:17)
+
+
+

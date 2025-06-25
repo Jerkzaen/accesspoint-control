@@ -3,23 +3,37 @@
 import { NextRequest, NextResponse } from "next/server"; // Importar NextRequest
 import { TicketService } from "@/services/ticketService";
 import { Prisma } from "@prisma/client";
-import { TicketCreateInput } from "@/services/ticketService"; // Importar el tipo de input para POST
+import { TicketCreateInput } from "@/services/ticketService";
+import { serializeDates } from "@/lib/utils";
+// Importar getServerSession y authOptions para la validación de sesión
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 /**
  * GET handler para obtener todos los tickets.
  * @param request La solicitud Next.js.
  * @returns Una respuesta JSON con los tickets o un mensaje de error.
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest) { // Cambiado a NextRequest
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ message: "No autorizado" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     const tickets = await TicketService.getTickets(true); // Incluir relaciones comunes
-    return NextResponse.json(tickets);
+    return new Response(JSON.stringify(serializeDates(tickets)), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error en GET /api/tickets:", error);
-    return NextResponse.json(
-      { message: "Error al obtener tickets", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ message: "Error interno del servidor" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
@@ -28,25 +42,42 @@ export async function GET(request: NextRequest) {
  * @param request La solicitud Next.js.
  * @returns Una respuesta JSON con el ticket creado o un mensaje de error.
  */
-export async function POST(request: NextRequest) { // Tipado explícito para 'request'
+export async function POST(request: NextRequest) { // Cambiado a NextRequest
   try {
-    // Asegurarse de que el JSON que se recibe coincide con TicketCreateInput
-    const data: TicketCreateInput = await request.json(); 
-    const newTicket = await TicketService.createTicket(data);
-    return NextResponse.json(newTicket, { status: 201 });
-  } catch (error) {
-    console.error("Error en POST /api/tickets:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') { // Unique constraint failed on 'numeroCaso'
-        return NextResponse.json(
-          { message: "Error al crear ticket: El número de caso ya existe.", error: error.message },
-          { status: 409 } // Conflict
-        );
-      }
+    const data: TicketCreateInput = await request.json();
+    // Validación mínima para simular error 400 si faltan campos obligatorios
+    if (!data.titulo || !data.solicitanteNombre || !data.creadoPorUsuarioId) {
+      return new Response(JSON.stringify({ message: "Faltan campos obligatorios." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-    return NextResponse.json(
-      { message: "Error al crear ticket", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    // Convertir fechaDevolucionEstimada a objeto Date si es un string (solo para equipoPrestamo anidado)
+    if (data.equipoPrestamo && typeof data.equipoPrestamo.fechaDevolucionEstimada === 'string') {
+      data.equipoPrestamo.fechaDevolucionEstimada = new Date(data.equipoPrestamo.fechaDevolucionEstimada);
+    }
+    const newTicket = await TicketService.createTicket(data);
+    return new Response(JSON.stringify(serializeDates(newTicket)), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return new Response(JSON.stringify({ message: "Error al crear ticket: El número de caso ya existe." }), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (error.message && error.message.includes('Faltan campos obligatorios')) {
+      return new Response(JSON.stringify({ message: "Faltan campos obligatorios." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ message: "Error al crear ticket" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
+

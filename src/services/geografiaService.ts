@@ -1,6 +1,7 @@
 // src/services/geografiaService.ts
 
-import { prisma } from "@/lib/prisma";
+import { PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma, prisma } from "@/lib/prisma";
 import type { Comuna, Direccion, Pais, Provincia, Region, Empresa, Sucursal } from '@prisma/client';
 // Importamos los esquemas de validación Zod para Direccion
 import { createDireccionSchema, updateDireccionSchema } from "@/lib/validators/direccionValidator";
@@ -36,14 +37,19 @@ export type DireccionConRelaciones = Direccion & {
  * Centraliza la lógica de acceso a la base de datos para la geografía.
  */
 export class GeografiaService {
+  private prisma: PrismaClient;
+
+  constructor(prismaClient?: PrismaClient) {
+    this.prisma = prismaClient || defaultPrisma;
+  }
 
   /**
    * Obtiene todos los países ordenados alfabéticamente.
    * @returns Una promesa que resuelve con un array de objetos Pais.
    */
-  static async getPaises(): Promise<Pais[]> {
+  async getPaises(): Promise<Pais[]> {
     try {
-      return await prisma.pais.findMany({
+      return await this.prisma.pais.findMany({
         orderBy: { nombre: 'asc' },
       });
     } catch (error) {
@@ -56,9 +62,9 @@ export class GeografiaService {
    * Obtiene todas las regiones ordenadas alfabéticamente.
    * @returns Una promesa que resuelve con un array de objetos Region.
    */
-  static async getRegiones(): Promise<Region[]> {
+  async getRegiones(): Promise<Region[]> {
     try {
-      return await prisma.region.findMany({
+      return await this.prisma.region.findMany({
         orderBy: { nombre: 'asc' },
       });
     } catch (error) {
@@ -71,9 +77,9 @@ export class GeografiaService {
    * Obtiene todas las provincias ordenadas alfabéticamente.
    * @returns Una promesa que resuelve con un array de objetos Provincia.
    */
-  static async getProvincias(): Promise<Provincia[]> {
+  async getProvincias(): Promise<Provincia[]> {
     try {
-      return await prisma.provincia.findMany({
+      return await this.prisma.provincia.findMany({
         orderBy: { nombre: 'asc' },
       });
     } catch (error) {
@@ -88,12 +94,12 @@ export class GeografiaService {
    * @param regionId El ID de la región.
    * @returns Una promesa que resuelve con un array de objetos ComunaConProvinciaYRegion.
    */
-  static async getComunasByRegion(regionId: string): Promise<ComunaConProvinciaYRegion[]> {
+  async getComunasByRegion(regionId: string): Promise<ComunaConProvinciaYRegion[]> {
     if (!regionId) {
       return [];
     }
     try {
-      const comunas = await prisma.comuna.findMany({
+      const comunas = await this.prisma.comuna.findMany({
         where: { provincia: { regionId: regionId } },
         include: { // Asegura que la región esté incluida para el tipo ComunaConProvinciaYRegion
           provincia: {
@@ -116,12 +122,12 @@ export class GeografiaService {
    * @param searchTerm El texto a buscar en los nombres de las comunas.
    * @returns Un array de objetos ComunaConProvinciaYRegion.
    */
-  static async searchComunas(searchTerm: string): Promise<ComunaConProvinciaYRegion[]> {
+  async searchComunas(searchTerm: string): Promise<ComunaConProvinciaYRegion[]> {
     if (!searchTerm.trim()) {
       return [];
     }
     try {
-      const comunas = await prisma.comuna.findMany({
+      const comunas = await this.prisma.comuna.findMany({
         where: {
           nombre: {
             contains: searchTerm,
@@ -149,9 +155,9 @@ export class GeografiaService {
    * Obtiene todas las direcciones, incluyendo sus relaciones geográficas completas.
    * @returns Una promesa que resuelve con un array de objetos DireccionConRelaciones.
    */
-  static async getDirecciones(): Promise<DireccionConRelaciones[]> {
+  async getDirecciones(): Promise<DireccionConRelaciones[]> {
     try {
-      const direcciones = await prisma.direccion.findMany({
+      const direcciones = await this.prisma.direccion.findMany({
         include: {
           comuna: {
             include: {
@@ -187,12 +193,12 @@ export class GeografiaService {
    * @param data Los datos de la nueva dirección (calle, numero, depto, comunaId).
    * @returns Una promesa que resuelve con el objeto Direccion creado.
    */
-  static async addDireccion(data: { calle: string; numero: string; depto?: string | null; comunaId: string; }): Promise<Direccion> {
+  async addDireccion(data: { calle: string; numero: string; depto?: string | null; comunaId: string; }): Promise<Direccion> {
     try {
       // Validar los datos de entrada con Zod
       const validatedData = createDireccionSchema.parse(data);
 
-      const newDireccion = await prisma.direccion.create({
+      const newDireccion = await this.prisma.direccion.create({
         data: {
           calle: validatedData.calle,
           numero: validatedData.numero,

@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma, Sucursal, Empresa, Direccion, Ubicacion, Ticket } from "@prisma/client";
+import { createSucursalSchema, updateSucursalSchema } from "@/lib/validators/sucursalValidator";
+import { ZodError } from "zod";
 
 /**
  * Define los tipos de entrada para las operaciones CRUD de Sucursal.
@@ -115,6 +117,8 @@ export class SucursalService {
    */
   static async createSucursal(data: SucursalCreateInput): Promise<Sucursal> {
     try {
+      // Validación Zod
+      createSucursalSchema.parse(data);
       const newSucursal = await prisma.$transaction(async (tx) => {
         // 1. Crear la dirección asociada a la sucursal
         const nuevaDireccion = await tx.direccion.create({
@@ -143,6 +147,9 @@ export class SucursalService {
       });
       return newSucursal;
     } catch (error) {
+      if (error instanceof ZodError) {
+        throw new Error("Error de validación: " + error.errors.map(e => e.message).join(", "));
+      }
       console.error("Error al crear sucursal en SucursalService:", error);
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002' && error.meta?.target === 'sucursales_direccionId_key') {
@@ -161,6 +168,8 @@ export class SucursalService {
    */
   static async updateSucursal(data: SucursalUpdateInput): Promise<Sucursal> {
     try {
+      // Validación Zod
+      updateSucursalSchema.parse(data);
       const updatedSucursal = await prisma.$transaction(async (tx) => {
         // Si hay datos para actualizar la dirección, manejarlos primero
         if (data.direccion !== undefined) {
@@ -205,6 +214,9 @@ export class SucursalService {
       });
       return updatedSucursal;
     } catch (error) {
+      if (error instanceof ZodError) {
+        throw new Error("Error de validación: " + error.errors.map(e => e.message).join(", "));
+      }
       console.error(`Error al actualizar sucursal con ID ${data.id} en SucursalService:`, error);
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002' && error.meta?.target === 'sucursales_direccionId_key') {
@@ -266,7 +278,10 @@ export class SucursalService {
         // 4. Eliminar la dirección asociada si no está siendo usada por otras entidades (ej. Empresa)
         // Esto es importante para limpiar direcciones "huérfanas"
         const isDireccionUsedByOtherSucursal = await tx.sucursal.count({
-          where: { direccionId: sucursalToDelete.direccionId },
+          where: {
+            direccionId: sucursalToDelete.direccionId,
+            NOT: { id }, // Excluir la sucursal que acabamos de eliminar
+          },
         });
 
         const isDireccionUsedByEmpresa = await tx.empresa.count({

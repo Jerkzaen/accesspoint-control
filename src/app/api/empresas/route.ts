@@ -11,7 +11,8 @@ import { Prisma } from "@prisma/client"; // Para tipos de errores de Prisma si e
 export async function GET() {
   try {
     const empresas = await EmpresaService.getEmpresas(true); // Incluimos la dirección principal
-    return NextResponse.json(empresas);
+    const empresasJson = JSON.parse(JSON.stringify(empresas)); // Serializar fechas a string para que coincida con los tests
+    return new Response(JSON.stringify(empresasJson), { status: 200 });
   } catch (error) {
     console.error("Error en GET /api/empresas:", error);
     return NextResponse.json(
@@ -28,24 +29,17 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    const newEmpresa = await EmpresaService.createEmpresa(data);
-    return NextResponse.json(newEmpresa, { status: 201 });
-  } catch (error) {
-    console.error("Error en POST /api/empresas:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // Manejar errores conocidos de Prisma, por ejemplo, duplicados
-      if (error.code === 'P2002') { // Unique constraint failed on the 'rut' field
-        return NextResponse.json(
-          { message: "Error al crear empresa: El RUT ya existe.", error: error.message },
-          { status: 409 } // Conflict
-        );
-      }
+    const body = await request.json();
+    const newEmpresa = await EmpresaService.createEmpresa(body);
+    return new Response(JSON.stringify(newEmpresa), { status: 201 });
+  } catch (error: any) {
+    if (error.message && error.message.startsWith('Error de validación')) {
+      return new Response(JSON.stringify({ message: error.message }), { status: 400 });
     }
-    return NextResponse.json(
-      { message: "Error al crear empresa", error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return new Response(JSON.stringify({ message: 'Error al crear empresa: El RUT ya existe.' }), { status: 409 });
+    }
+    return new Response(JSON.stringify({ message: 'Error al crear empresa' }), { status: 500 });
   }
 }
 

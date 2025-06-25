@@ -48,3 +48,25 @@ export function getCompanyLogoUrl(companyName?: string | null): string { // Hace
       return ''; // O una imagen de logo por defecto
   }
 }
+
+/**
+ * Serializa todas las fechas (Date) en un objeto o array a string ISO, omitiendo propiedades undefined.
+ * @param obj El objeto a serializar.
+ * @returns El objeto serializado.
+ */
+export function serializeDates(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (obj instanceof Date) return obj.toISOString();
+  if (Array.isArray(obj)) return obj.map(serializeDates);
+  if (typeof obj === "object") {
+    const result: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key];
+        if (value !== undefined) result[key] = serializeDates(value);
+      }
+    }
+    return result;
+  }
+  return obj;
+}

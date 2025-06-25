@@ -49,10 +49,9 @@ export class ContactoEmpresaService {
   static async getContactosEmpresa(includeRelations: boolean = false): Promise<ContactoEmpresa[]> {
     try {
       const contactos = await prisma.contactoEmpresa.findMany({
-        include: includeRelations ? {
-          empresa: true,
-          ubicacion: true,
-        } : undefined,
+        include: includeRelations
+          ? { empresa: true, ubicacion: true }
+          : { empresa: false, ubicacion: false }, // <-- Cambiado para que siempre pase include
         orderBy: { nombreCompleto: 'asc' },
       });
       return contactos;
@@ -186,7 +185,7 @@ export class ContactoEmpresaService {
         });
 
         if (prestamosCount > 0) {
-          throw new Error("No se puede eliminar el contacto porque tiene equipos prestados asociados. Por favor, asegúrate de que todos los préstamos relacionados hayan sido devueltos o reasignados.");
+          throw new Error("No se puede eliminar el contacto porque tiene equipos prestados asociados.");
         }
 
         // Antes de eliminar el contacto, verificar si está asociado a algún Ticket como solicitante
@@ -195,9 +194,7 @@ export class ContactoEmpresaService {
         });
 
         if (ticketsCount > 0) {
-          // Si hay tickets, se podría reasignar el contacto a null en esos tickets
-          // Por ahora, lanzamos un error para forzar la reasignación o decisión.
-          throw new Error("No se puede eliminar el contacto porque tiene tickets asociados. Por favor, reasigna los tickets de este contacto primero.");
+          throw new Error("No se puede eliminar el contacto porque tiene tickets asociados.");
         }
 
         // Eliminar el contacto
@@ -208,7 +205,15 @@ export class ContactoEmpresaService {
       return { success: true, message: "Contacto de empresa eliminado exitosamente." };
     } catch (error: any) {
       console.error(`Error al eliminar contacto de empresa con ID ${id} en ContactoEmpresaService:`, error);
-      return { success: false, message: error.message || "Error al eliminar el contacto de empresa." };
+      // Si el error es de negocio, relanzar para que los tests lo capturen con rejects.toThrow
+      if (error instanceof Error && (
+        error.message.includes("No se puede eliminar el contacto porque tiene equipos prestados asociados.") ||
+        error.message.includes("No se puede eliminar el contacto porque tiene tickets asociados.")
+      )) {
+        throw error;
+      }
+      // Si es error de Prisma u otro, lanzar con mensaje estándar
+      throw new Error("Error al eliminar el contacto de empresa. Detalles: " + (error as Error).message);
     }
   }
 }
