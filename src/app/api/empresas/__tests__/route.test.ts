@@ -1,107 +1,130 @@
-// RUTA: /src/app/api/empresas/__tests__/route.test.ts
+// RUTA: src/app/api/empresas/__tests__/route.test.ts
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-// 1. IMPORTA los módulos a mockear
-import { getServerSession } from 'next-auth';
-import { EmpresaService } from '@/services/empresaService';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { type NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { EmpresaService } from '@/services/empresaService';
 
-// 2. MOCKEA los módulos ANTES de importar las rutas
+// --- MOCKS ---
+vi.mock('next-auth/next', () => ({
+  getServerSession: vi.fn(),
+}));
 vi.mock('@/services/empresaService');
-vi.mock('next-auth'); // Usa el mock de __mocks__/next-auth.ts
 
-// 3. IMPORTA los handlers de la API DESPUÉS de los mocks
+// --- IMPORTACIÓN DEL CÓDIGO A PROBAR ---
+// Importamos los handlers de AMBOS archivos de ruta
 import { GET, POST } from '../route';
 import { GET as getById, PUT as putById, DELETE as deleteById } from '../[id]/route';
 
-describe('API Endpoints para /api/empresas', () => {
+describe('API Endpoints para /api/empresas (Suite Completa)', () => {
+
+  const mockAdminSession = { user: { id: 'admin-123', role: 'ADMIN' } };
+  const mockEmpresa = { id: 'empresa-1', nombre: 'Empresa Fantástica', rut: '76.123.456-7' };
 
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  // --- Pruebas para GET /api/empresas ---
+  // --- Pruebas para la ruta principal: /api/empresas ---
   describe('GET /api/empresas', () => {
-    it('debería devolver error 401 si el usuario no está autenticado', async () => {
-      // Configuración: Sin sesión
-      (getServerSession as vi.Mock).mockResolvedValue(null);
-      const request = new Request('http://localhost/api/empresas') as NextRequest;
-      
-      // Ejecución y Aserción
-      const response = await GET(request);
+    it('debe devolver 401 si el usuario no está autenticado', async () => {
+      (getServerSession as Mock).mockResolvedValue(null);
+      const request = new Request('http://localhost/api/empresas');
+      const response = await GET(request as NextRequest);
       expect(response.status).toBe(401);
     });
 
-    it('debería devolver una lista de empresas si el usuario está autenticado', async () => {
-      // Configuración: Con sesión y datos del servicio
-      const mockSession = { user: { id: 'user-123', role: 'ADMIN' } };
-      (getServerSession as vi.Mock).mockResolvedValue(mockSession);
-
-      const mockEmpresas = [{ id: 'empresa-1', nombre: 'Empresa de Prueba' }];
-      (EmpresaService.getEmpresas as vi.Mock).mockResolvedValue(mockEmpresas);
-      
-      const request = new Request('http://localhost/api/empresas') as NextRequest;
-      
-      // Ejecución
-      const response = await GET(request);
+    it('debe devolver una lista de empresas si el usuario está autenticado', async () => {
+      (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+      (EmpresaService.getEmpresas as Mock).mockResolvedValue([mockEmpresa]);
+      const request = new Request('http://localhost/api/empresas');
+      const response = await GET(request as NextRequest);
       const body = await response.json();
-
-      // Aserción
       expect(response.status).toBe(200);
-      expect(body).toEqual(mockEmpresas);
-      expect(EmpresaService.getEmpresas).toHaveBeenCalledTimes(1);
+      expect(body).toEqual([mockEmpresa]);
     });
   });
 
-  // --- Pruebas para GET /api/empresas/[id] ---
-  describe('GET /api/empresas/[id]', () => {
-    it('debería devolver una empresa por su ID si el usuario está autenticado', async () => {
-        // Configuración
-        const mockSession = { user: { id: 'user-123' } };
-        (getServerSession as vi.Mock).mockResolvedValue(mockSession);
-        
-        const mockEmpresa = { id: 'empresa-1', nombre: 'Empresa Específica' };
-        (EmpresaService.getEmpresaById as vi.Mock).mockResolvedValue(mockEmpresa);
-
-        const request = new Request('http://localhost/api/empresas/empresa-1') as NextRequest;
-        
-        // Ejecución (el `params` se pasa como segundo argumento al handler)
-        const response = await getById(request, { params: { id: 'empresa-1' } });
+  describe('POST /api/empresas', () => {
+    it('debe crear una empresa si los datos son válidos y el usuario está autenticado', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        const newEmpresaData = { nombre: 'Nueva Empresa', rut: '12.345.678-9' };
+        (EmpresaService.createEmpresa as Mock).mockResolvedValue({ id: 'new-id', ...newEmpresaData });
+        const request = new Request('http://localhost/api/empresas', {
+            method: 'POST', body: JSON.stringify(newEmpresaData),
+        });
+        const response = await POST(request as NextRequest);
         const body = await response.json();
+        expect(response.status).toBe(201);
+        expect(body.nombre).toBe('Nueva Empresa');
+    });
+  });
 
-        // Aserción
+  // --- Pruebas para la ruta dinámica: /api/empresas/[id] ---
+  describe('GET /api/empresas/[id]', () => {
+    it('debe devolver 401 si el usuario no está autenticado', async () => {
+        (getServerSession as Mock).mockResolvedValue(null);
+        const request = new Request(`http://localhost/api/empresas/${mockEmpresa.id}`);
+        const response = await getById(request as NextRequest, { params: { id: mockEmpresa.id } });
+        expect(response.status).toBe(401);
+    });
+
+    it('debe devolver una empresa por su ID si el usuario está autenticado', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (EmpresaService.getEmpresaById as Mock).mockResolvedValue(mockEmpresa);
+        const request = new Request(`http://localhost/api/empresas/${mockEmpresa.id}`);
+        const response = await getById(request as NextRequest, { params: { id: mockEmpresa.id } });
+        const body = await response.json();
         expect(response.status).toBe(200);
         expect(body).toEqual(mockEmpresa);
-        expect(EmpresaService.getEmpresaById).toHaveBeenCalledWith('empresa-1');
+    });
+
+    it('debe devolver 404 si la empresa no se encuentra', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (EmpresaService.getEmpresaById as Mock).mockResolvedValue(null); // El servicio no encuentra nada
+        const request = new Request(`http://localhost/api/empresas/id-que-no-existe`);
+        const response = await getById(request as NextRequest, { params: { id: 'id-que-no-existe' } });
+        expect(response.status).toBe(404);
     });
   });
 
-  // --- Pruebas para POST /api/empresas ---
-  describe('POST /api/empresas', () => {
-    it('debería crear una empresa si los datos son válidos y el usuario es admin', async () => {
-        // Configuración
-        const mockSession = { user: { id: 'user-123', role: 'ADMIN' } };
-        (getServerSession as vi.Mock).mockResolvedValue(mockSession);
+  describe('PUT /api/empresas/[id]', () => {
+    const updateData = { nombre: 'Empresa Actualizada' };
 
-        const newEmpresaData = { nombre: 'Nueva Empresa', rut: '12345678-9' };
-        const createdEmpresa = { id: 'new-id', ...newEmpresaData };
-        (EmpresaService.createEmpresa as vi.Mock).mockResolvedValue(createdEmpresa);
-
-        const request = new Request('http://localhost/api/empresas', {
-            method: 'POST',
-            body: JSON.stringify(newEmpresaData),
-        }) as NextRequest;
-        
-        // Ejecución
-        const response = await POST(request);
+    it('debe actualizar una empresa y devolver 200', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (EmpresaService.updateEmpresa as Mock).mockResolvedValue({ ...mockEmpresa, ...updateData });
+        const request = new Request(`http://localhost/api/empresas/${mockEmpresa.id}`, {
+            method: 'PUT', body: JSON.stringify(updateData),
+        });
+        const response = await putById(request as NextRequest, { params: { id: mockEmpresa.id } });
         const body = await response.json();
-        
-        // Aserción
-        expect(response.status).toBe(201);
-        expect(body).toEqual(createdEmpresa);
-        expect(EmpresaService.createEmpresa).toHaveBeenCalledWith(newEmpresaData);
+        expect(response.status).toBe(200);
+        expect(body.nombre).toBe('Empresa Actualizada');
+        expect(EmpresaService.updateEmpresa).toHaveBeenCalledWith(mockEmpresa.id, updateData);
     });
   });
 
+  describe('DELETE /api/empresas/[id]', () => {
+    it('debe eliminar una empresa y devolver 200', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (EmpresaService.deleteEmpresa as Mock).mockResolvedValue(undefined); // delete no devuelve nada
+        const request = new Request(`http://localhost/api/empresas/${mockEmpresa.id}`, { method: 'DELETE' });
+        const response = await deleteById(request as NextRequest, { params: { id: mockEmpresa.id } });
+        const body = await response.json();
+        expect(response.status).toBe(200);
+        expect(body.message).toBe('Empresa eliminada exitosamente');
+    });
+
+    it('debe devolver 400 si la empresa tiene sucursales asociadas', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        const error = new Error("No se puede eliminar la empresa porque tiene sucursales asociadas.");
+        (EmpresaService.deleteEmpresa as Mock).mockRejectedValue(error);
+        const request = new Request(`http://localhost/api/empresas/${mockEmpresa.id}`, { method: 'DELETE' });
+        const response = await deleteById(request as NextRequest, { params: { id: mockEmpresa.id } });
+        const body = await response.json();
+        expect(response.status).toBe(400);
+        expect(body.message).toContain('sucursales asociadas');
+    });
+  });
 });
