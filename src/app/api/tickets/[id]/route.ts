@@ -1,111 +1,86 @@
-// src/app/api/tickets/[id]/route.ts
+// RUTA: src/app/api/tickets/[id]/route.ts
 
-import { NextRequest, NextResponse } from "next/server"; // Importar NextRequest
-import { TicketService } from "@/services/ticketService";
+import { NextResponse } from "next/server";
+import { TicketService, TicketUpdateInput } from "@/services/ticketService";
 import { Prisma } from "@prisma/client";
-import { TicketUpdateInput } from "@/services/ticketService"; // Importar el tipo de input para PUT
-import { serializeDates } from "@/lib/utils"; // Importar serializador
+// 1. --- IMPORTAMOS getServerSession ---
+import { getServerSession } from "next-auth/next";
 
 /**
  * GET handler para obtener un ticket por su ID.
- * @param request La solicitud Next.js.
- * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
- * @returns Una respuesta JSON con el ticket o un mensaje de error.
  */
 export async function GET(
-  request: NextRequest, // Cambiado a NextRequest
+  request: Request,
   { params }: { params: { id: string } }
 ) {
+  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    const ticket = await TicketService.getTicketById(id);
+    const ticket = await TicketService.getTicketById(params.id);
     if (!ticket) {
-      return new Response(JSON.stringify({ message: "Ticket no encontrado" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ message: "Ticket no encontrado" }, { status: 404 });
     }
-    return new Response(JSON.stringify(serializeDates(ticket)), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    // 3. --- SIMPLIFICAMOS LA RESPUESTA ---
+    return NextResponse.json(ticket, { status: 200 });
   } catch (error) {
     console.error(`Error en GET /api/tickets/${params.id}:`, error);
-    return new Response(JSON.stringify({ message: "Error al obtener el ticket" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ message: "Error al obtener el ticket" }, { status: 500 });
   }
 }
 
 /**
  * PUT handler para actualizar un ticket por su ID.
- * @param request La solicitud Next.js.
- * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
- * @returns Una respuesta JSON con el ticket actualizado o un mensaje de error.
  */
 export async function PUT(
-  request: NextRequest, // Cambiado a NextRequest
+  request: Request,
   { params }: { params: { id: string } }
 ) {
+  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
+    // La desestructuración para remover 'id' es una buena práctica
     const { id: _, ...restOfData }: TicketUpdateInput = await request.json();
-    const updatedTicket = await TicketService.updateTicket({ id, ...restOfData });
-    return new Response(JSON.stringify(serializeDates(updatedTicket)), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    const updatedTicket = await TicketService.updateTicket({ id: params.id, ...restOfData });
+    return NextResponse.json(updatedTicket, { status: 200 });
   } catch (error: any) {
     console.error(`Error en PUT /api/tickets/${params.id}:`, error);
-    if (error.message && error.message.includes('Detalles:')) { // Mensajes que vienen del servicio
-      return new Response(JSON.stringify({ message: error.message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (error.message && error.message.includes('Detalles:')) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
-    // Puedes añadir más manejo específico de errores de Prisma o Zod aquí
-    return new Response(JSON.stringify({ message: "Error al actualizar el ticket" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ message: "Error al actualizar el ticket" }, { status: 500 });
   }
 }
 
 /**
  * DELETE handler para eliminar un ticket por su ID.
- * @param request La solicitud Next.js.
- * @param params Los parámetros de la ruta, incluyendo el ID del ticket.
- * @returns Una respuesta JSON de éxito o un mensaje de error.
  */
 export async function DELETE(
-  request: NextRequest, // Cambiado a NextRequest
+  request: Request,
   { params }: { params: { id: string } }
 ) {
+  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    const result = await TicketService.deleteTicket(id);
-    if (!result.success) { // El servicio devuelve {success: false} en algunos casos
-      return new Response(JSON.stringify({ message: result.message || "Error al eliminar ticket" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    return new Response(JSON.stringify({ message: "Ticket eliminado exitosamente" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    // El servicio maneja la lógica de si se puede eliminar o no
+    await TicketService.deleteTicket(params.id);
+    return NextResponse.json({ message: "Ticket eliminado exitosamente" }, { status: 200 });
   } catch (error: any) {
     console.error(`Error en DELETE /api/tickets/${params.id}:`, error);
     if (error.message && error.message.includes("préstamos asociados")) {
-      return new Response(JSON.stringify({ message: error.message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
-    return new Response(JSON.stringify({ message: "Error al eliminar ticket" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ message: "Error al eliminar ticket" }, { status: 500 });
   }
 }

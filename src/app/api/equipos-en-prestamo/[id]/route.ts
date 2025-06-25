@@ -1,78 +1,79 @@
-// src/app/api/equipos-en-prestamo/[id]/route.ts
+// RUTA: src/app/api/equipos-en-prestamo/[id]/route.ts
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { EquipoEnPrestamoService, EquipoEnPrestamoUpdateInput } from "@/services/equipoEnPrestamoService";
-import { serializeDates } from "@/lib/utils"; // Importar la utilidad de serialización
+// 1. --- IMPORTAMOS getServerSession ---
+import { getServerSession } from "next-auth/next";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+/**
+ * GET handler para obtener un registro de préstamo por su ID.
+ */
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    const prestamo = await EquipoEnPrestamoService.getEquipoEnPrestamoById(id);
+    const prestamo = await EquipoEnPrestamoService.getEquipoEnPrestamoById(params.id);
     if (!prestamo) {
-      return new Response(JSON.stringify({ message: "Registro de préstamo no encontrado" }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+      return NextResponse.json({ message: "Registro de préstamo no encontrado" }, { status: 404 });
     }
-    return new Response(JSON.stringify(serializeDates(prestamo)), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch (error: any) {
+    return NextResponse.json(prestamo);
+  } catch (error) {
     console.error(`Error en GET /api/equipos-en-prestamo/${params.id}:`, error);
-    return new Response(
-      JSON.stringify({ message: "Error al obtener registro de préstamo", error: error?.message || "Error desconocido" }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ message: "Error al obtener registro de préstamo" }, { status: 500 });
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+/**
+ * PUT handler para actualizar un registro de préstamo por su ID.
+ */
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    let data: EquipoEnPrestamoUpdateInput = await request.json();
-    // Convertir fechas de string a Date si es necesario
-    if (typeof data.fechaDevolucionEstimada === 'string') {
-      data.fechaDevolucionEstimada = new Date(data.fechaDevolucionEstimada);
-    }
-    if (typeof data.fechaDevolucionReal === 'string') {
-      data.fechaDevolucionReal = new Date(data.fechaDevolucionReal);
-    }
-    const updatedPrestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo({ ...data, id });
-    return new Response(JSON.stringify(serializeDates(updatedPrestamo)), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    const data: Omit<EquipoEnPrestamoUpdateInput, 'id'> = await request.json();
+    const updatedPrestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo({ ...data, id: params.id });
+    return NextResponse.json(updatedPrestamo, { status: 200 });
   } catch (error: any) {
     console.error(`Error en PUT /api/equipos-en-prestamo/${params.id}:`, error);
-    // Manejo de error de validación por mensaje
     if (error?.message && error.message.startsWith('Error de validación')) {
-      return new Response(
-        JSON.stringify({ message: error.message }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return NextResponse.json({ message: error.message }, { status: 400 });
     }
-    if (error?.code === 'P2002') {
-      return new Response(
-        JSON.stringify({ message: "Ya existe un registro con los mismos datos únicos" }),
-        { status: 409, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    return new Response(
-      JSON.stringify({ message: "Error al actualizar registro de préstamo", error: error?.message || "Error desconocido" }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ message: "Error al actualizar registro de préstamo" }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+/**
+ * DELETE handler para eliminar un registro de préstamo por su ID.
+ */
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    const result = await EquipoEnPrestamoService.deleteEquipoEnPrestamo(id);
-    // El servicio devuelve void en caso de éxito, así que el mensaje es fijo
-    return new Response(JSON.stringify({ message: "Registro de préstamo eliminado exitosamente" }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    await EquipoEnPrestamoService.deleteEquipoEnPrestamo(params.id);
+    return NextResponse.json({ message: "Registro de préstamo eliminado exitosamente" }, { status: 200 });
   } catch (error: any) {
     console.error(`Error en DELETE /api/equipos-en-prestamo/${params.id}:`, error);
-    if (error?.message && error.message.startsWith('Error de validación')) {
-      return new Response(
-        JSON.stringify({ message: error.message }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    return new Response(
-      JSON.stringify({ message: "Error al eliminar registro de préstamo", error: error?.message || "Error desconocido" }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ message: "Error al eliminar registro de préstamo" }, { status: 500 });
   }
 }

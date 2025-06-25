@@ -1,73 +1,61 @@
-// src/app/api/tickets/[id]/accion/[accionId]/route.ts
-// Este archivo actualmente no tiene lógica implementada, pero se adaptaría si se necesita
-// actualizar o eliminar acciones individuales.
-// No necesita cambios si solo POST y GET a /accion son usados.
-// Si se desea eliminar una acción específica, se podría añadir un DELETE aquí.
+// RUTA: src/app/api/tickets/[id]/accion/[accionId]/route.ts
 
-import { NextRequest, NextResponse } from "next/server"; // Importar NextRequest
-import { TicketService } from "@/services/ticketService"; // Para usar TicketService
-import { Prisma } from "@prisma/client"; // Para errores de Prisma
-import { serializeDates } from "@/lib/utils"; // Importar serializador
+import { NextRequest, NextResponse } from "next/server";
+import { TicketService } from "@/services/ticketService";
+import { Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth/next";
 
-export async function GET() {
-  return new Response(JSON.stringify({ message: "GET para acción específica (no implementado)" }), {
-    status: 501,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+/**
+ * PUT handler para actualizar una acción específica de un ticket.
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { accionId: string } }
+) {
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string; accionId: string } }) { // Cambiado a NextRequest
   try {
-    const { id: ticketId, accionId } = params;
-    const data = await request.json();
-    const descripcion = data.descripcion?.trim();
-    if (!descripcion) {
-      return new Response(JSON.stringify({ message: "La descripción de la acción no puede estar vacía." }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    const { descripcion } = await request.json();
+    if (!descripcion || !descripcion.trim()) {
+      return NextResponse.json({ message: "La descripción es obligatoria." }, { status: 400 });
     }
-    // En tu diseño actual, TicketService.updateTicket no gestiona acciones por ID directamente
-    // Necesitaríamos un método en TicketService (o un nuevo AccionTicketService) para actualizar una acción específica.
-    // Por simplicidad, y para que el test compile, si TicketService.updateTicket fuera el responsable,
-    // se llamaría de esta forma (pero su firma no lo soporta directamente ahora).
-    // Si la API es un proxy directo a Prisma.accionTicket.update:
-    try {
-      await TicketService.updateTicket({ id: ticketId, acciones: [{ id: accionId, descripcion }] } as any);
-      // await (prisma as any).accionTicket.update({ // Si la ruta llamara directamente a Prisma
-      //   where: { id: accionId, ticketId: ticketId },
-      //   data: { descripcion: descripcion },
-      // });
-    } catch (error: any) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-        return new Response(JSON.stringify({ message: `No se encontró la acción con el ID ${accionId} para el ticket ${ticketId}` }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ message: "Error al editar la acción." }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    const updatedAccion = await TicketService.updateAccion(params.accionId, { descripcion });
+    return NextResponse.json(updatedAccion, { status: 200 });
+
+  } catch (error: any) {
+    console.error(`Error en PUT /api/tickets/[id]/accion/${params.accionId}:`, error);
+    if (error.message.includes('No se encontró la acción')) {
+        return NextResponse.json({ message: error.message }, { status: 404 });
     }
-    // Una vez actualizada la acción, obtenemos el ticket completo para devolverlo
-    const ticket = await TicketService.getTicketById(ticketId);
-    return new Response(JSON.stringify(serializeDates(ticket)), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error(`Error en PUT /api/tickets/${params.id}/accion/${params.accionId}:`, error);
-    return new Response(JSON.stringify({ message: "Error al editar la acción." }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ message: "Error al actualizar la acción." }, { status: 500 });
   }
 }
 
-export async function DELETE() {
-  return new Response(JSON.stringify({ message: "DELETE para acción específica (no implementado)" }), {
-    status: 501,
-    headers: { "Content-Type": "application/json" },
-  });
+/**
+ * DELETE handler para eliminar una acción específica de un ticket.
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { accionId: string } }
+) {
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+
+  try {
+    await TicketService.deleteAccion(params.accionId);
+    return NextResponse.json({ message: "Acción eliminada exitosamente." }, { status: 200 });
+
+  } catch (error: any) {
+      console.error(`Error en DELETE /api/tickets/[id]/accion/${params.accionId}:`, error);
+      if (error.message.includes('No se encontró la acción')) {
+          return NextResponse.json({ message: error.message }, { status: 404 });
+      }
+      return NextResponse.json({ message: "Error al eliminar la acción." }, { status: 500 });
+  }
 }

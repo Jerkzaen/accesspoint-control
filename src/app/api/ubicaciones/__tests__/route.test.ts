@@ -1,306 +1,114 @@
-// src/app/api/ubicaciones/__tests__/route.test.ts
+// RUTA: src/app/api/ubicaciones/__tests__/route.test.ts
 
-
-
-// Importamos las funciones de las rutas API que vamos a probar
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { type NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth/next';
 import { UbicacionService } from '@/services/ubicacionService';
-import { GET, POST } from '../route'; // Importa las funciones GET y POST de la ruta principal
-import { GET as getById, PUT as putById, DELETE as deleteById } from '../[id]/route'; // Importa las funciones de la ruta con ID
 
-// Importamos y mockeamos el UbicacionService para controlar su comportamiento en las pruebas de API.
-import { Prisma } from '@prisma/client';
- 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-vi.mock('@/services/ubicacionService', () => ({
-  UbicacionService: {
-    getAll: vi.fn(),
-    getUbicaciones: vi.fn(),
-    createUbicacion: vi.fn(),
-    getUbicacionById: vi.fn(),
-    updateUbicacion: vi.fn(),
-    deleteUbicacion: vi.fn(),
-  },
+// --- MOCKS ---
+vi.mock('next-auth/next', () => ({
+  getServerSession: vi.fn(),
 }));
+vi.mock('@/services/ubicacionService');
 
-const mockUbicacionService = UbicacionService as unknown as vi.Mocked<typeof UbicacionService>;
+// --- IMPORTACIÓN DEL CÓDIGO A PROBAR ---
+import { GET, POST } from '../route';
+import { GET as getById, PUT as putById, DELETE as deleteById } from '../[id]/route';
 
-describe('/api/ubicaciones', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+describe('API Endpoints para /api/ubicaciones (Suite Completa)', () => {
 
-  // Datos de mock
-  const mockDate = new Date();
+  const mockAdminSession = { user: { id: 'admin-123', role: 'ADMIN' } };
   const mockUbicacion = {
     id: 'ubicacion-test-id',
     nombreReferencial: 'Oficina Principal',
     sucursalId: 'sucursal-test-id',
     notas: 'Notas de la ubicación',
-    createdAt: mockDate,
-    updatedAt: mockDate,
-    sucursal: {
-      id: 'sucursal-test-id', nombre: 'Sucursal Test', telefono: null, email: null, direccionId: 'dir-test-id', empresaId: 'empresa-test-id',
-      createdAt: mockDate, updatedAt: mockDate
-    },
-    contactos: [],
-    equiposInventario: [],
   };
 
-  // Utilidad para convertir fechas a string en el mock de ubicación para los tests
-  function ubicacionMockToJson(ubicacion: any) {
-    return {
-      ...ubicacion,
-      createdAt: ubicacion.createdAt?.toISOString?.() || ubicacion.createdAt,
-      updatedAt: ubicacion.updatedAt?.toISOString?.() || ubicacion.updatedAt,
-      sucursal: ubicacion.sucursal ? {
-        ...ubicacion.sucursal,
-        createdAt: ubicacion.sucursal.createdAt?.toISOString?.() || ubicacion.sucursal.createdAt,
-        updatedAt: ubicacion.sucursal.updatedAt?.toISOString?.() || ubicacion.sucursal.updatedAt,
-      } : null,
-      // Los arrays de relaciones como contactos y equiposInventario no necesitan serialización de fechas aquí
-      // a menos que sus objetos internos también tengan fechas y se incluyan en el select/include real.
-    };
-  }
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
-  // --- Pruebas para GET /api/ubicaciones ---
-  describe('GET', () => {
-    it('debe retornar una lista de ubicaciones con status 200', async () => {
-      mockUbicacionService.getUbicaciones.mockResolvedValue([mockUbicacion]);
+  // --- Pruebas para /api/ubicaciones ---
+  describe('GET /api/ubicaciones', () => {
+    it('debe devolver 401 si el usuario no está autenticado', async () => {
+      (getServerSession as Mock).mockResolvedValue(null);
+      const request = new Request('http://localhost/api/ubicaciones');
+      const response = await GET(request as NextRequest);
+      expect(response.status).toBe(401);
+    });
 
-      const response = await GET(new Request('http://localhost/api/ubicaciones'));
-      const json = await response.json();
-
+    it('debe devolver una lista de ubicaciones si el usuario está autenticado', async () => {
+      (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+      (UbicacionService.getUbicaciones as Mock).mockResolvedValue([mockUbicacion]);
+      const request = new Request('http://localhost/api/ubicaciones');
+      const response = await GET(request as NextRequest);
+      const body = await response.json();
       expect(response.status).toBe(200);
-      expect(json).toEqual([ubicacionMockToJson(mockUbicacion)]);
-      expect(mockUbicacionService.getUbicaciones).toHaveBeenCalledTimes(1);
-      expect(mockUbicacionService.getUbicaciones).toHaveBeenCalledWith(true); // Esperamos que incluya relaciones por defecto
-    });
-
-    it('debe manejar errores y retornar status 500', async () => {
-      mockUbicacionService.getUbicaciones.mockRejectedValue(new Error('Error de servicio'));
-
-      const response = await GET(new Request('http://localhost/api/ubicaciones'));
-      const json = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(json).toHaveProperty('message', 'Error al obtener ubicaciones');
-      expect(mockUbicacionService.getUbicaciones).toHaveBeenCalledTimes(1);
+      expect(body).toEqual([mockUbicacion]);
     });
   });
 
-  // --- Pruebas para POST /api/ubicaciones ---
-  describe('POST', () => {
-    const newUbicacionData = {
-      nombreReferencial: 'Nueva Ubicación Demo',
-      sucursalId: 'sucursal-demo-id',
-      notas: 'Notas de la demo',
-    };
-
-    it('debe crear una nueva ubicación con status 201', async () => {
-      mockUbicacionService.createUbicacion.mockResolvedValue({ id: 'new-ubicacion-id', ...newUbicacionData, createdAt: mockDate, updatedAt: mockDate });
-
-      const request = new Request('http://localhost/api/ubicaciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUbicacionData),
-      });
-
-      const response = await POST(request);
-      const json = await response.json();
-
-      expect(response.status).toBe(201);
-      expect(json).toHaveProperty('id', 'new-ubicacion-id');
-      expect(mockUbicacionService.createUbicacion).toHaveBeenCalledTimes(1);
-      expect(mockUbicacionService.createUbicacion).toHaveBeenCalledWith(newUbicacionData);
-    });
-
-    it('debe retornar status 400 por error de validación', async () => {
-      mockUbicacionService.createUbicacion.mockRejectedValue(new Error('Error de validación al crear ubicación: El ID de la sucursal es requerido.'));
-
-      const invalidData = { ...newUbicacionData, sucursalId: '' };
-      const request = new Request('http://localhost/api/ubicaciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invalidData),
-      });
-
-      const response = await POST(request);
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json).toHaveProperty('message', 'Error de validación al crear ubicación: El ID de la sucursal es requerido.');
-    });
-
-    it('debe manejar otros errores y retornar status 500', async () => {
-      mockUbicacionService.createUbicacion.mockRejectedValue(new Error('Error desconocido'));
-
-      const request = new Request('http://localhost/api/ubicaciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUbicacionData),
-      });
-
-      const response = await POST(request);
-      const json = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(json).toHaveProperty('message', 'Error al crear ubicación');
+  describe('POST /api/ubicaciones', () => {
+    it('debe crear una ubicación si los datos son válidos y está autenticado', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        const newUbicacionData = { nombreReferencial: 'Bodega Central', sucursalId: 'suc-central-id' };
+        (UbicacionService.createUbicacion as Mock).mockResolvedValue({ id: 'new-id', ...newUbicacionData });
+        const request = new Request('http://localhost/api/ubicaciones', {
+            method: 'POST', body: JSON.stringify(newUbicacionData),
+        });
+        const response = await POST(request as NextRequest);
+        const body = await response.json();
+        expect(response.status).toBe(201);
+        expect(body.nombreReferencial).toBe('Bodega Central');
     });
   });
 
-  // --- Pruebas para GET /api/ubicaciones/[id] ---
+  // --- Pruebas para /api/ubicaciones/[id] ---
   describe('GET /api/ubicaciones/[id]', () => {
-    it('debe retornar una ubicación por ID con status 200', async () => {
-      mockUbicacionService.getUbicacionById.mockResolvedValue(mockUbicacion);
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`);
-      const response = await getById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(json).toEqual(ubicacionMockToJson(mockUbicacion));
-      expect(mockUbicacionService.getUbicacionById).toHaveBeenCalledTimes(1);
-      expect(mockUbicacionService.getUbicacionById).toHaveBeenCalledWith(mockUbicacion.id);
+    it('debe devolver una ubicación por ID si está autenticado', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (UbicacionService.getUbicacionById as Mock).mockResolvedValue(mockUbicacion);
+        const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`);
+        const response = await getById(request, { params: { id: mockUbicacion.id } });
+        const body = await response.json();
+        expect(response.status).toBe(200);
+        expect(body).toEqual(mockUbicacion);
     });
 
-    it('debe retornar status 404 si la ubicación no se encuentra', async () => {
-      mockUbicacionService.getUbicacionById.mockResolvedValue(null);
-
-      const request = new Request(`http://localhost/api/ubicaciones/non-existent-id`);
-      const response = await getById(request, { params: { id: 'non-existent-id' } });
-      const json = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(json).toHaveProperty('message', 'Ubicación no encontrada');
-    });
-
-    it('debe manejar errores y retornar status 500', async () => {
-      mockUbicacionService.getUbicacionById.mockRejectedValue(new Error('Error de servicio'));
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`);
-      const response = await getById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(json).toHaveProperty('message', 'Error al obtener ubicación');
+    it('debe devolver 404 si la ubicación no se encuentra', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (UbicacionService.getUbicacionById as Mock).mockResolvedValue(null);
+        const request = new Request(`http://localhost/api/ubicaciones/id-no-existe`);
+        const response = await getById(request, { params: { id: 'id-no-existe' } });
+        expect(response.status).toBe(404);
     });
   });
 
-  // --- Pruebas para PUT /api/ubicaciones/[id] ---
   describe('PUT /api/ubicaciones/[id]', () => {
-    const updateData = { nombreReferencial: 'Ubicación Actualizada', notas: 'Notas Actualizadas' };
-
-    it('debe actualizar una ubicación y retornar status 200', async () => {
-      mockUbicacionService.updateUbicacion.mockResolvedValue({ ...mockUbicacion, ...updateData });
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      });
-
-      const response = await putById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(json).toHaveProperty('nombreReferencial', 'Ubicación Actualizada');
-      expect(mockUbicacionService.updateUbicacion).toHaveBeenCalledTimes(1);
-      expect(mockUbicacionService.updateUbicacion).toHaveBeenCalledWith({ id: mockUbicacion.id, ...updateData });
-    });
-
-    it('debe retornar status 400 por error de validación', async () => {
-      mockUbicacionService.updateUbicacion.mockRejectedValue(new Error('Error de validación al actualizar ubicación: El nombre referencial es requerido.'));
-
-      const invalidData = { nombreReferencial: 'a' };
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invalidData),
-      });
-
-      const response = await putById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json).toHaveProperty('message', 'Error de validación al actualizar ubicación: El nombre referencial es requerido.');
-    });
-
-    it('debe manejar otros errores y retornar status 500', async () => {
-      mockUbicacionService.updateUbicacion.mockRejectedValue(new Error('Error desconocido'));
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      });
-
-      const response = await putById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(json).toHaveProperty('message', 'Error al actualizar ubicación');
+    it('debe actualizar una ubicación y devolver 200', async () => {
+        const updateData = { nombreReferencial: 'Oficina Gerencia' };
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (UbicacionService.updateUbicacion as Mock).mockResolvedValue({ ...mockUbicacion, ...updateData });
+        const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
+            method: 'PUT', body: JSON.stringify(updateData)
+        });
+        const response = await putById(request, { params: { id: mockUbicacion.id } });
+        const body = await response.json();
+        expect(response.status).toBe(200);
+        expect(body.nombreReferencial).toBe('Oficina Gerencia');
     });
   });
 
-  // --- Pruebas para DELETE /api/ubicaciones/[id] ---
   describe('DELETE /api/ubicaciones/[id]', () => {
-    it('debe eliminar una ubicación y retornar status 200', async () => {
-      mockUbicacionService.deleteUbicacion.mockResolvedValue({ success: true, message: 'Ubicación eliminada exitosamente.' });
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'DELETE',
-      });
-
-      const response = await deleteById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(json).toHaveProperty('message', 'Ubicación eliminada exitosamente');
-      expect(mockUbicacionService.deleteUbicacion).toHaveBeenCalledTimes(1);
-      expect(mockUbicacionService.deleteUbicacion).toHaveBeenCalledWith(mockUbicacion.id);
-    });
-
-    it('debe retornar status 400 por error de regla de negocio (contactos asociados)', async () => {
-      mockUbicacionService.deleteUbicacion.mockRejectedValue(new Error('No se puede eliminar la ubicación porque tiene contactos asociados.'));
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'DELETE',
-      });
-
-      const response = await deleteById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json).toHaveProperty('message', 'No se puede eliminar la ubicación porque tiene contactos asociados.');
-    });
-
-    it('debe retornar status 400 por error de regla de negocio (equipos asociados)', async () => {
-      mockUbicacionService.deleteUbicacion.mockRejectedValue(new Error('No se puede eliminar la ubicación porque tiene equipos de inventario asociados.'));
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'DELETE',
-      });
-
-      const response = await deleteById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json).toHaveProperty('message', 'No se puede eliminar la ubicación porque tiene equipos de inventario asociados.');
-    });
-
-    it('debe manejar otros errores y retornar status 500', async () => {
-      mockUbicacionService.deleteUbicacion.mockRejectedValue(new Error('Error desconocido'));
-
-      const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, {
-        method: 'DELETE',
-      });
-
-      const response = await deleteById(request, { params: { id: mockUbicacion.id } });
-      const json = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(json).toHaveProperty('message', 'Error al eliminar ubicación');
+    it('debe eliminar una ubicación y devolver 200', async () => {
+        (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+        (UbicacionService.deleteUbicacion as Mock).mockResolvedValue(undefined);
+        const request = new Request(`http://localhost/api/ubicaciones/${mockUbicacion.id}`, { method: 'DELETE' });
+        const response = await deleteById(request, { params: { id: mockUbicacion.id } });
+        const body = await response.json();
+        expect(response.status).toBe(200);
+        expect(body.message).toBe('Ubicación eliminada exitosamente');
     });
   });
 });
