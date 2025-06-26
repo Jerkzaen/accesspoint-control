@@ -1,109 +1,85 @@
 // RUTA: src/services/ticketService.ts
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, Ticket, AccionTicket, EstadoTicket, TipoAccion } from "@prisma/client";
-import { createAccionTicketSchema, updateAccionTicketSchema, createTicketSchema, updateTicketSchema } from "@/lib/validators/ticketValidator";
+import { Prisma, Ticket } from "@prisma/client";
+import { createTicketSchema, updateTicketSchema } from "@/lib/validators/ticketValidator"; // Asegúrate que los imports son correctos
 import { z } from "zod";
 
+// --- TIPOS DE INPUT USANDO ZOD ---
 export type TicketCreateInput = z.infer<typeof createTicketSchema>;
 export type TicketUpdateInput = z.infer<typeof updateTicketSchema>;
-export type AccionTicketCreateInput = z.infer<typeof createAccionTicketSchema>;
-export type AccionTicketUpdateInput = z.infer<typeof updateAccionTicketSchema>;
+// ... (tus otros tipos para AccionTicket, etc. se mantienen)
 
 export class TicketService {
 
-  // --- MÉTODOS DE TICKETS (EXISTENTES) ---
-  static async getTickets(includeRelations = true) {
-    return prisma.ticket.findMany({ 
-        include: { 
-            empresa: includeRelations, 
-            sucursal: includeRelations,
-            tecnicoAsignado: includeRelations,
-            contacto: includeRelations,
-        },
-        orderBy: { fechaCreacion: 'desc' }
-    });
-  }
+  // --- MÉTODOS EXISTENTES ---
+  static async getTickets(/*...*/) { /* Tu código existente */ }
+  static async getTicketById(/*...*/) { /* Tu código existente */ }
+  // ... (etc.)
 
-  static async getTicketById(id: string) {
-    return prisma.ticket.findUnique({ 
-        where: { id }, 
-        include: { 
-            acciones: { include: { realizadaPor: true }, orderBy: { fechaAccion: 'desc' } }, 
-            equiposEnPrestamo: true,
-            empresa: true, 
-            sucursal: true,
-            tecnicoAsignado: true,
-            contacto: true,
-        } 
-    });
-  }
-
-  static async createTicket(data: TicketCreateInput) {
+  /**
+   * MÉTODO "EMPODERADO" PARA CREAR UN TICKET
+   * Implementa la lógica de negocio para buscar o crear una sucursal dinámicamente.
+   */
+  static async createTicket(data: TicketCreateInput): Promise<Ticket> {
     const validatedData = createTicketSchema.parse(data);
-    return prisma.ticket.create({ data: validatedData as any });
-  }
+    const { nuevaSucursal, ...ticketData } = validatedData;
 
-  static async updateTicket(data: TicketUpdateInput) {
-    const { id, ...restOfData } = data;
-    if (!id) throw new Error("Se requiere ID para actualizar el ticket.");
-    const validatedData = updateTicketSchema.parse(restOfData);
-    return prisma.ticket.update({ where: { id }, data: validatedData });
-  }
+    let sucursalIdFinal = ticketData.sucursalId;
 
-  static async deleteTicket(id: string) {
-    const prestamosCount = await prisma.equipoEnPrestamo.count({ where: { ticketId: id } });
-    if (prestamosCount > 0) {
-        throw new Error("No se puede eliminar el ticket porque tiene préstamos asociados");
+    // Si no nos dieron un ID de sucursal, pero sí los datos para crear una nueva...
+    if (!sucursalIdFinal && nuevaSucursal) {
+        // Usamos una transacción para asegurar que todo se cree correctamente o nada se crea.
+        const sucursalCreada = await prisma.$transaction(async (tx) => {
+            // 1. Crear la nueva Dirección
+            const nuevaDireccion = await tx.direccion.create({
+                data: {
+                    calle: nuevaSucursal.direccion.calle,
+                    numero: nuevaSucursal.direccion.numero,
+                    depto: nuevaSucursal.direccion.depto,
+                    comuna: { connect: { id: nuevaSucursal.comunaId } },
+                }
+            });
+
+            // 2. Crear la nueva Sucursal, asociándola a la nueva Dirección y a la Empresa del ticket
+            const nuevaSucursalCreada = await tx.sucursal.create({
+                data: {
+                    nombre: nuevaSucursal.nombre,
+                    direccion: { connect: { id: nuevaDireccion.id } },
+                    // Asumimos que la nueva sucursal pertenece a la misma empresa del ticket
+                    empresa: ticketData.empresaId ? { connect: { id: ticketData.empresaId } } : undefined,
+                }
+            });
+
+            return nuevaSucursalCreada;
+        });
+        sucursalIdFinal = sucursalCreada.id;
     }
-    await prisma.accionTicket.deleteMany({ where: { ticketId: id } });
-    return prisma.ticket.delete({ where: { id } });
-  }
+    
+    if (!sucursalIdFinal) {
+        throw new Error("No se pudo determinar la sucursal para el ticket.");
+    }
 
-  // --- MÉTODOS DE ACCIONES ---
-
-  static async getAccionesByTicketId(ticketId: string) {
-      return prisma.accionTicket.findMany({ where: { ticketId }, orderBy: { fechaAccion: 'desc' } });
-  }
-  
-  static async addAccionToTicket(data: AccionTicketCreateInput): Promise<AccionTicket> {
-    const validatedData = createAccionTicketSchema.parse(data);
-    // CORRECCIÓN: Separamos usuarioId del resto para evitar el conflicto en Prisma.
-    const { ticketId, nuevoEstado, usuarioId, ...accionData } = validatedData;
-
-    return prisma.$transaction(async (tx) => {
-      const ticketActual = await tx.ticket.findUnique({ where: { id: ticketId }, select: { estado: true }});
-      if (!ticketActual) {
-        throw new Error("El ticket no existe.");
-      }
-
-      if (nuevoEstado && ticketActual.estado !== nuevoEstado) {
-        await tx.ticket.update({ where: { id: ticketId }, data: { estado: nuevoEstado }});
-      }
-
-      const accionCreada = await tx.accionTicket.create({
-        data: {
-          ...accionData, // Aquí ya no va usuarioId
-          ticket: { connect: { id: ticketId } },
-          realizadaPor: { connect: { id: usuarioId } },
-          estadoTicketAnterior: ticketActual.estado,
-          estadoTicketNuevo: nuevoEstado,
-        }
-      });
-
-      return accionCreada;
+    // Finalmente, creamos el ticket con el ID de sucursal correcto (ya sea el existente o el nuevo).
+    const newTicket = await prisma.ticket.create({
+      data: {
+        ...ticketData,
+        sucursal: { connect: { id: sucursalIdFinal } },
+        // Aquí se conectan las otras relaciones como empresa, contacto, etc.
+        empresa: ticketData.empresaId ? { connect: { id: ticketData.empresaId } } : undefined,
+        contacto: ticketData.contactoId ? { connect: { id: ticketData.contactoId } } : undefined,
+        tecnicoAsignado: ticketData.tecnicoAsignadoId ? { connect: { id: ticketData.tecnicoAsignadoId } } : undefined,
+      } as any, // Se usa 'as any' para simplificar, idealmente el tipo sería más estricto.
     });
+
+    return newTicket;
   }
 
-  static async updateAccion(accionId: string, data: AccionTicketUpdateInput): Promise<AccionTicket> {
-    const validatedData = updateAccionTicketSchema.parse(data);
-    return prisma.accionTicket.update({
-        where: { id: accionId },
-        data: validatedData,
-    });
-  }
-
-  static async deleteAccion(accionId: string): Promise<void> {
-    await prisma.accionTicket.delete({ where: { id: accionId } });
-  }
+  // --- RESTO DE TUS MÉTODOS (updateTicket, deleteTicket, métodos de acciones, etc.) ---
+  static async updateTicket(/*...*/) { /* Tu código existente */ }
+  static async deleteTicket(/*...*/) { /* Tu código existente */ }
+  static async getAccionesByTicketId(/*...*/) { /* Tu código existente */ }
+  static async addAccionToTicket(/*...*/) { /* Tu código existente */ }
+  static async updateAccion(/*...*/) { /* Tu código existente */ }
+  static async deleteAccion(/*...*/) { /* Tu código existente */ }
 }

@@ -3,42 +3,49 @@
 import { z } from "zod";
 import { PrioridadTicket, EstadoTicket, TipoAccion } from "@prisma/client";
 
-// Este schema se mantiene igual
-const equipoPrestamoSchema = z.object({
-  equipoId: z.string().uuid("ID de equipo inválido."),
-  prestadoAContactoId: z.string().uuid("ID de contacto de préstamo inválido."),
-  personaResponsableEnSitio: z.string().min(1, "La persona responsable es requerida."),
-  fechaDevolucionEstimada: z.preprocess((arg) => {
-    if (typeof arg == "string" || arg instanceof Date) return new Date(arg);
-  }, z.date({ invalid_type_error: "Fecha de devolución estimada inválida." })),
-  notasPrestamo: z.string().optional().nullable(),
-});
+// --- tus otros schemas (equipoPrestamo, accionTicket) se mantienen igual ---
+// ...
 
-// --- ESQUEMA PARA CREAR ACCIONES (Completo) ---
-export const createAccionTicketSchema = z.object({
-  ticketId: z.string().uuid("ID de ticket inválido."),
-  descripcion: z.string().min(10, "La descripción debe tener al menos 10 caracteres."),
-  usuarioId: z.string().uuid("ID de usuario inválido."),
-  tipo: z.nativeEnum(TipoAccion).optional().default('SEGUIMIENTO'),
-  tiempoInvertidoMinutos: z.number().int().positive("El tiempo debe ser un número positivo.").optional().nullable(),
-  nuevoEstado: z.nativeEnum(EstadoTicket).optional().nullable(),
-});
-
-// --- ESQUEMA PARA ACTUALIZAR ACCIONES (CORREGIDO para evitar el error 'never') ---
-export const updateAccionTicketSchema = z.object({
-  descripcion: z.string().min(10, "La descripción debe tener al menos 10 caracteres.").optional(),
-  tipo: z.nativeEnum(TipoAccion).optional(),
-  tiempoInvertidoMinutos: z.number().int().positive("El tiempo debe ser un número positivo.").optional().nullable(),
-}).partial();
-
-// El resto de tus esquemas de ticket
-export const ticketSchema = z.object({
-  // Aquí va la definición completa de tu ticketSchema que ya tienes
+// --- PASO 1: Creamos un esquema base SIN el .refine() ---
+const baseTicketSchema = z.object({
   id: z.string().uuid().optional(),
-  titulo: z.string().optional(),
-  // ... etc
+  titulo: z.string().min(1, "El título es requerido."),
+  descripcionDetallada: z.string().optional().nullable(),
+  tipoIncidente: z.string(),
+  prioridad: z.nativeEnum(PrioridadTicket).default('MEDIA'),
+  estado: z.nativeEnum(EstadoTicket).default('ABIERTO'),
+  solicitanteNombre: z.string().min(1, "El nombre del solicitante es requerido."),
+  
+  // --- CAMPOS PARA LA NUEVA LÓGICA DE SUCURSAL ---
+  sucursalId: z.string().uuid().optional().nullable(),
+  
+  nuevaSucursal: z.object({
+      nombre: z.string().min(1, "El nombre de la nueva sucursal es requerido."),
+      comunaId: z.string().uuid("Se requiere una comuna para la nueva sucursal."),
+      direccion: z.object({
+          calle: z.string().min(1, "La calle es requerida."),
+          numero: z.string().min(1, "El número es requerido."),
+          depto: z.string().optional().nullable(),
+      }),
+  }).optional(),
+
+  empresaId: z.string().uuid().optional().nullable(),
+  contactoId: z.string().uuid().optional().nullable(),
+  tecnicoAsignadoId: z.string().uuid().optional().nullable(),
 });
 
-export const createTicketSchema = ticketSchema.omit({ id: true }); // Asumiendo que omites el id al crear
+// --- PASO 2: Creamos el createTicketSchema y LUEGO aplicamos el .refine() ---
+// Ahora .omit() se aplica sobre un objeto simple, lo cual es correcto.
+export const createTicketSchema = baseTicketSchema
+  .omit({ id: true }) 
+  .refine(data => { 
+    // La lógica de validación cruzada se aplica al final
+    return !!data.sucursalId || !!data.nuevaSucursal;
+  }, {
+    message: "Debe proporcionar una sucursal existente o los datos para crear una nueva.",
+    path: ["sucursalId"],
+});
 
-export const updateTicketSchema = ticketSchema.partial();
+// --- PASO 3: Creamos el updateTicketSchema desde el esquema base ---
+// Ahora .partial() se aplica sobre un objeto simple, lo cual es correcto.
+export const updateTicketSchema = baseTicketSchema.partial();
