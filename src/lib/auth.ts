@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
         name: dbUser.name,
         email: dbUser.email,
         picture: dbUser.image,
-        role: dbUser.rol, // Asegúrate de que el campo en tu DB se llame 'rol'
+        role: dbUser.rol, 
       };
     },
     // Tu callback de sesión para pasar los datos del token a la sesión del cliente

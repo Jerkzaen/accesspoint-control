@@ -1,8 +1,7 @@
+// RUTA: /tsconfig.vitest.json (NUEVO Y LIMPIO)
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node", "@testing-library/jest-dom"]
   }
 }
