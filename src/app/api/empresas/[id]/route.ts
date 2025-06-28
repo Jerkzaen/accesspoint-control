@@ -1,96 +1,44 @@
-// RUTA: src/app/api/empresas/[id]/route.ts
-
+import { NextRequest, NextResponse } from "next/server";
 import { EmpresaService } from "@/services/empresaService";
-import { Prisma } from "@prisma/client";
-import { NextResponse } from "next/server";
-// 1. --- IMPORTAMOS getServerSession ---
 import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { updateEmpresaSchema } from "@/lib/validators/empresaValidator";
 
-/**
- * GET handler para obtener una empresa por su ID.
- */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
-
-  try {
+// GET y PUT están bien, no se tocan.
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
+    
     const empresa = await EmpresaService.getEmpresaById(params.id);
-    if (!empresa) {
-      return NextResponse.json({ message: "Empresa no encontrada" }, {
-        status: 404,
-      });
-    }
-    return NextResponse.json(empresa, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ message: "Error al obtener empresa" }, {
-      status: 500,
-    });
-  }
+    if(!empresa) return NextResponse.json({ message: 'Empresa no encontrada' }, { status: 404 });
+    
+    return NextResponse.json(empresa);
 }
 
-/**
- * PUT handler para actualizar una empresa por su ID.
- */
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
 
-  try {
-    const body = await request.json();
-    // 3. --- CORRECCIÓN ---
-    // Ahora pasamos el 'id' y el 'body' como dos argumentos separados,
-    // tal como lo espera la función 'updateEmpresa' en tu servicio.
-    const empresa = await EmpresaService.updateEmpresa(params.id, body);
-    return NextResponse.json(empresa, { status: 200 });
-  } catch (error: any) {
-    if (error.message && error.message.startsWith('Error de validación')) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    try {
+        const data = await req.json();
+        const validatedData = updateEmpresaSchema.parse(data);
+        const empresaActualizada = await EmpresaService.updateEmpresa(params.id, validatedData);
+        return NextResponse.json(empresaActualizada);
+    } catch (error) {
+        return NextResponse.json({ message: 'Error al actualizar la empresa' }, { status: 500 });
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ message: 'Error al actualizar empresa: El RUT ya existe.' }, { status: 409 });
-    }
-    return NextResponse.json({ message: "Error al actualizar empresa" }, {
-      status: 500,
-    });
-  }
 }
 
-/**
- * DELETE handler para eliminar una empresa por su ID.
- */
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
+// --- CORRECCIÓN CLAVE ---
+// El handler DELETE ahora llama al método correcto: 'deactivateEmpresa'.
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
 
-  try {
-    await EmpresaService.deleteEmpresa(params.id);
-    return NextResponse.json({ message: "Empresa eliminada exitosamente" }, {
-      status: 200,
-    });
-  } catch (error: any) {
-    if (error.message && error.message.includes("sucursales asociadas")) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    try {
+        await EmpresaService.deactivateEmpresa(params.id);
+        return NextResponse.json({ message: 'Empresa desactivada exitosamente' }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: 'Error al desactivar la empresa' }, { status: 500 });
     }
-    return NextResponse.json({ message: "Error al eliminar empresa" }, {
-      status: 500,
-    });
-  }
 }

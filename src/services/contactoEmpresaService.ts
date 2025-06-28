@@ -5,10 +5,8 @@ import { Prisma, ContactoEmpresa, Empresa, Ubicacion, EstadoContacto } from "@pr
 import { createContactoEmpresaSchema, updateContactoEmpresaSchema } from "@/lib/validators/contactoEmpresaValidator";
 import { z } from "zod";
 
-
 export type ContactoEmpresaCreateInput = z.infer<typeof createContactoEmpresaSchema>;
 export type ContactoEmpresaUpdateInput = z.infer<typeof updateContactoEmpresaSchema>;
-
 
 export class ContactoEmpresaService {
 
@@ -48,7 +46,6 @@ export class ContactoEmpresaService {
           cargo: validatedData.cargo,
           empresa: empresaConnect,
           ubicacion: ubicacionConnect,
-          // El estado por defecto es ACTIVO gracias al schema.prisma
         },
       });
     });
@@ -75,6 +72,4 @@ export class ContactoEmpresaService {
       },
     });
   }
-
-  // El método deleteContactoEmpresa() ha sido eliminado intencionalmente.
 }

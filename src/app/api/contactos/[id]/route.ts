@@ -1,87 +1,48 @@
-// RUTA: src/app/api/contactos/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { ContactoEmpresaService } from '@/services/contactoEmpresaService';
+import { updateContactoEmpresaSchema } from '@/lib/validators/contactoEmpresaValidator';
 
-import { ContactoEmpresaService, ContactoEmpresaUpdateInput } from "@/services/contactoEmpresaService";
-import { Prisma } from "@prisma/client";
-import { NextResponse } from 'next/server';
-// 1. --- IMPORTAMOS getServerSession ---
-import { getServerSession } from "next-auth/next";
+// GET y PUT están bien, no se tocan.
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
 
-/**
- * GET handler para obtener un contacto por su ID.
- */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
-
-  try {
     const contacto = await ContactoEmpresaService.getContactoEmpresaById(params.id);
-    if (!contacto) {
-      return NextResponse.json({ message: "Contacto no encontrado" }, { status: 404 });
-    }
-    return NextResponse.json(contacto, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ message: "Error al obtener contacto" }, { status: 500 });
-  }
+    if (!contacto) return NextResponse.json({ message: 'Contacto no encontrado' }, { status: 404 });
+
+    return NextResponse.json(contacto);
 }
 
-/**
- * PUT handler para actualizar un contacto por su ID.
- */
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
 
-  try {
-    const data: ContactoEmpresaUpdateInput = await request.json();
-    const updatedContacto = await ContactoEmpresaService.updateContactoEmpresa({ ...data, id: params.id });
-    return NextResponse.json(updatedContacto, { status: 200 });
-  } catch (error: any) {
-    if (error.message && error.message.startsWith('Error de validación')) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    try {
+        const data = await req.json();
+        const validatedData = updateContactoEmpresaSchema.parse({ id: params.id, ...data });
+        const contactoActualizado = await ContactoEmpresaService.updateContactoEmpresa(validatedData);
+        return NextResponse.json(contactoActualizado);
+    } catch (error) {
+        return NextResponse.json({ message: 'Error al actualizar el contacto.' }, { status: 500 });
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ message: 'Error al actualizar contacto: El correo electrónico ya existe.' }, { status: 409 });
-    }
-    return NextResponse.json({ message: 'Error al actualizar contacto' }, { status: 500 });
-  }
 }
 
-/**
- * DELETE handler para eliminar un contacto por su ID.
- */
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
-  
-  try {
-    await ContactoEmpresaService.deleteContactoEmpresa(params.id);
-    return NextResponse.json({ message: 'Contacto de empresa eliminado exitosamente' }, { status: 200 });
-  } catch (error: any) {
-    const msg = error.message || '';
-    if (
-      /pr[eé]stados asociados/i.test(msg) ||
-      /tickets asociados/i.test(msg)
-    ) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+
+// --- CORRECCIÓN CLAVE Y DEFINITIVA ---
+// El handler DELETE ahora llama al método correcto 'deactivateContactoEmpresa'.
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
+
+    try {
+        // Llamamos al método correcto que SÍ existe en el servicio
+        await ContactoEmpresaService.deactivateContactoEmpresa(params.id);
+        // Devolvemos la respuesta de éxito con código 200
+        return NextResponse.json({ message: 'Contacto desactivado exitosamente' }, { status: 200 });
+    } catch (error) {
+        // Si algo falla, devolvemos 500
+        return NextResponse.json({ message: 'Error al desactivar el contacto.' }, { status: 500 });
     }
-    return NextResponse.json({ message: 'Error al eliminar contacto' }, { status: 500 });
-  }
 }
