@@ -1,15 +1,12 @@
-// RUTA: src/app/api/tickets/route.ts (CON LA LLAMADA A SESSION ACTIVADA)
+// RUTA: src/app/api/tickets/route.ts
 
 import { NextResponse } from "next/server";
-import { TicketService } from "@/services/ticketService";
-import { authOptions } from "@/lib/auth";
-import { getServerSession } from "next-auth";
+import { TicketService, TicketCreateInput } from "@/services/ticketService";
+import { getServerSession } from "next-auth"; // Importamos desde 'next-auth'
+import { authOptions } from "@/lib/auth";     // Importamos nuestra "receta"
 
-/**
- * GET handler para obtener todos los tickets.
- */
 export async function GET(request: Request) {
-  // --- La llamada que nos daba el error, ahora la volvemos a activar ---
+  // Le pasamos la receta directamente. Cero magia.
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
@@ -23,4 +20,20 @@ export async function GET(request: Request) {
   }
 }
 
-// ... la función POST se mantiene igual
+export async function POST(request: Request) {
+  // Le pasamos la receta directamente. Cero magia.
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.id) {
+    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+  }
+  
+  try {
+    const data = await request.json();
+    const completeData = { ...data, creadoPorUsuarioId: session.user.id };
+    const newTicket = await TicketService.createTicket(completeData);
+    return NextResponse.json(newTicket, { status: 201 });
+  } catch (error) {
+    // Tu manejo de errores...
+    return NextResponse.json({ message: "Error al crear ticket" }, { status: 500 });
+  }
+}
