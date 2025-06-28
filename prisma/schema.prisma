@@ -356,6 +356,9 @@ model EquipoInventario {
   id                     String               @id @default(uuid())
   nombreDescriptivo      String
   identificadorUnico     String               @unique
+  parentEquipoId      String?              @map("parent_equipo_id")
+  parentEquipo        EquipoInventario?    @relation("ComponenteCompuesto", fields: [parentEquipoId], references: [id])
+  componentes         EquipoInventario[]   @relation("ComponenteCompuesto")
   tipoEquipo             TipoEquipoInventario
   marca                  String?
   modelo                 String?
