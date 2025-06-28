@@ -1,219 +1,80 @@
 // src/services/contactoEmpresaService.ts
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, ContactoEmpresa, Empresa, Ubicacion } from "@prisma/client";
-// Importamos los esquemas de validación Zod para ContactoEmpresa
+import { Prisma, ContactoEmpresa, Empresa, Ubicacion, EstadoContacto } from "@prisma/client";
 import { createContactoEmpresaSchema, updateContactoEmpresaSchema } from "@/lib/validators/contactoEmpresaValidator";
+import { z } from "zod";
 
-/**
- * Define los tipos de entrada para las operaciones CRUD de ContactoEmpresa.
- */
-export type ContactoEmpresaCreateInput = {
-  nombreCompleto: string;
-  email: string;
-  telefono: string;
-  cargo?: string | null;
-  empresaId?: string | null;
-  ubicacionId?: string | null;
-};
 
-export type ContactoEmpresaUpdateInput = {
-  id: string; // El ID del contacto a actualizar
-  nombreCompleto?: string;
-  email?: string;
-  telefono?: string;
-  cargo?: string | null;
-  empresaId?: string | null; // Puede ser null para desvincular
-  ubicacionId?: string | null; // Puede ser null para desvincular
-};
+export type ContactoEmpresaCreateInput = z.infer<typeof createContactoEmpresaSchema>;
+export type ContactoEmpresaUpdateInput = z.infer<typeof updateContactoEmpresaSchema>;
 
-/**
- * Tipo para un ContactoEmpresa con sus relaciones más comunes.
- */
-export type ContactoEmpresaWithRelations = ContactoEmpresa & {
-  empresa?: Empresa | null;
-  ubicacion?: Ubicacion | null;
-};
 
-/**
- * Servicio para la gestión de Contactos de Empresa.
- * Centraliza la lógica de negocio y el acceso a la base de datos para los contactos.
- */
 export class ContactoEmpresaService {
 
   /**
-   * Obtiene todos los contactos de empresa, opcionalmente incluyendo sus relaciones.
-   * @param includeRelations Indica si se deben incluir las relaciones de empresa y ubicación.
-   * @returns Un array de objetos ContactoEmpresa o ContactoEmpresaWithRelations.
+   * Obtiene todos los contactos, por defecto solo los ACTIVOS.
    */
-  static async getContactosEmpresa(includeRelations: boolean = false): Promise<ContactoEmpresa[]> {
-    try {
-      const contactos = await prisma.contactoEmpresa.findMany({
-        include: includeRelations
-          ? { empresa: true, ubicacion: true }
-          : { empresa: false, ubicacion: false }, // <-- Cambiado para que siempre pase include
-        orderBy: { nombreCompleto: 'asc' },
-      });
-      return contactos;
-    } catch (error) {
-      console.error("Error al obtener contactos de empresa en ContactoEmpresaService:", error);
-      throw new Error("No se pudieron obtener los contactos de empresa.");
-    }
+  static async getContactosEmpresa(estado: EstadoContacto = EstadoContacto.ACTIVO): Promise<ContactoEmpresa[]> {
+    return prisma.contactoEmpresa.findMany({
+      where: { estado },
+      include: { empresa: true, ubicacion: true },
+      orderBy: { nombreCompleto: 'asc' },
+    });
   }
 
-  /**
-   * Obtiene un contacto de empresa por su ID, incluyendo sus relaciones.
-   * @param id El ID del contacto.
-   * @returns El objeto ContactoEmpresaWithRelations o null si no se encuentra.
-   */
-  static async getContactoEmpresaById(id: string): Promise<ContactoEmpresaWithRelations | null> {
-    try {
-      const contacto = await prisma.contactoEmpresa.findUnique({
-        where: { id },
-        include: {
-          empresa: true,
-          ubicacion: true,
+  static async getContactoEmpresaById(id: string): Promise<ContactoEmpresa | null> {
+    return prisma.contactoEmpresa.findUnique({
+      where: { id },
+      include: {
+        empresa: true,
+        ubicacion: true,
+      },
+    });
+  }
+
+  static async createContactoEmpresa(data: ContactoEmpresaCreateInput): Promise<ContactoEmpresa> {
+    const validatedData = createContactoEmpresaSchema.parse(data);
+
+    return prisma.$transaction(async (tx) => {
+      const empresaConnect = validatedData.empresaId ? { connect: { id: validatedData.empresaId } } : undefined;
+      const ubicacionConnect = validatedData.ubicacionId ? { connect: { id: validatedData.ubicacionId } } : undefined;
+
+      return tx.contactoEmpresa.create({
+        data: {
+          nombreCompleto: validatedData.nombreCompleto,
+          email: validatedData.email,
+          telefono: validatedData.telefono,
+          cargo: validatedData.cargo,
+          empresa: empresaConnect,
+          ubicacion: ubicacionConnect,
+          // El estado por defecto es ACTIVO gracias al schema.prisma
         },
       });
-      return contacto;
-    } catch (error) {
-      console.error(`Error al obtener contacto de empresa con ID ${id} en ContactoEmpresaService:`, error);
-      throw new Error("No se pudo obtener el contacto de empresa.");
-    }
+    });
   }
 
-  /**
-   * Crea un nuevo contacto de empresa, validando los datos con Zod.
-   * @param data Los datos para crear el contacto.
-   * @returns El objeto ContactoEmpresa creado.
-   */
-  static async createContactoEmpresa(data: ContactoEmpresaCreateInput): Promise<ContactoEmpresa> {
-    try {
-      // Validar los datos de entrada con el esquema de creación de Zod
-      const validatedData = createContactoEmpresaSchema.parse(data);
-
-      const newContacto = await prisma.$transaction(async (tx) => {
-        // Preparar datos de conexión para relaciones opcionales
-        const empresaConnect = validatedData.empresaId ? { connect: { id: validatedData.empresaId } } : undefined;
-        const ubicacionConnect = validatedData.ubicacionId ? { connect: { id: validatedData.ubicacionId } } : undefined;
-
-        const contacto = await tx.contactoEmpresa.create({
-          data: {
-            nombreCompleto: validatedData.nombreCompleto,
-            email: validatedData.email,
-            telefono: validatedData.telefono,
-            cargo: validatedData.cargo,
-            empresa: empresaConnect,
-            ubicacion: ubicacionConnect,
-          },
-        });
-        return contacto;
-      });
-      return newContacto;
-    } catch (error) {
-      console.error("Error al crear contacto de empresa en ContactoEmpresaService:", error);
-      if (error instanceof Error && 'issues' in error) { // ZodError
-        throw new Error("Error de validación al crear contacto: " + (error as any).issues.map((i: any) => i.message).join(", "));
-      }
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') { // Unique constraint failed (e.g., on email)
-          throw new Error("Error al crear contacto: El correo electrónico ya existe.");
-        }
-      }
-      throw new Error("Error al crear el contacto de empresa. Detalles: " + (error as Error).message);
-    }
-  }
-
-  /**
-   * Actualiza un contacto de empresa existente, validando los datos con Zod.
-   * @param data Los datos para actualizar el contacto (incluyendo el ID).
-   * @returns El objeto ContactoEmpresa actualizado.
-   */
   static async updateContactoEmpresa(data: ContactoEmpresaUpdateInput): Promise<ContactoEmpresa> {
-    try {
-      // Validar los datos de entrada con el esquema de actualización de Zod
-      const validatedData = updateContactoEmpresaSchema.parse(data);
-
-      const updatedContacto = await prisma.$transaction(async (tx) => {
-        // Preparar datos de conexión/desconexión para relaciones opcionales
-        const empresaUpdate = validatedData.empresaId !== undefined
-          ? (validatedData.empresaId === null ? { disconnect: true } : { connect: { id: validatedData.empresaId } })
-          : undefined;
-        const ubicacionUpdate = validatedData.ubicacionId !== undefined
-          ? (validatedData.ubicacionId === null ? { disconnect: true } : { connect: { id: validatedData.ubicacionId } })
-          : undefined;
-
-        const contacto = await tx.contactoEmpresa.update({
-          where: { id: validatedData.id },
-          data: {
-            nombreCompleto: validatedData.nombreCompleto,
-            email: validatedData.email,
-            telefono: validatedData.telefono,
-            cargo: validatedData.cargo,
-            empresa: empresaUpdate,
-            ubicacion: ubicacionUpdate,
-          },
-        });
-        return contacto;
-      });
-      return updatedContacto;
-    } catch (error) {
-      console.error(`Error al actualizar contacto de empresa con ID ${data.id} en ContactoEmpresaService:`, error);
-      if (error instanceof Error && 'issues' in error) { // ZodError
-        throw new Error("Error de validación al actualizar contacto: " + (error as any).issues.map((i: any) => i.message).join(", "));
-      }
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') { // Unique constraint failed (e.g., on email)
-          throw new Error("Error al actualizar contacto: El correo electrónico ya existe.");
-        }
-      }
-      throw new Error("Error al actualizar el contacto de empresa. Detalles: " + (error as Error).message);
-    }
+    const validatedData = updateContactoEmpresaSchema.parse(data);
+    const { id, ...updateData } = validatedData;
+    
+    return prisma.contactoEmpresa.update({
+        where: { id },
+        data: updateData
+    });
   }
 
   /**
-   * Elimina un contacto de empresa.
-   * @param id El ID del contacto a eliminar.
-   * @returns Un objeto de éxito o error.
+   * NUEVO MÉTODO: Desactiva un contacto en lugar de borrarlo.
    */
-  static async deleteContactoEmpresa(id: string): Promise<{ success: boolean; message?: string }> {
-    try {
-      await prisma.$transaction(async (tx) => {
-        // Antes de eliminar el contacto, verificar si está asociado a algún EquipoEnPrestamo
-        const prestamosCount = await tx.equipoEnPrestamo.count({
-          where: { prestadoAContactoId: id },
-        });
-
-        if (prestamosCount > 0) {
-          throw new Error("No se puede eliminar el contacto porque tiene equipos prestados asociados.");
-        }
-
-        // Antes de eliminar el contacto, verificar si está asociado a algún Ticket como solicitante
-        const ticketsCount = await tx.ticket.count({
-          where: { contactoId: id },
-        });
-
-        if (ticketsCount > 0) {
-          throw new Error("No se puede eliminar el contacto porque tiene tickets asociados.");
-        }
-
-        // Eliminar el contacto
-        await tx.contactoEmpresa.delete({
-          where: { id },
-        });
-      });
-      return { success: true, message: "Contacto de empresa eliminado exitosamente." };
-    } catch (error: any) {
-      console.error(`Error al eliminar contacto de empresa con ID ${id} en ContactoEmpresaService:`, error);
-      // Si el error es de negocio, relanzar para que los tests lo capturen con rejects.toThrow
-      if (error instanceof Error && (
-        error.message.includes("No se puede eliminar el contacto porque tiene equipos prestados asociados.") ||
-        error.message.includes("No se puede eliminar el contacto porque tiene tickets asociados.")
-      )) {
-        throw error;
-      }
-      // Si es error de Prisma u otro, lanzar con mensaje estándar
-      throw new Error("Error al eliminar el contacto de empresa. Detalles: " + (error as Error).message);
-    }
+  static async deactivateContactoEmpresa(id: string): Promise<ContactoEmpresa> {
+    return prisma.contactoEmpresa.update({
+      where: { id },
+      data: {
+        estado: EstadoContacto.INACTIVO,
+      },
+    });
   }
+
+  // El método deleteContactoEmpresa() ha sido eliminado intencionalmente.
 }
