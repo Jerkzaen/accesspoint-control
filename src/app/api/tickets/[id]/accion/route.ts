@@ -1,18 +1,19 @@
-// RUTA: src/app/api/tickets/[id]/accion/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { TicketService } from "@/services/ticketService";
 import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
+// CORRECCIÓN CLAVE: Importamos la configuración de auth para ser explícitos.
+import { authOptions } from "@/lib/auth";
 
 /**
  * GET handler para obtener todas las acciones de un ticket específico.
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id:string } }
 ) {
-  const session = await getServerSession();
+  // CORRECCIÓN CLAVE: Pasamos authOptions a getServerSession.
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
@@ -33,21 +34,21 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id:string } }
 ) {
-  const session = await getServerSession();
-  if (!session || !session.user?.id) { // Verificación extra de session.user.id
+  // CORRECCIÓN CLAVE: Pasamos authOptions a getServerSession.
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.id) {
     return NextResponse.json({ message: "Usuario no autenticado." }, { status: 401 });
   }
 
   try {
     const data = await request.json();
     
-    // El servicio necesita el ticketId y el usuario que realiza la acción
     const accionData = { 
         ...data, 
         ticketId: params.id, 
-        usuarioId: session.user.id // Ahora es seguro acceder a session.user.id
+        usuarioId: session.user.id
     };
 
     const newAccion = await TicketService.addAccionToTicket(accionData);
@@ -55,11 +56,14 @@ export async function POST(
     return NextResponse.json({ message: "Acción agregada con éxito.", accion: newAccion }, { status: 201 });
 
   } catch (error: any) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      return NextResponse.json({ message: `El ticket con ID ${params.id} no existe.` }, { status: 404 });
+    if (error.message === "El ticket no existe.") {
+        return NextResponse.json({ message: "El ticket especificado no fue encontrado." }, { status: 404 });
+    }
+    if (error.name === 'ZodError') {
+      return NextResponse.json({ message: "Datos de entrada inválidos.", issues: error.issues }, { status: 400 });
     }
     return NextResponse.json(
-      { message: "Error al agregar la acción al ticket." },
+      { message: "Error interno al procesar la acción." },
       { status: 500 }
     );
   }

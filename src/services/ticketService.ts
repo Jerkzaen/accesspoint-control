@@ -1,4 +1,5 @@
-// RUTA: src/services/ticketService.ts (VERSIÓN FINAL, COMPLETA Y CORREGIDA)
+// RUTA: src/services/ticketService.ts
+// VERSIÓN CON ACCIONES INMUTABLES: Se eliminaron los métodos updateAccion y deleteAccion.
 
 import { prisma } from "@/lib/prisma";
 import { Prisma, Ticket, AccionTicket, EstadoTicket, TipoAccion } from "@prisma/client";
@@ -103,17 +104,17 @@ export class TicketService {
         await tx.ticket.update({ where: { id: ticketId }, data: { estado: nuevoEstado }});
       }
       return tx.accionTicket.create({
-        data: { ...accionData, ticket: { connect: { id: ticketId } }, realizadaPor: { connect: { id: usuarioId } }, estadoTicketAnterior: ticketActual.estado, estadoTicketNuevo: nuevoEstado }
+        data: { 
+            ...accionData, 
+            ticket: { connect: { id: ticketId } }, 
+            realizadaPor: { connect: { id: usuarioId } }, 
+            estadoTicketAnterior: ticketActual.estado, 
+            estadoTicketNuevo: nuevoEstado 
+        }
       });
     });
   }
 
-  static async updateAccion(accionId: string, data: AccionTicketUpdateInput): Promise<AccionTicket> {
-    const validatedData = updateAccionTicketSchema.parse(data);
-    return prisma.accionTicket.update({ where: { id: accionId }, data: validatedData });
-  }
-
-  static async deleteAccion(accionId: string): Promise<void> {
-    await prisma.accionTicket.delete({ where: { id: accionId } });
-  }
+  // Los métodos updateAccion y deleteAccion han sido eliminados intencionalmente
+  // para garantizar la inmutabilidad de la bitácora de acciones.
 }

@@ -1,47 +1,45 @@
 // RUTA: src/app/api/tickets/[id]/accion/[accionId]/route.ts
+// VERSIÓN CON ACCIONES INMUTABLES: Los métodos PUT y DELETE ahora devuelven un error 405.
 
-import { NextRequest, NextResponse } from "next/server";
-import { TicketService } from "@/services/ticketService";
-import { Prisma } from "@prisma/client";
-import { getServerSession } from "next-auth/next";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { TicketService } from '@/services/ticketService';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { accionId: string } }
-) {
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
-
-  try {
-    const data = await request.json();
-    const updatedAccion = await TicketService.updateAccion(params.accionId, data);
-    return NextResponse.json(updatedAccion, { status: 200 });
-  } catch (error: any) {
-    if (error.message.includes('No se encontró la acción')) {
-      return NextResponse.json({ message: error.message }, { status: 404 });
+// GET para una acción específica sigue siendo válido, podría ser útil para ver detalles.
+// (Esta función probablemente no exista en tu archivo, pero la dejamos como ejemplo de lo que SÍ se permite)
+export async function GET(req: NextRequest, { params }: { params: { accionId: string } }) {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+        return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
     }
-    return NextResponse.json({ message: "Error al actualizar la acción." }, { status: 500 });
-  }
+
+    // Aquí iría la lógica para obtener una sola acción por su ID si fuera necesario.
+    // Por ahora, devolvemos un método no implementado como placeholder.
+    return NextResponse.json({ message: "GET para una acción específica no implementado." }, { status: 501 });
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { accionId: string } }
-) {
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
 
-  try {
-    await TicketService.deleteAccion(params.accionId);
-    return NextResponse.json({ message: "Acción eliminada exitosamente." }, { status: 200 });
-  } catch (error: any) {
-    if (error.message.includes('No se encontró la acción')) {
-      return NextResponse.json({ message: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ message: "Error al eliminar la acción." }, { status: 500 });
-  }
+// --- INMUTABILIDAD APLICADA ---
+
+/**
+ * Método PUT deshabilitado. Las acciones de un ticket son inmutables.
+ * Devuelve un error 405 (Method Not Allowed).
+ */
+export async function PUT() {
+  return NextResponse.json(
+    { message: "El método PUT no está permitido. Las acciones de los tickets son inmutables." },
+    { status: 405 }
+  );
+}
+
+/**
+ * Método DELETE deshabilitado. Las acciones de un ticket son inmutables.
+ * Devuelve un error 405 (Method Not Allowed).
+ */
+export async function DELETE() {
+  return NextResponse.json(
+    { message: "El método DELETE no está permitido. Las acciones de los tickets son inmutables." },
+    { status: 405 }
+  );
 }

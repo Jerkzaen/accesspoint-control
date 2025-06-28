@@ -1,45 +1,38 @@
-// RUTA: src/app/api/tickets/[id]/accion/[accionId]/__tests__/route.test.ts
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { getServerSession } from 'next-auth';
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
-import { type NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { TicketService } from '@/services/ticketService';
-import { TipoAccion } from '@prisma/client';
+// --- Mocks de Módulos ---
+// No es necesario mockear el servicio porque la ruta ni siquiera lo llama.
+vi.mock('next-auth');
 
-vi.mock('next-auth/next', () => ({ getServerSession: vi.fn() }));
-vi.mock('@/services/ticketService');
+// --- Importación de Rutas ---
+// Las rutas para intentar modificar/borrar una acción individual
+import { PUT as putAccion, DELETE as deleteAccion } from '../route';
 
-import { PUT, DELETE } from '../route';
-
-describe('API Endpoints para /api/tickets/[id]/accion/[accionId]', () => {
-  const mockAdminSession = { user: { id: 'admin-123' } };
-  const mockAccionId = 'accion-test-id';
+describe('API Endpoint para GESTIONAR una Acción Específica', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    (getServerSession as Mock).mockResolvedValue(mockAdminSession);
+    // Aunque la ruta no usa la sesión para estos métodos, es buena práctica tenerla mockeada.
+    (getServerSession as Mock).mockResolvedValue({ user: { id: 'admin-123' } });
   });
 
-  describe('PUT', () => {
-    it('debe actualizar una acción y devolver 200', async () => {
-      const updateData = { descripcion: 'Descripción actualizada' };
-      (TicketService.updateAccion as Mock).mockResolvedValue({ id: mockAccionId, ...updateData });
-      const request = new Request(`http://localhost/api/tickets/any/accion/${mockAccionId}`, {
-        method: 'PUT', body: JSON.stringify(updateData),
-      });
-      const response = await PUT(request as NextRequest, { params: { accionId: mockAccionId } });
-      const body = await response.json();
-      expect(response.status).toBe(200);
-      expect(body.descripcion).toBe('Descripción actualizada');
-    });
+  // --- Pruebas de INMUTABILIDAD ---
+  it('debe devolver 405 Method Not Allowed para PUT en una acción', async () => {
+    // Usamos la función importada 'putAccion'
+    const response = await putAccion();
+    const body = await response.json();
+
+    expect(response.status).toBe(405);
+    expect(body.message).toContain('método PUT no está permitido');
   });
 
-  describe('DELETE', () => {
-    it('debe eliminar una acción y devolver 200', async () => {
-      (TicketService.deleteAccion as Mock).mockResolvedValue(undefined);
-      const request = new Request(`http://localhost/api/tickets/any/accion/${mockAccionId}`, { method: 'DELETE' });
-      const response = await DELETE(request as NextRequest, { params: { accionId: mockAccionId } });
-      expect(response.status).toBe(200);
-    });
+  it('debe devolver 405 Method Not Allowed para DELETE en una acción', async () => {
+    // Usamos la función importada 'deleteAccion'
+    const response = await deleteAccion();
+    const body = await response.json();
+
+    expect(response.status).toBe(405);
+    expect(body.message).toContain('método DELETE no está permitido');
   });
 });
