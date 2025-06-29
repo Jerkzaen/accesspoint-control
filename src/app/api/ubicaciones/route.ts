@@ -1,29 +1,40 @@
 // RUTA: src/app/api/ubicaciones/route.ts
 
-import { UbicacionService, UbicacionCreateInput } from "@/services/ubicacionService";
+import { GeografiaService } from "@/services/geografiaService";
 import { NextResponse } from "next/server";
-// 1. --- IMPORTAMOS getServerSession ---
 import { getServerSession } from "next-auth/next";
+import { ZodError } from "zod";
+import { ubicacionCreateSchema, UbicacionCreateInput } from "@/lib/validators/ubicacionValidator";
+import { Ubicacion } from "@prisma/client"; // Importar el tipo Ubicacion
+
 
 /**
- * GET handler para obtener todas las ubicaciones.
+ * GET handler para obtener ubicaciones.
+ * Permite filtrar por sucursalId mediante un query parameter.
  */
 export async function GET(request: Request) {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
 
   try {
-    const ubicaciones = await UbicacionService.getUbicaciones(true);
-    // 3. --- SIMPLIFICAMOS LA RESPUESTA ---
-    // NextResponse.json se encarga de serializar correctamente las fechas.
+    const url = new URL(request.url);
+    const sucursalId = url.searchParams.get('sucursalId');
+
+    let ubicaciones: Ubicacion[]; // <--- ¡Corrección aquí! Tipo explícito
+    if (sucursalId) {
+      ubicaciones = await GeografiaService.getUbicacionesBySucursal(sucursalId);
+    } else {
+      ubicaciones = []; 
+      console.warn("Advertencia: No se proporcionó sucursalId para /api/ubicaciones. Devolviendo un array vacío.");
+    }
+    
     return NextResponse.json(ubicaciones, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error en GET /api/ubicaciones:", error);
     return NextResponse.json(
-      { message: "Error al obtener ubicaciones" },
+      { message: error.message || "Error al obtener ubicaciones" },
       { status: 500 }
     );
   }
@@ -33,24 +44,24 @@ export async function GET(request: Request) {
  * POST handler para crear una nueva ubicación.
  */
 export async function POST(request: Request) {
-  // 2. --- AÑADIMOS LA VERIFICACIÓN DE SESIÓN ---
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
 
   try {
-    const data: UbicacionCreateInput = await request.json();
-    const newUbicacion = await UbicacionService.createUbicacion(data);
-    // 3. --- SIMPLIFICAMOS LA RESPUESTA ---
+    const rawData = await request.json();
+    const data: UbicacionCreateInput = ubicacionCreateSchema.parse(rawData);
+
+    const newUbicacion = await GeografiaService.createUbicacion(data);
     return NextResponse.json(newUbicacion, { status: 201 });
   } catch (error: any) {
     console.error("Error en POST /api/ubicaciones:", error);
-    if (error.message && error.message.startsWith("Error de validación")) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    if (error instanceof ZodError) {
+      return NextResponse.json({ message: `Error de validación: ${error.errors.map(e => e.message).join(', ')}` }, { status: 400 });
     }
     return NextResponse.json(
-      { message: "Error al crear ubicación" },
+      { message: error.message || "Error al crear ubicación" },
       { status: 500 }
     );
   }

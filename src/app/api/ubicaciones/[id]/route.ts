@@ -1,8 +1,12 @@
 // RUTA: src/app/api/ubicaciones/[id]/route.ts
 
-import { UbicacionService, UbicacionUpdateInput } from "@/services/ubicacionService";
+import { GeografiaService } from "@/services/geografiaService";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
+import { ZodError } from "zod";
+import { ubicacionUpdateSchema, UbicacionUpdateInput } from "@/lib/validators/ubicacionValidator";
+import { Prisma } from "@prisma/client";
+
 
 export async function GET(
   request: Request,
@@ -13,14 +17,17 @@ export async function GET(
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
   try {
-    const ubicacion = await UbicacionService.getUbicacionById(params.id);
+    const ubicacion = await GeografiaService.getUbicacionById(params.id);
     if (!ubicacion) {
       return NextResponse.json({ message: "Ubicación no encontrada" }, { status: 404 });
     }
     return NextResponse.json(ubicacion);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error en GET /api/ubicaciones/[id]:", error);
-    return NextResponse.json({ message: "Error al obtener ubicación" }, { status: 500 });
+    return NextResponse.json(
+      { message: error.message || "Error al obtener ubicación" },
+      { status: 500 }
+    );
   }
 }
 
@@ -33,15 +40,20 @@ export async function PUT(
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
   try {
-    const data: Omit<UbicacionUpdateInput, 'id'> = await request.json();
-    const updatedUbicacion = await UbicacionService.updateUbicacion({ ...data, id: params.id });
+    const rawData = await request.json();
+    const data: Omit<UbicacionUpdateInput, 'id'> = ubicacionUpdateSchema.parse(rawData);
+
+    const updatedUbicacion = await GeografiaService.updateUbicacion(params.id, data);
     return NextResponse.json(updatedUbicacion, { status: 200 });
   } catch (error: any) {
     console.error("Error en PUT /api/ubicaciones/[id]:", error);
-    if (error.message && error.message.startsWith("Error de validación")) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    if (error instanceof ZodError) {
+      return NextResponse.json({ message: `Error de validación: ${error.errors.map(e => e.message).join(', ')}` }, { status: 400 });
     }
-    return NextResponse.json({ message: "Error al actualizar ubicación" }, { status: 500 });
+    return NextResponse.json(
+      { message: error.message || "Error al actualizar ubicación" },
+      { status: 500 }
+    );
   }
 }
 
@@ -54,13 +66,16 @@ export async function DELETE(
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
   try {
-    await UbicacionService.deleteUbicacion(params.id);
-    return NextResponse.json({ message: "Ubicación eliminada exitosamente" }, { status: 200 });
+    await GeografiaService.deactivateUbicacion(params.id);
+    return NextResponse.json({ message: "Ubicación desactivada exitosamente" }, { status: 200 });
   } catch (error: any) {
-    console.error("Error en DELETE /api/ubicaciones/[id]:", error);
-    if (error.message && (error.message.includes('contactos asociados') || error.message.includes('equipos de inventario asociados'))) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    console.error("Error en DELETE (deactivate) /api/ubicaciones/[id]:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        return NextResponse.json({ message: 'No se puede desactivar la ubicación debido a elementos asociados (contactos, equipos).' }, { status: 400 });
     }
-    return NextResponse.json({ message: "Error al eliminar ubicación" }, { status: 500 });
+    return NextResponse.json(
+      { message: error.message || "Error al desactivar ubicación" },
+      { status: 500 }
+    );
   }
 }
