@@ -22,7 +22,16 @@ enum EstadoEmpresa {
   INACTIVA
 }
 
-// --- NUEVO ENUM AÑADIDO ---
+enum EstadoSucursal {
+  ACTIVA
+  INACTIVA
+}
+
+enum EstadoUbicacion {
+  ACTIVA
+  INACTIVA
+}
+
 enum EstadoContacto {
   ACTIVO
   INACTIVO
@@ -307,6 +316,9 @@ model ContactoEmpresa {
 model Sucursal {
   id          String      @id @default(uuid())
   nombre      String
+  // --- CAMPO NUEVO AÑADIDO ---
+  estado      EstadoSucursal @default(ACTIVA)
+  // ... resto de los campos
   telefono    String?
   email       String?
   direccionId String      @unique
@@ -323,6 +335,9 @@ model Sucursal {
 model Ubicacion {
   id                String             @id @default(uuid())
   nombreReferencial String?
+  // --- CAMPO NUEVO AÑADIDO ---
+  estado            EstadoUbicacion @default(ACTIVA)
+  // ... resto de los campos
   sucursalId        String
   sucursal          Sucursal           @relation(fields: [sucursalId], references: [id], onDelete: Restrict) 
   notas             String?

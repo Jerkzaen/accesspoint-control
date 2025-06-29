@@ -1,7 +1,7 @@
 // src/services/geografiaService.ts
 
 import { prisma } from "@/lib/prisma";
-import { Pais, Region, Provincia, Comuna } from "@prisma/client";
+import { Pais, Region, Provincia, Comuna, Ubicacion,EstadoUbicacion } from "@prisma/client";
 
 /**
  * Servicio para la gestión COMPLETA de datos geográficos.
@@ -39,6 +39,31 @@ export class GeografiaService {
       where: { nombre: { contains: searchTerm } },
       include: { provincia: { include: { region: true } } },
       take: 10,
+    });
+  }
+    // --- MÉTODOS PARA UBICACIONES ---
+    static async getUbicacionesBySucursal(sucursalId: string, estado: EstadoUbicacion = EstadoUbicacion.ACTIVA): Promise<Ubicacion[]> {
+    return prisma.ubicacion.findMany({
+      where: { sucursalId, estado },
+      orderBy: { nombreReferencial: 'asc' },
+    });
+  }
+
+  static async createUbicacion(data: { nombreReferencial: string, sucursalId: string, notas?: string }): Promise<Ubicacion> {
+    return prisma.ubicacion.create({ data });
+  }
+
+  static async updateUbicacion(id: string, data: { nombreReferencial?: string, notas?: string }): Promise<Ubicacion> {
+    return prisma.ubicacion.update({ where: { id }, data });
+  }
+
+  /**
+   * NUEVO MÉTODO: Desactiva una ubicación.
+   */
+  static async deactivateUbicacion(id: string): Promise<Ubicacion> {
+    return prisma.ubicacion.update({
+      where: { id },
+      data: { estado: EstadoUbicacion.INACTIVA },
     });
   }
 
