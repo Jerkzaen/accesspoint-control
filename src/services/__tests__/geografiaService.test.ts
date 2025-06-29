@@ -1,171 +1,104 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GeografiaService } from '../geografiaService';
+import { prisma } from '../../lib/prisma';
+import { Pais, Region, Provincia, Comuna } from '@prisma/client';
 
-let mockPrisma: any;
-let geografiaService: GeografiaService;
+// Mockeamos el módulo prisma
+vi.mock('../../lib/prisma', () => ({
+  prisma: {
+    pais: { findMany: vi.fn(), create: vi.fn() },
+    region: { findMany: vi.fn(), create: vi.fn() },
+    provincia: { findMany: vi.fn(), create: vi.fn() },
+    comuna: { findMany: vi.fn(), create: vi.fn() },
+  },
+}));
 
 describe('GeografiaService', () => {
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrisma = {
-      pais: {
-        findMany: vi.fn(),
-      },
-      region: {
-        findMany: vi.fn(),
-      },
-      comuna: {
-        findMany: vi.fn(),
-      },
-      direccion: {
-        create: vi.fn(),
-      },
-    };
-    geografiaService = new GeografiaService(mockPrisma);
   });
 
-
-
-
-
-
-  describe('getPaises', () => {
-    it('debe retornar una lista de países ordenados alfabéticamente', async () => {
-      (mockPrisma.pais.findMany as vi.Mock).mockResolvedValue([
-        { id: 'p1', nombre: 'País A', createdAt: new Date(), updatedAt: new Date(), regiones: [] },
-        { id: 'p2', nombre: 'País B', createdAt: new Date(), updatedAt: new Date(), regiones: [] },
-      ]);
-
-      const paises = await geografiaService.getPaises();
-
-      expect(mockPrisma.pais.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.pais.findMany).toHaveBeenCalledWith({
-        orderBy: { nombre: 'asc' },
-      });
-
-      expect(paises).toEqual([
-        { id: 'p1', nombre: 'País A', createdAt: expect.any(Date), updatedAt: expect.any(Date), regiones: [] },
-        { id: 'p2', nombre: 'País B', createdAt: expect.any(Date), updatedAt: expect.any(Date), regiones: [] },
-      ]);
+  describe('Países y Búsqueda', () => {
+    it('getPaises: debe obtener una lista de países', async () => {
+      const mockPaises: Pais[] = [{ id: '1', nombre: 'Chile', createdAt: new Date(), updatedAt: new Date() }];
+      vi.mocked(prisma.pais.findMany).mockResolvedValue(mockPaises);
+      const paises = await GeografiaService.getPaises();
+      expect(paises).toEqual(mockPaises);
     });
 
-    it('debe manejar errores cuando Prisma falla al obtener países', async () => {
-      (mockPrisma.pais.findMany as vi.Mock).mockRejectedValue(new Error('Error de DB'));
-      await expect(geografiaService.getPaises()).rejects.toThrow('No se pudieron obtener los países.');
-      expect(mockPrisma.pais.findMany).toHaveBeenCalledTimes(1);
+    it('createPais: debe crear un nuevo país', async () => {
+      const mockPaisCreado: Pais = { id: '2', nombre: 'Argentina', createdAt: new Date(), updatedAt: new Date() };
+      vi.mocked(prisma.pais.create).mockResolvedValue(mockPaisCreado);
+      const nuevoPais = await GeografiaService.createPais({ nombre: 'Argentina' });
+      expect(nuevoPais).toEqual(mockPaisCreado);
     });
   });
 
-  describe('getRegiones', () => {
-    it('debe retornar una lista de regiones ordenadas alfabéticamente', async () => {
-      (mockPrisma.region.findMany as vi.Mock).mockResolvedValue([
-        { id: 'r2', nombre: 'Región B', paisId: 'p1', createdAt: new Date(), updatedAt: new Date(), pais: null, provincias: [] },
-        { id: 'r1', nombre: 'Región A', paisId: 'p1', createdAt: new Date(), updatedAt: new Date(), pais: null, provincias: [] },
-      ]);
-
-      const regiones = await geografiaService.getRegiones();
-
-      expect(mockPrisma.region.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.region.findMany).toHaveBeenCalledWith({
-        orderBy: { nombre: 'asc' },
-      });
-      expect(regiones).toEqual([
-        expect.objectContaining({ nombre: 'Región B' }),
-        expect.objectContaining({ nombre: 'Región A' }),
-      ]);
-    });
-
-    it('debe manejar errores cuando Prisma falla al obtener regiones', async () => {
-      (mockPrisma.region.findMany as vi.Mock).mockRejectedValue(new Error('Error de DB'));
-      await expect(geografiaService.getRegiones()).rejects.toThrow('No se pudieron obtener las regiones.');
-    });
-  });
-
-  describe('getComunasByRegion', () => {
-    const mockComunas = [
-      { id: 'c1', nombre: 'Comuna A', provinciaId: 'pr1', createdAt: new Date(), updatedAt: new Date(), provincia: { id: 'pr1', nombre: 'Provincia X', regionId: 'r1', createdAt: new Date(), updatedAt: new Date(), region: null, comunas: [] } },
-      { id: 'c2', nombre: 'Comuna B', provinciaId: 'pr1', createdAt: new Date(), updatedAt: new Date(), provincia: { id: 'pr1', nombre: 'Provincia X', regionId: 'r1', createdAt: new Date(), updatedAt: new Date(), region: null, comunas: [] } },
-    ];
-    it('debe retornar una lista de comunas para una región específica', async () => {
-      (mockPrisma.comuna.findMany as vi.Mock).mockResolvedValue(mockComunas);
-
-      const comunas = await geografiaService.getComunasByRegion('r1');
-
-      expect(mockPrisma.comuna.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.comuna.findMany).toHaveBeenCalledWith({
-        where: { provincia: { regionId: 'r1' } },
-        include: { provincia: { include: { region: true } } }, // <-- CORREGIDO
-        orderBy: { nombre: 'asc' },
-      });
-      expect(comunas.length).toBe(2);
-      expect(comunas[0]).toHaveProperty('nombre', 'Comuna A');
-    });
-
-    it('debe retornar un array vacío si regionId es null o undefined', async () => {
-      const comunasNull = await geografiaService.getComunasByRegion(null as any);
-      const comunasUndefined = await geografiaService.getComunasByRegion(undefined as any);
-
-      expect(comunasNull).toEqual([]);
-      expect(comunasUndefined).toEqual([]);
-      expect(mockPrisma.comuna.findMany).not.toHaveBeenCalled();
-    });
-
-    it('debe manejar errores cuando Prisma falla al obtener comunas por región', async () => {
-      (mockPrisma.comuna.findMany as vi.Mock).mockRejectedValue(new Error('Error de DB'));
-      await expect(geografiaService.getComunasByRegion('r1')).rejects.toThrow('No se pudieron obtener las comunas para la región especificada.');
-    });
-  });
-
-  describe('addDireccion', () => {
-    // Usa un UUID válido para pasar la validación de Zod
-    const validComunaId = 'b6e3e3b2-8c2e-4b2a-9b2e-8c2e4b2a9b2e';
-    const newDireccionData = {
-      calle: 'Calle Test',
-      numero: '123',
-      comunaId: validComunaId,
-      depto: null
-    };
-
-    it('debe crear una nueva dirección y retornar el objeto creado', async () => {
-      (mockPrisma.direccion.create as vi.Mock).mockResolvedValue({
-        id: 'new-dir-id',
+  describe('Caso de Uso: Regiones de un País', () => {
+    it('debe crear una nueva Región y luego poder listarla por País', async () => {
+      const PAIS_ID = 'pais-chile-123';
+      const mockRegionCreada: Region = { 
+        id: 'region-rm-456', 
+        nombre: 'Metropolitana', 
+        paisId: PAIS_ID,
         createdAt: new Date(),
-        updatedAt: new Date(),
-        ...newDireccionData,
-      } as any);
+        updatedAt: new Date()
+      };
 
-      const direccion = await geografiaService.addDireccion(newDireccionData);
+      vi.mocked(prisma.region.create).mockResolvedValue(mockRegionCreada);
+      const nuevaRegion = await GeografiaService.createRegion({ nombre: 'Metropolitana', paisId: PAIS_ID });
+      expect(nuevaRegion.nombre).toBe('Metropolitana');
 
-      expect(mockPrisma.direccion.create).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.direccion.create).toHaveBeenCalledWith({
-        data: {
-          calle: newDireccionData.calle,
-          numero: newDireccionData.numero,
-          depto: newDireccionData.depto,
-          comuna: { connect: { id: newDireccionData.comunaId } },
-        },
-      });
-      expect(direccion).toHaveProperty('id', 'new-dir-id');
-      expect(direccion).toHaveProperty('calle', 'Calle Test');
-    });
-
-    it('debe lanzar un error de validación Zod si los datos son inválidos', async () => {
-      const invalidData = { calle: '', numero: '123', comunaId: 'not-a-uuid' }; // Calle vacía y comunaId inválido
-      await expect(geografiaService.addDireccion(invalidData as any)).rejects.toThrow(/Error de validación al añadir dirección/);
-      expect(mockPrisma.direccion.create).not.toHaveBeenCalled();
-    });
-
-    it('debe manejar errores de Prisma al crear dirección', async () => {
-      (mockPrisma.direccion.create as vi.Mock).mockRejectedValue(new Error('Error de Prisma simulado'));
-      await expect(geografiaService.addDireccion(newDireccionData)).rejects.toThrowError(/Error al añadir dirección./);
+      vi.mocked(prisma.region.findMany).mockResolvedValue([mockRegionCreada]);
+      const regionesDelPais = await GeografiaService.getRegionesByPais(PAIS_ID);
+      
+      expect(regionesDelPais).toContainEqual(mockRegionCreada);
     });
   });
 
-  // Puedes continuar añadiendo pruebas para:
-  // - searchComunas
-  // - getDirecciones
-  // - updateDireccion
-  // - deleteDireccion
-  // - getUbicaciones
+  describe('Caso de Uso: Provincias de una Región', () => {
+    it('debe crear una nueva Provincia y luego poder listarla por Región', async () => {
+      const REGION_ID = 'region-rm-456';
+      const mockProvinciaCreada: Provincia = {
+        id: 'prov-stgo-789',
+        nombre: 'Santiago',
+        regionId: REGION_ID,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      vi.mocked(prisma.provincia.create).mockResolvedValue(mockProvinciaCreada);
+      const nuevaProvincia = await GeografiaService.createProvincia({ nombre: 'Santiago', regionId: REGION_ID });
+      expect(nuevaProvincia.nombre).toBe('Santiago');
+
+      vi.mocked(prisma.provincia.findMany).mockResolvedValue([mockProvinciaCreada]);
+      const provinciasDeLaRegion = await GeografiaService.getProvinciasByRegion(REGION_ID);
+
+      expect(provinciasDeLaRegion).toContainEqual(mockProvinciaCreada);
+    });
+  });
+
+  describe('Caso de Uso: Comunas de una Provincia', () => {
+    it('debe crear una nueva Comuna y luego poder listarla por Provincia', async () => {
+      const PROVINCIA_ID = 'prov-stgo-789';
+      const mockComunaCreada: Comuna = {
+        id: 'com-lc-101',
+        nombre: 'Las Condes',
+        provinciaId: PROVINCIA_ID,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      vi.mocked(prisma.comuna.create).mockResolvedValue(mockComunaCreada);
+      const nuevaComuna = await GeografiaService.createComuna({ nombre: 'Las Condes', provinciaId: PROVINCIA_ID });
+      expect(nuevaComuna.nombre).toBe('Las Condes');
+
+      vi.mocked(prisma.comuna.findMany).mockResolvedValue([mockComunaCreada]);
+      const comunasDeLaProvincia = await GeografiaService.getComunasByProvincia(PROVINCIA_ID);
+      
+      expect(comunasDeLaProvincia).toContainEqual(mockComunaCreada);
+    });
+  });
 });
+
