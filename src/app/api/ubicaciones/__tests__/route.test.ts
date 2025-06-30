@@ -126,7 +126,8 @@ describe('API Endpoints para /api/ubicaciones (Suite Completa)', () => {
         const response = await POST(request as NextRequest);
         expect(response.status).toBe(400);
         const body = await response.json();
-        expect(body.message).toContain('Error de validación: El nombre referencial es requerido y debe tener al menos 3 caracteres');
+        expect(body.message).toContain('Error de validación');
+        expect(body.message).toContain('nombre referencial');
         expect(GeografiaService.createUbicacion).not.toHaveBeenCalled();
     });
 

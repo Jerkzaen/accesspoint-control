@@ -39,3 +39,8 @@ export const createEquipoEnPrestamoSchema = equipoEnPrestamoSchema.omit({ id: tr
 
 // Esquema Zod para la actualización de un EquipoEnPrestamo (todos los campos son opcionales)
 export const updateEquipoEnPrestamoSchema = equipoEnPrestamoSchema.partial();
+
+// Exportar tipos TypeScript derivados de los esquemas Zod
+export type EquipoEnPrestamoInput = z.infer<typeof equipoEnPrestamoSchema>;
+export type EquipoEnPrestamoCreateInput = z.infer<typeof createEquipoEnPrestamoSchema>;
+export type EquipoEnPrestamoUpdateInput = z.infer<typeof updateEquipoEnPrestamoSchema>;

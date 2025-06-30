@@ -7,7 +7,8 @@ import { Prisma, EstadoPrestamoEquipo, EstadoEquipoInventario, TipoEquipoInventa
 
 
 // Mockeamos el módulo 'prisma' para controlar el comportamiento de sus métodos.
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type MockedObject, type Mock } from 'vitest';
+import { ZodError } from 'zod';
 
 vi.mock('../../lib/prisma', () => ({
   prisma: {
@@ -23,13 +24,13 @@ vi.mock('../../lib/prisma', () => ({
       update: vi.fn(), // Para actualizar el estado del equipo
     },
     // Mockeamos $transaction para que simplemente ejecute el callback que recibe
-    $transaction: vi.fn((callback) => callback(prisma as unknown as vi.Mocked<typeof prisma>)), // Pasamos el mock de tx para funciones anidadas
+    $transaction: vi.fn((callback) => callback(prisma as unknown as MockedObject<typeof prisma>)), // Pasamos el mock de tx para funciones anidadas
     $disconnect: vi.fn(),
   },
 }));
 
 // Casteamos la instancia mockeada de prisma para un mejor tipado en las pruebas
-const mockPrisma = prisma as unknown as vi.Mocked<typeof prisma>;
+const mockPrisma = prisma as unknown as MockedObject<typeof prisma>;
 
 describe('EquipoEnPrestamoService', () => {
   beforeEach(() => {
@@ -101,7 +102,7 @@ describe('EquipoEnPrestamoService', () => {
         { ...mockExistingPrestamo, id: 'p2', fechaPrestamo: new Date(mockDate.getTime() - 1000) },
         { ...mockExistingPrestamo, id: 'p1', fechaPrestamo: new Date(mockDate.getTime() - 2000) },
       ];
-      (mockPrisma.equipoEnPrestamo.findMany as vi.Mock).mockResolvedValue(mockPrestamos);
+      (mockPrisma.equipoEnPrestamo.findMany as Mock).mockResolvedValue(mockPrestamos);
 
       const prestamos = await EquipoEnPrestamoService.getEquiposEnPrestamo();
 
@@ -122,7 +123,7 @@ describe('EquipoEnPrestamoService', () => {
         entregadoPorUsuario: mockUserEntregado,
         recibidoPorUsuario: mockUserRecibido,
       };
-      (mockPrisma.equipoEnPrestamo.findMany as vi.Mock).mockResolvedValue([mockPrestamoWithRelations]);
+      (mockPrisma.equipoEnPrestamo.findMany as Mock).mockResolvedValue([mockPrestamoWithRelations]);
 
       const prestamos = await EquipoEnPrestamoService.getEquiposEnPrestamo(true);
 
@@ -141,7 +142,7 @@ describe('EquipoEnPrestamoService', () => {
     });
 
     it('debe manejar errores cuando Prisma falla al obtener préstamos', async () => {
-      (mockPrisma.equipoEnPrestamo.findMany as vi.Mock).mockRejectedValue(new Error('DB Error'));
+      (mockPrisma.equipoEnPrestamo.findMany as Mock).mockRejectedValue(new Error('DB Error'));
       await expect(EquipoEnPrestamoService.getEquiposEnPrestamo()).rejects.toThrow('No se pudieron obtener los equipos en préstamo.');
     });
   });
@@ -157,7 +158,7 @@ describe('EquipoEnPrestamoService', () => {
         entregadoPorUsuario: mockUserEntregado,
         recibidoPorUsuario: mockUserRecibido,
       };
-      (mockPrisma.equipoEnPrestamo.findUnique as vi.Mock).mockResolvedValue(mockPrestamoWithAllRelations);
+      (mockPrisma.equipoEnPrestamo.findUnique as Mock).mockResolvedValue(mockPrestamoWithAllRelations);
 
       const prestamo = await EquipoEnPrestamoService.getEquipoEnPrestamoById(mockPrestamoId);
 
@@ -176,13 +177,13 @@ describe('EquipoEnPrestamoService', () => {
     });
 
     it('debe retornar null si el registro de préstamo no se encuentra', async () => {
-      (mockPrisma.equipoEnPrestamo.findUnique as vi.Mock).mockResolvedValue(null);
+      (mockPrisma.equipoEnPrestamo.findUnique as Mock).mockResolvedValue(null);
       const prestamo = await EquipoEnPrestamoService.getEquipoEnPrestamoById('non-existent-id');
       expect(prestamo).toBeNull();
     });
 
     it('debe manejar errores cuando Prisma falla al obtener préstamo por ID', async () => {
-      (mockPrisma.equipoEnPrestamo.findUnique as vi.Mock).mockRejectedValue(new Error('DB Error'));
+      (mockPrisma.equipoEnPrestamo.findUnique as Mock).mockRejectedValue(new Error('DB Error'));
       await expect(EquipoEnPrestamoService.getEquipoEnPrestamoById(mockPrestamoId)).rejects.toThrow('No se pudo obtener el registro de préstamo.');
     });
   });
@@ -194,20 +195,21 @@ describe('EquipoEnPrestamoService', () => {
       prestadoAContactoId: mockContactoId,
       personaResponsableEnSitio: 'Nuevo Responsable',
       fechaDevolucionEstimada: new Date(),
+      estadoPrestamo: EstadoPrestamoEquipo.PRESTADO,
       notasPrestamo: 'Notas del nuevo préstamo',
       entregadoPorUsuarioId: mockUsuarioEntregadoId,
       ticketId: mockTicketId,
     };
 
     it('debe crear un nuevo registro de préstamo y actualizar el estado del equipo', async () => {
-      (mockPrisma.equipoEnPrestamo.create as vi.Mock).mockResolvedValue({
+      (mockPrisma.equipoEnPrestamo.create as Mock).mockResolvedValue({
         id: 'new-prestamo-id',
         ...newPrestamoData,
         fechaPrestamo: new Date(), // Simula la fecha por defecto
         estadoPrestamo: EstadoPrestamoEquipo.PRESTADO,
         createdAt: new Date(), updatedAt: new Date(),
       });
-      (mockPrisma.equipoInventario.update as vi.Mock).mockResolvedValue({}); // Mock para la actualización del equipo
+      (mockPrisma.equipoInventario.update as Mock).mockResolvedValue({}); // Mock para la actualización del equipo
 
       const prestamo = await EquipoEnPrestamoService.createEquipoEnPrestamo(newPrestamoData);
 
@@ -242,7 +244,7 @@ describe('EquipoEnPrestamoService', () => {
     });
 
     it('debe manejar otros errores de Prisma al crear préstamo', async () => {
-      (mockPrisma.equipoEnPrestamo.create as vi.Mock).mockRejectedValue(new Error('Other DB Error'));
+      (mockPrisma.equipoEnPrestamo.create as Mock).mockRejectedValue(new Error('Other DB Error'));
       await expect(EquipoEnPrestamoService.createEquipoEnPrestamo(newPrestamoData)).rejects.toThrow('Error al crear el registro de préstamo. Detalles: Other DB Error');
       expect(mockPrisma.equipoInventario.update).not.toHaveBeenCalled();
     });
@@ -252,17 +254,18 @@ describe('EquipoEnPrestamoService', () => {
   describe('updateEquipoEnPrestamo', () => {
     it('debe actualizar los campos del registro de préstamo y retornar el objeto actualizado', async () => {
       const updateData: EquipoEnPrestamoUpdateInput = {
-        id: mockPrestamoId,
         personaResponsableEnSitio: 'Responsable Actualizado',
         notasDevolucion: 'Equipo en perfecto estado',
       };
-      (mockPrisma.equipoEnPrestamo.update as vi.Mock).mockResolvedValue({ ...mockExistingPrestamo, ...updateData });
+      // Mock para findUnique que devuelve los datos del préstamo existente
+      (mockPrisma.equipoEnPrestamo.findUnique as Mock).mockResolvedValue({ id: mockPrestamoId, equipoId: mockEquipoId, estadoPrestamo: EstadoPrestamoEquipo.PRESTADO });
+      (mockPrisma.equipoEnPrestamo.update as Mock).mockResolvedValue({ ...mockExistingPrestamo, ...updateData });
 
-      const prestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo(updateData);
+      const prestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo(mockPrestamoId, updateData);
 
       expect(mockPrisma.equipoEnPrestamo.update).toHaveBeenCalledTimes(1);
       expect(mockPrisma.equipoEnPrestamo.update).toHaveBeenCalledWith({
-        where: { id: updateData.id },
+        where: { id: mockPrestamoId },
         data: expect.objectContaining({
           personaResponsableEnSitio: 'Responsable Actualizado',
           notasDevolucion: 'Equipo en perfecto estado',
@@ -273,18 +276,17 @@ describe('EquipoEnPrestamoService', () => {
 
     it('debe actualizar el estado del equipo a DISPONIBLE si se registra la devolución', async () => {
       const updateData: EquipoEnPrestamoUpdateInput = {
-        id: mockPrestamoId,
         fechaDevolucionReal: new Date(),
         estadoPrestamo: EstadoPrestamoEquipo.DEVUELTO,
       };
       // Mock para findUnique que devuelve el equipoId antes de la actualización
-      (mockPrisma.equipoEnPrestamo.findUnique as vi.Mock).mockResolvedValue({ id: mockPrestamoId, equipoId: mockEquipoId });
-      (mockPrisma.equipoEnPrestamo.update as vi.Mock).mockResolvedValue({ ...mockExistingPrestamo, ...updateData });
-      (mockPrisma.equipoInventario.update as vi.Mock).mockResolvedValue({}); // Mock para la actualización del equipo
+      (mockPrisma.equipoEnPrestamo.findUnique as Mock).mockResolvedValue({ id: mockPrestamoId, equipoId: mockEquipoId, estadoPrestamo: EstadoPrestamoEquipo.PRESTADO });
+      (mockPrisma.equipoEnPrestamo.update as Mock).mockResolvedValue({ ...mockExistingPrestamo, ...updateData });
+      (mockPrisma.equipoInventario.update as Mock).mockResolvedValue({}); // Mock para la actualización del equipo
 
-      const prestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo(updateData);
+      const prestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo(mockPrestamoId, updateData);
 
-      expect(mockPrisma.equipoEnPrestamo.findUnique).toHaveBeenCalledWith({ where: { id: mockPrestamoId }, select: { equipoId: true } });
+      expect(mockPrisma.equipoEnPrestamo.findUnique).toHaveBeenCalledWith({ where: { id: mockPrestamoId }, select: { equipoId: true, estadoPrestamo: true } });
       expect(mockPrisma.equipoInventario.update).toHaveBeenCalledTimes(1);
       expect(mockPrisma.equipoInventario.update).toHaveBeenCalledWith({
         where: { id: mockEquipoId },
@@ -296,15 +298,14 @@ describe('EquipoEnPrestamoService', () => {
     
     it('debe desvincular el ticket asociado si ticketId se envía como null', async () => {
       const updateData: EquipoEnPrestamoUpdateInput = {
-        id: mockPrestamoId,
         ticketId: null,
       };
-      (mockPrisma.equipoEnPrestamo.update as vi.Mock).mockResolvedValue({ ...mockExistingPrestamo, ticketId: null });
+      (mockPrisma.equipoEnPrestamo.update as Mock).mockResolvedValue({ ...mockExistingPrestamo, ticketId: null });
 
-      const prestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo(updateData);
+      const prestamo = await EquipoEnPrestamoService.updateEquipoEnPrestamo(mockPrestamoId, updateData);
 
       expect(mockPrisma.equipoEnPrestamo.update).toHaveBeenCalledWith({
-        where: { id: updateData.id },
+        where: { id: mockPrestamoId },
         data: expect.objectContaining({
           ticketAsociado: { disconnect: true },
         }),
@@ -313,22 +314,24 @@ describe('EquipoEnPrestamoService', () => {
     });
 
     it('debe lanzar un error de validación Zod si los datos son inválidos', async () => {
-      const invalidData = { ...mockExistingPrestamo, id: mockPrestamoId, personaResponsableEnSitio: 'a' }; // Nombre muy corto
-      await expect(EquipoEnPrestamoService.updateEquipoEnPrestamo(invalidData as any)).rejects.toThrow(/Error de validación al actualizar préstamo/);
+      const invalidData = { personaResponsableEnSitio: 'a' }; // Nombre muy corto
+      await expect(EquipoEnPrestamoService.updateEquipoEnPrestamo(mockPrestamoId, invalidData as any)).rejects.toThrow(/Error de validación al actualizar préstamo/);
       expect(mockPrisma.equipoEnPrestamo.update).not.toHaveBeenCalled();
     });
 
     it('debe manejar otros errores de Prisma al actualizar préstamo', async () => {
-      const updateData = { id: mockPrestamoId, notasDevolucion: 'Fail' };
-      (mockPrisma.equipoEnPrestamo.update as vi.Mock).mockRejectedValue(new Error('Update DB Error'));
-      await expect(EquipoEnPrestamoService.updateEquipoEnPrestamo(updateData)).rejects.toThrow('Error al actualizar el registro de préstamo. Detalles: Update DB Error');
+      const updateData = { notasDevolucion: 'Fail' };
+      // Mock para findUnique que devuelve los datos del préstamo existente
+      (mockPrisma.equipoEnPrestamo.findUnique as Mock).mockResolvedValue({ id: mockPrestamoId, equipoId: mockEquipoId, estadoPrestamo: EstadoPrestamoEquipo.PRESTADO });
+      (mockPrisma.equipoEnPrestamo.update as Mock).mockRejectedValue(new Error('Update DB Error'));
+      await expect(EquipoEnPrestamoService.updateEquipoEnPrestamo(mockPrestamoId, updateData)).rejects.toThrow('No se pudo actualizar el registro de préstamo. Detalles: Update DB Error');
     });
   });
 
   // --- Pruebas para deleteEquipoEnPrestamo ---
   describe('deleteEquipoEnPrestamo', () => {
     it('debe eliminar un registro de préstamo', async () => {
-      (mockPrisma.equipoEnPrestamo.delete as vi.Mock).mockResolvedValue({});
+      (mockPrisma.equipoEnPrestamo.delete as Mock).mockResolvedValue({});
 
       await expect(EquipoEnPrestamoService.deleteEquipoEnPrestamo(mockPrestamoId)).resolves.toBeUndefined();
       expect(mockPrisma.equipoEnPrestamo.delete).toHaveBeenCalledTimes(1);
@@ -336,7 +339,7 @@ describe('EquipoEnPrestamoService', () => {
     });
 
     it('debe manejar errores de Prisma al eliminar préstamo', async () => {
-      (mockPrisma.equipoEnPrestamo.delete as vi.Mock).mockRejectedValue(new Error('Delete DB Error'));
+      (mockPrisma.equipoEnPrestamo.delete as Mock).mockRejectedValue(new Error('Delete DB Error'));
       await expect(EquipoEnPrestamoService.deleteEquipoEnPrestamo(mockPrestamoId)).rejects.toThrow('Error al eliminar el registro de préstamo. Detalles: Delete DB Error');
     });
   });

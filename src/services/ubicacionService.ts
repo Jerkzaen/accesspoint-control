@@ -3,24 +3,11 @@
     import { prisma } from "@/lib/prisma";
     import { Prisma, Ubicacion, Sucursal, ContactoEmpresa, EquipoInventario } from "@prisma/client";
     // Importamos los esquemas de validación Zod para Ubicacion
-    import { createUbicacionSchema, updateUbicacionSchema } from "@/lib/validators/ubicacionValidator";
+    import { ubicacionCreateSchema, ubicacionUpdateSchema, UbicacionCreateInput, UbicacionUpdateInput } from "@/lib/validators/ubicacionValidator";
     import { ZodError } from "zod"; // Importar ZodError
 
-    /**
-     * Define los tipos de entrada para las operaciones CRUD de Ubicacion.
-     */
-    export type UbicacionCreateInput = {
-      nombreReferencial?: string | null;
-      sucursalId: string;
-      notas?: string | null;
-    };
-
-    export type UbicacionUpdateInput = {
-      id: string; // ID de la ubicación a actualizar
-      nombreReferencial?: string | null;
-      sucursalId?: string;
-      notas?: string | null;
-    };
+    // Re-exportar los tipos para mantener compatibilidad
+    export type { UbicacionCreateInput, UbicacionUpdateInput };
 
     /**
      * Tipo para una Ubicacion con sus relaciones más comunes.
@@ -89,7 +76,7 @@
       static async createUbicacion(data: UbicacionCreateInput): Promise<Ubicacion> {
         try {
           // Validar los datos de entrada con el esquema de creación de Zod
-          const validatedData = createUbicacionSchema.parse(data);
+          const validatedData = ubicacionCreateSchema.parse(data);
 
           const newUbicacion = await prisma.$transaction(async (tx) => {
             const sucursalConnect = { connect: { id: validatedData.sucursalId } };
@@ -118,13 +105,14 @@
 
       /**
        * Actualiza una ubicación existente, validando los datos con Zod.
-       * @param data Los datos para actualizar la ubicación (incluyendo el ID).
+       * @param id El ID de la ubicación a actualizar.
+       * @param data Los datos para actualizar la ubicación.
        * @returns El objeto Ubicacion actualizado.
        */
-      static async updateUbicacion(data: UbicacionUpdateInput): Promise<Ubicacion> {
+      static async updateUbicacion(id: string, data: UbicacionUpdateInput): Promise<Ubicacion> {
         try {
           // Validar los datos de entrada con el esquema de actualización de Zod
-          const validatedData = updateUbicacionSchema.parse(data);
+          const validatedData = ubicacionUpdateSchema.parse(data);
 
           const updatedUbicacion = await prisma.$transaction(async (tx) => {
             const sucursalUpdate = validatedData.sucursalId !== undefined
@@ -132,7 +120,7 @@
               : undefined;
 
             const ubicacion = await tx.ubicacion.update({
-              where: { id: validatedData.id },
+              where: { id },
               data: {
                 nombreReferencial: validatedData.nombreReferencial,
                 sucursal: sucursalUpdate,
@@ -146,7 +134,7 @@
           if (error instanceof ZodError) {
             throw new Error("Error de validación al actualizar ubicación: " + error.errors.map(e => e.message).join(", "));
           }
-          console.error(`Error al actualizar ubicación con ID ${data.id} en UbicacionService:`, error);
+          console.error(`Error al actualizar ubicación con ID ${id} en UbicacionService:`, error);
           if (error instanceof Prisma.PrismaClientKnownRequestError) {
             // Añadir manejo específico de errores de Prisma si es necesario (ej. clave única)
           }

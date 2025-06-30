@@ -1,64 +1,49 @@
 // src/services/equipoEnPrestamoService.ts
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, EquipoEnPrestamo, EquipoInventario, ContactoEmpresa, Ticket, EstadoPrestamoEquipo, User, EstadoEquipoInventario } from "@prisma/client";
-// Importamos los esquemas de validación Zod para EquipoEnPrestamo
-import { createEquipoEnPrestamoSchema, updateEquipoEnPrestamoSchema } from "@/lib/validators/equipoEnPrestamoValidator";
+import { EquipoEnPrestamo, EstadoPrestamoEquipo, EstadoEquipoInventario, Prisma } from "@prisma/client";
+import { ZodError, z } from "zod";
 
-/**
- * Define los tipos de entrada para las operaciones CRUD de EquipoEnPrestamo.
- */
-export type EquipoEnPrestamoCreateInput = {
-  equipoId: string;
-  prestadoAContactoId: string;
-  personaResponsableEnSitio: string;
-  fechaDevolucionEstimada: Date;
-  estadoPrestamo?: EstadoPrestamoEquipo;
-  ticketId?: string | null;
-  notasPrestamo?: string | null;
-  entregadoPorUsuarioId?: string | null;
-};
+// Importar los tipos de input de la fase de validación (Módulo 6 - Fase 2)
+import { 
+  EquipoEnPrestamoCreateInput, 
+  EquipoEnPrestamoUpdateInput,
+  createEquipoEnPrestamoSchema,
+  updateEquipoEnPrestamoSchema
+} from "@/lib/validators/equipoEnPrestamoValidator";
 
-export type EquipoEnPrestamoUpdateInput = {
-  id: string; // ID del registro de préstamo a actualizar
-  equipoId?: string;
-  prestadoAContactoId?: string;
-  personaResponsableEnSitio?: string;
-  fechaDevolucionEstimada?: Date;
-  fechaDevolucionReal?: Date | null; // Para registrar la devolución
-  estadoPrestamo?: EstadoPrestamoEquipo;
-  ticketId?: string | null;
-  notasPrestacion?: string | null;
-  notasDevolucion?: string | null;
-  entregadoPorUsuarioId?: string | null;
-  recibidoPorUsuarioId?: string | null;
-};
+// Definir tipos que incluyen las relaciones para métodos que usan include
+export type EquipoEnPrestamoWithRelations = Prisma.EquipoEnPrestamoGetPayload<{
+  include: {
+    equipo: true;
+    prestadoAContacto: true;
+    ticketAsociado: true;
+    entregadoPorUsuario: true;
+    recibidoPorUsuario: true;
+  };
+}>;
 
-/**
- * Tipo para un EquipoEnPrestamo con sus relaciones más comunes.
- */
-export type EquipoEnPrestamoWithRelations = EquipoEnPrestamo & {
-  equipo?: EquipoInventario | null;
-  prestadoAContacto?: ContactoEmpresa | null;
-  ticketAsociado?: Ticket | null;
-  entregadoPorUsuario?: User | null;
-  recibidoPorUsuario?: User | null;
-};
+// Sobrecarga para getEquiposEnPrestamo según includeRelations
+export type EquipoEnPrestamoList<T extends boolean> = T extends true 
+  ? EquipoEnPrestamoWithRelations[] 
+  : EquipoEnPrestamo[];
 
-/**
- * Servicio para la gestión de Equipos en Préstamo.
- * Centraliza la lógica de negocio y el acceso a la base de datos para los préstamos.
- */
+// Re-exportar los tipos para que puedan ser usados por otros módulos
+export type { EquipoEnPrestamoCreateInput, EquipoEnPrestamoUpdateInput };
+
+
 export class EquipoEnPrestamoService {
 
   /**
-   * Obtiene todos los registros de equipos en préstamo, opcionalmente incluyendo sus relaciones.
-   * @param includeRelations Indica si se deben incluir las relaciones.
-   * @returns Un array de objetos EquipoEnPrestamo o EquipoEnPrestamoWithRelations.
+   * Obtiene una lista de todos los registros de equipos en préstamo.
+   * Opcionalmente incluye relaciones.
    */
-  static async getEquiposEnPrestamo(includeRelations: boolean = false): Promise<EquipoEnPrestamo[]> {
+  static async getEquiposEnPrestamo(): Promise<EquipoEnPrestamo[]>;
+  static async getEquiposEnPrestamo(includeRelations: true): Promise<EquipoEnPrestamoWithRelations[]>;
+  static async getEquiposEnPrestamo(includeRelations: false): Promise<EquipoEnPrestamo[]>;
+  static async getEquiposEnPrestamo(includeRelations: boolean = false): Promise<EquipoEnPrestamo[] | EquipoEnPrestamoWithRelations[]> {
     try {
-      const prestamos = await prisma.equipoEnPrestamo.findMany({
+      return await prisma.equipoEnPrestamo.findMany({
         include: includeRelations ? {
           equipo: true,
           prestadoAContacto: true,
@@ -66,23 +51,21 @@ export class EquipoEnPrestamoService {
           entregadoPorUsuario: true,
           recibidoPorUsuario: true,
         } : undefined,
-        orderBy: { fechaPrestamo: 'desc' },
-      });
-      return prestamos;
-    } catch (error) {
-      console.error("Error al obtener equipos en préstamo en EquipoEnPrestamoService:", error);
-      throw new Error("No se pudieron obtener los equipos en préstamo.");
+        orderBy: { fechaPrestamo: 'desc' }, // Ordenar por fecha de préstamo más reciente
+      }) as any;
+    } catch (error: any) {
+      console.error("Error al obtener registros de préstamo:", error);
+      throw new Error(`No se pudieron obtener los equipos en préstamo. Detalles: ${error.message}`);
     }
   }
 
   /**
-   * Obtiene un registro de equipo en préstamo por su ID, incluyendo sus relaciones.
-   * @param id El ID del registro de préstamo.
-   * @returns El objeto EquipoEnPrestamoWithRelations o null si no se encuentra.
+   * Obtiene un registro de equipo en préstamo por su ID.
+   * Incluye todas las relaciones relevantes.
    */
   static async getEquipoEnPrestamoById(id: string): Promise<EquipoEnPrestamoWithRelations | null> {
     try {
-      const prestamo = await prisma.equipoEnPrestamo.findUnique({
+      return await prisma.equipoEnPrestamo.findUnique({
         where: { id },
         include: {
           equipo: true,
@@ -92,155 +75,211 @@ export class EquipoEnPrestamoService {
           recibidoPorUsuario: true,
         },
       });
-      return prestamo;
-    } catch (error) {
-      console.error(`Error al obtener préstamo con ID ${id} en EquipoEnPrestamoService:`, error);
-      throw new Error("No se pudo obtener el registro de préstamo.");
+    } catch (error: any) {
+      console.error(`Error al obtener registro de préstamo por ID ${id}:`, error);
+      throw new Error(`No se pudo obtener el registro de préstamo. Detalles: ${error.message}`);
     }
   }
 
   /**
-   * Crea un nuevo registro de equipo en préstamo, validando los datos con Zod.
-   * También actualiza el estado del equipo en inventario.
-   * @param data Los datos para crear el registro de préstamo.
-   * @returns El objeto EquipoEnPrestamo creado.
+   * Crea un nuevo registro de préstamo de equipo.
+   * Actualiza el estado del EquipoInventario a PRESTADO.
    */
   static async createEquipoEnPrestamo(data: EquipoEnPrestamoCreateInput): Promise<EquipoEnPrestamo> {
     try {
-      // Validar los datos de entrada con el esquema de creación de Zod
+      // Validar los datos de entrada con Zod
       const validatedData = createEquipoEnPrestamoSchema.parse(data);
 
-      const newPrestamo = await prisma.$transaction(async (tx) => {
-        // Conectar relaciones
-        const equipoConnect = { connect: { id: validatedData.equipoId } };
-        const prestadoAContactoConnect = { connect: { id: validatedData.prestadoAContactoId } };
-        const ticketConnect = validatedData.ticketId ? { connect: { id: validatedData.ticketId } } : undefined;
-        const entregadoPorConnect = validatedData.entregadoPorUsuarioId ? { connect: { id: validatedData.entregadoPorUsuarioId } } : undefined;
-
-        const prestamo = await tx.equipoEnPrestamo.create({
+      return await prisma.$transaction(async (tx) => {
+        // 1. Crear el registro de préstamo
+        const nuevoPrestamo = await tx.equipoEnPrestamo.create({
           data: {
-            equipo: equipoConnect,
-            prestadoAContacto: prestadoAContactoConnect,
+            equipo: { connect: { id: validatedData.equipoId } },
+            prestadoAContacto: { connect: { id: validatedData.prestadoAContactoId } },
             personaResponsableEnSitio: validatedData.personaResponsableEnSitio,
-            fechaPrestamo: new Date(), // Siempre se establece la fecha actual al crear
             fechaDevolucionEstimada: validatedData.fechaDevolucionEstimada,
-            estadoPrestamo: validatedData.estadoPrestamo || EstadoPrestamoEquipo.PRESTADO,
-            ticketAsociado: ticketConnect,
+            estadoPrestamo: EstadoPrestamoEquipo.PRESTADO, // Estado inicial siempre PRESTADO
             notasPrestamo: validatedData.notasPrestamo,
-            entregadoPorUsuario: entregadoPorConnect,
+            ...(validatedData.ticketId && { ticketAsociado: { connect: { id: validatedData.ticketId } } }),
+            ...(validatedData.entregadoPorUsuarioId && { entregadoPorUsuario: { connect: { id: validatedData.entregadoPorUsuarioId } } }),
           },
         });
 
-        // Actualizar el estado del equipo a "PRESTADO" en el inventario.
-        // CORRECCIÓN: Usar EstadoEquipoInventario.PRESTADO (o el estado correcto para un equipo prestado).
+        // 2. Actualizar el estado del EquipoInventario a PRESTADO
         await tx.equipoInventario.update({
           where: { id: validatedData.equipoId },
-          data: { estadoEquipo: EstadoEquipoInventario.PRESTADO }, 
+          data: { estadoEquipo: EstadoEquipoInventario.PRESTADO },
         });
 
-        return prestamo;
+        return nuevoPrestamo;
       });
-      return newPrestamo;
-    } catch (error) {
-      console.error("Error al crear registro de préstamo en EquipoEnPrestamoService:", error);
-      if (error instanceof Error && 'issues' in error) { // ZodError
-        throw new Error("Error de validación al crear préstamo: " + (error as any).issues.map((i: any) => i.message).join(", "));
+    } catch (error: any) {
+      console.error("Error al crear registro de préstamo:", error);
+      if (error instanceof ZodError) {
+        throw new Error("Error de validación al crear préstamo: " + error.errors.map(e => e.message).join(", "));
       }
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // Añadir manejo específico de errores de Prisma si es necesario
+        if (error.code === 'P2025') { // Relación no encontrada (equipo, contacto, ticket, usuario)
+          throw new Error('No se encontró el equipo, contacto, ticket o usuario asociado.');
+        }
       }
-      throw new Error("Error al crear el registro de préstamo. Detalles: " + (error as Error).message);
+      throw new Error(`Error al crear el registro de préstamo. Detalles: ${error.message}`);
     }
   }
 
   /**
-   * Actualiza un registro de equipo en préstamo existente, validando los datos con Zod.
-   * Puede usarse para registrar la devolución o cambiar otros detalles.
-   * También actualiza el estado del equipo en inventario si se registra la devolución.
-   * @param data Los datos para actualizar el registro de préstamo (incluyendo el ID).
-   * @returns El objeto EquipoEnPrestamo actualizado.
+   * Actualiza un registro de préstamo existente.
+   * Maneja la devolución del equipo (cambio de estado a DEVUELTO y actualización de EquipoInventario).
    */
-  static async updateEquipoEnPrestamo(data: EquipoEnPrestamoUpdateInput): Promise<EquipoEnPrestamo> {
+  static async updateEquipoEnPrestamo(id: string, data: EquipoEnPrestamoUpdateInput): Promise<EquipoEnPrestamo> {
     try {
-      // Validar los datos de entrada con el esquema de actualización de Zod
+      // Validar los datos de entrada con Zod
       const validatedData = updateEquipoEnPrestamoSchema.parse(data);
 
-      const updatedPrestamo = await prisma.$transaction(async (tx) => {
-        // Preparar datos de conexión/desconexión para relaciones opcionales
-        const equipoUpdate = validatedData.equipoId ? { connect: { id: validatedData.equipoId } } : undefined;
-        const prestadoAContactoUpdate = validatedData.prestadoAContactoId ? { connect: { id: validatedData.prestadoAContactoId } } : undefined;
-        const ticketUpdate = validatedData.ticketId !== undefined
-          ? (validatedData.ticketId === null ? { disconnect: true } : { connect: { id: validatedData.ticketId } })
-          : undefined;
-        const entregadoPorUpdate = validatedData.entregadoPorUsuarioId !== undefined
-          ? (validatedData.entregadoPorUsuarioId === null ? { disconnect: true } : { connect: { id: validatedData.entregadoPorUsuarioId } })
-          : undefined;
-        const recibidoPorUpdate = validatedData.recibidoPorUsuarioId !== undefined
-          ? (validatedData.recibidoPorUsuarioId === null ? { disconnect: true } : { connect: { id: validatedData.recibidoPorUsuarioId } })
-          : undefined;
+      return await prisma.$transaction(async (tx) => {
+        const prestamoExistente = await tx.equipoEnPrestamo.findUnique({
+          where: { id },
+          select: { equipoId: true, estadoPrestamo: true }, // Necesitamos equipoId y estado actual
+        });
 
-        const prestamo = await tx.equipoEnPrestamo.update({
-          where: { id: validatedData.id },
+        if (!prestamoExistente) {
+          throw new Error('Registro de préstamo no encontrado para actualizar.');
+        }
+
+        const updateInput: Prisma.EquipoEnPrestamoUpdateInput = {
+          // Solo incluir propiedades si están definidas en validatedData
+          ...(validatedData.personaResponsableEnSitio !== undefined && { personaResponsableEnSitio: validatedData.personaResponsableEnSitio }),
+          ...(validatedData.fechaDevolucionEstimada !== undefined && { fechaDevolucionEstimada: validatedData.fechaDevolucionEstimada }),
+          ...(validatedData.fechaDevolucionReal !== undefined && { fechaDevolucionReal: validatedData.fechaDevolucionReal }),
+          ...(validatedData.estadoPrestamo !== undefined && { estadoPrestamo: validatedData.estadoPrestamo }),
+          ...(validatedData.notasPrestamo !== undefined && { notasPrestamo: validatedData.notasPrestamo }),
+          ...(validatedData.notasDevolucion !== undefined && { notasDevolucion: validatedData.notasDevolucion }),
+        };
+
+        // Manejar conexiones para relaciones requeridas y opcionales
+        if (validatedData.equipoId !== undefined && validatedData.equipoId !== null) {
+          updateInput.equipo = { connect: { id: validatedData.equipoId } };
+        }
+        if (validatedData.prestadoAContactoId !== undefined && validatedData.prestadoAContactoId !== null) {
+          updateInput.prestadoAContacto = { connect: { id: validatedData.prestadoAContactoId } };
+        }
+        if (validatedData.ticketId !== undefined) {
+          updateInput.ticketAsociado = validatedData.ticketId === null ? { disconnect: true } : { connect: { id: validatedData.ticketId } };
+        }
+        if (validatedData.entregadoPorUsuarioId !== undefined) {
+          updateInput.entregadoPorUsuario = validatedData.entregadoPorUsuarioId === null ? { disconnect: true } : { connect: { id: validatedData.entregadoPorUsuarioId } };
+        }
+        if (validatedData.recibidoPorUsuarioId !== undefined) {
+          updateInput.recibidoPorUsuario = validatedData.recibidoPorUsuarioId === null ? { disconnect: true } : { connect: { id: validatedData.recibidoPorUsuarioId } };
+        }
+        
+        const updatedPrestamo = await tx.equipoEnPrestamo.update({
+          where: { id },
+          data: updateInput,
+        });
+
+        // Lógica para actualizar el estado del EquipoInventario si el préstamo cambia a DEVUELTO
+        if (updatedPrestamo.estadoPrestamo === EstadoPrestamoEquipo.DEVUELTO &&
+            prestamoExistente.estadoPrestamo !== EstadoPrestamoEquipo.DEVUELTO) { // Solo si realmente cambió a DEVUELTO
+          await tx.equipoInventario.update({
+            where: { id: prestamoExistente.equipoId },
+            data: { estadoEquipo: EstadoEquipoInventario.DISPONIBLE },
+          });
+        }
+
+        return updatedPrestamo;
+      });
+    } catch (error: any) {
+      console.error(`Error al actualizar registro de préstamo ${id}:`, error);
+      if (error instanceof ZodError) {
+        throw new Error("Error de validación al actualizar préstamo: " + error.errors.map(e => e.message).join(", "));
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') { // Record not found
+          throw new Error('Registro de préstamo o entidad relacionada no encontrada para actualizar.');
+        }
+      }
+      throw new Error(`No se pudo actualizar el registro de préstamo. Detalles: ${error.message}`);
+    }
+  }
+
+  /**
+   * Método para "finalizar" un préstamo si no se usa el estado DEVUELTO en update,
+   * o para otras transiciones finales (ej. PERDIDO_POR_CLIENTE)
+   * Nota: No se usa un "delete" físico, solo actualización de estado.
+   */
+  static async finalizarPrestamo(id: string, estadoFinal: EstadoPrestamoEquipo, notasDevolucion?: string): Promise<EquipoEnPrestamo> {
+    if (estadoFinal !== EstadoPrestamoEquipo.DEVUELTO && estadoFinal !== EstadoPrestamoEquipo.PERDIDO_POR_CLIENTE) {
+      throw new Error('Estado final inválido para finalizar préstamo. Use DEVUELTO o PERDIDO_POR_CLIENTE.');
+    }
+
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const prestamo = await tx.equipoEnPrestamo.findUnique({
+          where: { id },
+          select: { equipoId: true, estadoPrestamo: true },
+        });
+
+        if (!prestamo) {
+          throw new Error('Registro de préstamo no encontrado para finalizar.');
+        }
+
+        if (prestamo.estadoPrestamo === EstadoPrestamoEquipo.DEVUELTO ||
+            prestamo.estadoPrestamo === EstadoPrestamoEquipo.PERDIDO_POR_CLIENTE) {
+          throw new Error('El préstamo ya ha sido finalizado.');
+        }
+
+        const updatedPrestamo = await tx.equipoEnPrestamo.update({
+          where: { id },
           data: {
-            equipo: equipoUpdate,
-            prestadoAContacto: prestadoAContactoUpdate,
-            personaResponsableEnSitio: validatedData.personaResponsableEnSitio,
-            fechaDevolucionEstimada: validatedData.fechaDevolucionEstimada,
-            fechaDevolucionReal: validatedData.fechaDevolucionReal,
-            estadoPrestamo: validatedData.estadoPrestamo,
-            ticketAsociado: ticketUpdate,
-            notasPrestamo: validatedData.notasPrestamo,
-            notasDevolucion: validatedData.notasDevolucion,
-            entregadoPorUsuario: entregadoPorUpdate,
-            recibidoPorUsuario: recibidoPorUpdate,
+            estadoPrestamo: estadoFinal,
+            fechaDevolucionReal: new Date(), // Registrar fecha de finalización
+            notasDevolucion: notasDevolucion,
           },
         });
 
-        // Lógica para actualizar el estado del equipo si se registra la devolución
-        if (validatedData.fechaDevolucionReal && validatedData.estadoPrestamo === EstadoPrestamoEquipo.DEVUELTO) {
-          const equipoPrestado = await tx.equipoEnPrestamo.findUnique({
-            where: { id: validatedData.id },
-            select: { equipoId: true }
+        // Si el equipo es devuelto o marcado como perdido, actualizar su estado en el inventario
+        if (estadoFinal === EstadoPrestamoEquipo.DEVUELTO) {
+          await tx.equipoInventario.update({
+            where: { id: prestamo.equipoId },
+            data: { estadoEquipo: EstadoEquipoInventario.DISPONIBLE },
           });
-          if (equipoPrestado?.equipoId) {
-            // CORRECCIÓN: Usar EstadoEquipoInventario.DISPONIBLE
-            await tx.equipoInventario.update({
-              where: { id: equipoPrestado.equipoId },
-              data: { estadoEquipo: EstadoEquipoInventario.DISPONIBLE }, // Usar el enum correcto aquí
-            });
-          }
+        } else if (estadoFinal === EstadoPrestamoEquipo.PERDIDO_POR_CLIENTE) {
+          await tx.equipoInventario.update({
+            where: { id: prestamo.equipoId },
+            data: { estadoEquipo: EstadoEquipoInventario.PERDIDO_ROBADO }, // O DE_BAJA, según tu lógica
+          });
         }
 
-        return prestamo;
+        return updatedPrestamo;
       });
-      return updatedPrestamo;
-    } catch (error) {
-      console.error(`Error al actualizar registro de préstamo con ID ${data.id} en EquipoEnPrestamoService:`, error);
-      if (error instanceof Error && 'issues' in error) { // ZodError
-        throw new Error("Error de validación al actualizar préstamo: " + (error as any).issues.map((i: any) => i.message).join(", "));
+    } catch (error: any) {
+      console.error(`Error al finalizar préstamo ${id}:`, error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new Error('Registro de préstamo no encontrado para finalizar.');
       }
-      throw new Error("Error al actualizar el registro de préstamo. Detalles: " + (error as Error).message);
+      throw new Error(`No se pudo finalizar el préstamo. Detalles: ${error.message}`);
     }
   }
 
   /**
-   * Elimina un registro de equipo en préstamo.
-   * @param id El ID del registro de préstamo a eliminar.
-   * @returns void si tiene éxito, lanza un error si falla.
+   * Elimina físicamente un registro de préstamo (solo para casos especiales)
+   * Normalmente se debería usar finalizarPrestamo en su lugar
    */
   static async deleteEquipoEnPrestamo(id: string): Promise<void> {
     try {
-      await prisma.$transaction(async (tx) => {
-        // No hay dependencias directas en cascada con EquipoEnPrestamo,
-        // pero podemos considerar lógica de negocio inversa (ej. si era el último préstamo, cambiar estado del equipo).
-        // Por ahora, solo elimina el registro.
-        await tx.equipoEnPrestamo.delete({
-          where: { id },
-        });
+      await prisma.equipoEnPrestamo.delete({
+        where: { id },
       });
     } catch (error: any) {
-      console.error(`Error al eliminar registro de préstamo con ID ${id} en EquipoEnPrestamoService:`, error);
-      throw new Error("Error al eliminar el registro de préstamo. Detalles: " + (error?.message || error));
+      console.error(`Error al eliminar registro de préstamo ${id}:`, error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new Error('Registro de préstamo no encontrado para eliminar.');
+      }
+      throw new Error(`Error al eliminar el registro de préstamo. Detalles: ${error.message}`);
     }
   }
+
+  // NOTE: El método deleteEquipoEnPrestamo del archivo de test será reemplazado por la lógica de finalizarPrestamo.
+
 }

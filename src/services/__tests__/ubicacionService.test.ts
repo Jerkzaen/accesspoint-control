@@ -7,7 +7,8 @@ import { Prisma } from '@prisma/client'; // Para tipos de errores de Prisma
 
 
     // Mockeamos el módulo 'prisma' para controlar el comportamiento de sus métodos.
-    import { describe, it, expect, beforeEach, vi } from 'vitest';
+    import { describe, it, expect, beforeEach, vi, type MockedObject, type Mock } from 'vitest';
+    import { ZodError } from 'zod';
 
 vi.mock('../../lib/prisma', () => ({
       prisma: {
@@ -25,13 +26,13 @@ vi.mock('../../lib/prisma', () => ({
           count: vi.fn(), // Para la lógica de eliminación de Ubicacion
         },
         // Mockeamos $transaction para que simplemente ejecute el callback que recibe
-        $transaction: vi.fn((callback) => callback(mockPrisma as unknown as vi.Mocked<typeof prisma>)), // Pasamos el mock de tx para funciones anidadas
+        $transaction: vi.fn((callback) => callback(mockPrisma as unknown as MockedObject<typeof prisma>)), // Pasamos el mock de tx para funciones anidadas
         $disconnect: vi.fn(),
       },
     }));
 
     // Casteamos la instancia mockeada de prisma para un mejor tipado en las pruebas
-    const mockPrisma = prisma as unknown as vi.Mocked<typeof prisma>;
+    const mockPrisma = prisma as unknown as MockedObject<typeof prisma>;
 
     describe('UbicacionService', () => {
       beforeEach(() => {
@@ -60,7 +61,7 @@ vi.mock('../../lib/prisma', () => ({
             { ...mockExistingUbicacion, id: 'u2', nombreReferencial: 'Pasillo B' },
             { ...mockExistingUbicacion, id: 'u1', nombreReferencial: 'Oficina A' },
           ];
-          (mockPrisma.ubicacion.findMany as vi.Mock).mockResolvedValue(mockUbicaciones);
+          (mockPrisma.ubicacion.findMany as Mock).mockResolvedValue(mockUbicaciones);
 
           const ubicaciones = await UbicacionService.getUbicaciones();
 
@@ -79,7 +80,7 @@ vi.mock('../../lib/prisma', () => ({
             contactos: [{ id: mockContactoId, nombreCompleto: 'Contacto Test' }],
             equiposInventario: [{ id: mockEquipoId, nombreDescriptivo: 'Equipo Test' }],
           };
-          (mockPrisma.ubicacion.findMany as vi.Mock).mockResolvedValue([mockUbicacionWithRelations]);
+          (mockPrisma.ubicacion.findMany as Mock).mockResolvedValue([mockUbicacionWithRelations]);
 
           const ubicaciones = await UbicacionService.getUbicaciones(true);
 
@@ -93,7 +94,7 @@ vi.mock('../../lib/prisma', () => ({
         });
 
         it('debe manejar errores cuando Prisma falla al obtener ubicaciones', async () => {
-          (mockPrisma.ubicacion.findMany as vi.Mock).mockRejectedValue(new Error('DB Error'));
+          (mockPrisma.ubicacion.findMany as Mock).mockRejectedValue(new Error('DB Error'));
           await expect(UbicacionService.getUbicaciones()).rejects.toThrow('No se pudieron obtener las ubicaciones.');
         });
       });
@@ -107,7 +108,7 @@ vi.mock('../../lib/prisma', () => ({
             contactos: [],
             equiposInventario: [],
           };
-          (mockPrisma.ubicacion.findUnique as vi.Mock).mockResolvedValue(mockUbicacionWithAllRelations);
+          (mockPrisma.ubicacion.findUnique as Mock).mockResolvedValue(mockUbicacionWithAllRelations);
 
           const ubicacion = await UbicacionService.getUbicacionById(mockUbicacionId);
 
@@ -120,13 +121,13 @@ vi.mock('../../lib/prisma', () => ({
         });
 
         it('debe retornar null si la ubicación no se encuentra', async () => {
-          (mockPrisma.ubicacion.findUnique as vi.Mock).mockResolvedValue(null);
+          (mockPrisma.ubicacion.findUnique as Mock).mockResolvedValue(null);
           const ubicacion = await UbicacionService.getUbicacionById('non-existent-id');
           expect(ubicacion).toBeNull();
         });
 
         it('debe manejar errores cuando Prisma falla al obtener ubicación por ID', async () => {
-          (mockPrisma.ubicacion.findUnique as vi.Mock).mockRejectedValue(new Error('DB Error'));
+          (mockPrisma.ubicacion.findUnique as Mock).mockRejectedValue(new Error('DB Error'));
           await expect(UbicacionService.getUbicacionById(mockUbicacionId)).rejects.toThrow('No se pudo obtener la ubicación.');
         });
       });
@@ -140,7 +141,7 @@ vi.mock('../../lib/prisma', () => ({
         };
 
         it('debe crear una nueva ubicación y retornar el objeto creado', async () => {
-          (mockPrisma.ubicacion.create as vi.Mock).mockResolvedValue({
+          (mockPrisma.ubicacion.create as Mock).mockResolvedValue({
             id: 'new-ubicacion-id',
             ...newUbicacionData,
             createdAt: new Date(), updatedAt: new Date(),
@@ -167,8 +168,8 @@ vi.mock('../../lib/prisma', () => ({
         });
 
         it('debe manejar otros errores de Prisma al crear ubicación', async () => {
-          (mockPrisma.ubicacion.create as vi.Mock).mockRejectedValue(new Error('Other DB Error'));
-          await expect(UbicacionService.createUbicacion(newUbicacionData)).rejects.toThrow(/Error al crear ubicación en UbicacionService: Error: Other DB Error/);
+          (mockPrisma.ubicacion.create as Mock).mockRejectedValue(new Error('Other DB Error'));
+          await expect(UbicacionService.createUbicacion(newUbicacionData)).rejects.toThrow(/Error al crear la ubicación. Detalles: Other DB Error/);
         });
       });
 
@@ -176,17 +177,16 @@ vi.mock('../../lib/prisma', () => ({
       describe('updateUbicacion', () => {
         it('debe actualizar los campos de la ubicación y retornar el objeto actualizado', async () => {
           const updateData: UbicacionUpdateInput = {
-            id: mockUbicacionId,
             nombreReferencial: 'Piso 4 - Actualizado',
             notas: 'Notas actualizadas',
           };
-          (mockPrisma.ubicacion.update as vi.Mock).mockResolvedValue({ ...mockExistingUbicacion, ...updateData });
+          (mockPrisma.ubicacion.update as Mock).mockResolvedValue({ ...mockExistingUbicacion, ...updateData });
 
-          const ubicacion = await UbicacionService.updateUbicacion(updateData);
+          const ubicacion = await UbicacionService.updateUbicacion(mockUbicacionId, updateData);
 
           expect(mockPrisma.ubicacion.update).toHaveBeenCalledTimes(1);
           expect(mockPrisma.ubicacion.update).toHaveBeenCalledWith({
-            where: { id: updateData.id },
+            where: { id: mockUbicacionId },
             data: expect.objectContaining({
               nombreReferencial: 'Piso 4 - Actualizado',
               notas: 'Notas actualizadas',
@@ -198,16 +198,15 @@ vi.mock('../../lib/prisma', () => ({
         it('debe actualizar la sucursal si se proporciona un nuevo sucursalId', async () => {
           const newSucursalId = '0a1c5d2c-5958-4a14-ad8e-1a5046bb5d09'; // Nuevo UUID válido
           const updateData: UbicacionUpdateInput = {
-            id: mockUbicacionId,
             sucursalId: newSucursalId,
           };
-          (mockPrisma.ubicacion.update as vi.Mock).mockResolvedValue({ ...mockExistingUbicacion, sucursalId: newSucursalId });
+          (mockPrisma.ubicacion.update as Mock).mockResolvedValue({ ...mockExistingUbicacion, sucursalId: newSucursalId });
 
-          const ubicacion = await UbicacionService.updateUbicacion(updateData);
+          const ubicacion = await UbicacionService.updateUbicacion(mockUbicacionId, updateData);
 
           expect(mockPrisma.ubicacion.update).toHaveBeenCalledTimes(1);
           expect(mockPrisma.ubicacion.update).toHaveBeenCalledWith({
-            where: { id: updateData.id },
+            where: { id: mockUbicacionId },
             data: expect.objectContaining({
               sucursal: { connect: { id: newSucursalId } },
             }),
@@ -216,24 +215,24 @@ vi.mock('../../lib/prisma', () => ({
         });
 
         it('debe lanzar un error de validación Zod si los datos son inválidos', async () => {
-          const invalidData = { ...mockExistingUbicacion, id: mockUbicacionId, sucursalId: 'invalid-uuid-format' };
-          await expect(UbicacionService.updateUbicacion(invalidData as any)).rejects.toThrow(/Error de validación al actualizar ubicación/);
+          const invalidData = { sucursalId: 'invalid-uuid-format' };
+          await expect(UbicacionService.updateUbicacion(mockUbicacionId, invalidData as any)).rejects.toThrow(/Error de validación al actualizar ubicación/);
           expect(mockPrisma.ubicacion.update).not.toHaveBeenCalled();
         });
 
         it('debe manejar otros errores de Prisma al actualizar ubicación', async () => {
-          const updateData = { id: mockUbicacionId, nombreReferencial: 'Fail' };
-          (mockPrisma.ubicacion.update as vi.Mock).mockRejectedValue(new Error('Update DB Error'));
-          await expect(UbicacionService.updateUbicacion(updateData)).rejects.toThrow(/Error al actualizar ubicación con ID .* en UbicacionService: Error: Update DB Error/);
+          const updateData = { nombreReferencial: 'Fail' };
+          (mockPrisma.ubicacion.update as Mock).mockRejectedValue(new Error('Update DB Error'));
+          await expect(UbicacionService.updateUbicacion(mockUbicacionId, updateData)).rejects.toThrow(/Error al actualizar la ubicación. Detalles: Update DB Error/);
         });
       });
 
       // --- Pruebas para deleteUbicacion ---
       describe('deleteUbicacion', () => {
         it('debe eliminar una ubicación si no tiene contactos ni equipos asociados', async () => {
-          (mockPrisma.contactoEmpresa.count as vi.Mock).mockResolvedValue(0);
-          (mockPrisma.equipoInventario.count as vi.Mock).mockResolvedValue(0);
-          (mockPrisma.ubicacion.delete as vi.Mock).mockResolvedValue({});
+          (mockPrisma.contactoEmpresa.count as Mock).mockResolvedValue(0);
+          (mockPrisma.equipoInventario.count as Mock).mockResolvedValue(0);
+          (mockPrisma.ubicacion.delete as Mock).mockResolvedValue({});
 
           const result = await UbicacionService.deleteUbicacion(mockUbicacionId);
 
@@ -245,24 +244,24 @@ vi.mock('../../lib/prisma', () => ({
         });
 
         it('NO debe eliminar la ubicación si tiene contactos asociados', async () => {
-          (mockPrisma.contactoEmpresa.count as vi.Mock).mockResolvedValue(1); // Simula 1 contacto
+          (mockPrisma.contactoEmpresa.count as Mock).mockResolvedValue(1); // Simula 1 contacto
           // CORRECCIÓN: Usar rejects.toThrow ya que el servicio lanza el error.
           await expect(UbicacionService.deleteUbicacion(mockUbicacionId)).rejects.toThrow('No se puede eliminar la ubicación porque tiene contactos asociados.');
           expect(mockPrisma.ubicacion.delete).not.toHaveBeenCalled();
         });
 
         it('NO debe eliminar la ubicación si tiene equipos asociados', async () => {
-          (mockPrisma.contactoEmpresa.count as vi.Mock).mockResolvedValue(0);
-          (mockPrisma.equipoInventario.count as vi.Mock).mockResolvedValue(1); // Simula 1 equipo
+          (mockPrisma.contactoEmpresa.count as Mock).mockResolvedValue(0);
+          (mockPrisma.equipoInventario.count as Mock).mockResolvedValue(1); // Simula 1 equipo
           // CORRECCIÓN: Usar rejects.toThrow ya que el servicio lanza el error.
           await expect(UbicacionService.deleteUbicacion(mockUbicacionId)).rejects.toThrow('No se puede eliminar la ubicación porque tiene equipos de inventario asociados.');
           expect(mockPrisma.ubicacion.delete).not.toHaveBeenCalled();
         });
 
         it('debe manejar errores de Prisma al eliminar ubicación', async () => {
-          (mockPrisma.contactoEmpresa.count as vi.Mock).mockResolvedValue(0);
-          (mockPrisma.equipoInventario.count as vi.Mock).mockResolvedValue(0);
-          (mockPrisma.ubicacion.delete as vi.Mock).mockRejectedValue(new Error('Delete DB Error'));
+          (mockPrisma.contactoEmpresa.count as Mock).mockResolvedValue(0);
+          (mockPrisma.equipoInventario.count as Mock).mockResolvedValue(0);
+          (mockPrisma.ubicacion.delete as Mock).mockRejectedValue(new Error('Delete DB Error'));
           // CORRECCIÓN: Usar rejects.toThrow ya que el servicio lanza el error.
           await expect(UbicacionService.deleteUbicacion(mockUbicacionId)).rejects.toThrow('Error al eliminar la ubicación. Detalles: Delete DB Error');
         });
